@@ -119,6 +119,9 @@ stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘ
 
 promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、v2 では比較可能なrequest分母がない・新種がある・率が増える候補を調査へ戻します。v3 では分母がなくても既知の種類は件数で比べ、急増（最悪 baseline の 2 倍かつ +5 件超）と新種だけを調査へ戻します。エラー要約は `map[k:v]`、`種別:METHOD:/path xN`、`key=value` の各形式を読みます。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
 
+採用直前にも実資源のfingerprintを取得し、計測済みcandidateと照合します。人間判断待ちの
+recover後はコード再deployだけで資源まで戻ったと扱わず、[候補資源の復元・再確認](team/docs/RECOVERY.md#採用直前の資源確認)を行います。
+
 ## テスト
 
 ```bash

@@ -149,12 +149,18 @@ EOF
       for host in $APP_HOSTS; do
         [ "$(deployed_marker "$host")" = "$deployed" ] || die "$host marker differs from DEPLOYED_REV; deploy again"
       done
-      python3 - "$EXP_DIR" "$deployed" <<'EOF' || die "no passing candidate sample of $(short "$deployed") in $EXP_DIR"
+      fingerprints=$(resource_fingerprints) || die "candidate resource probe failed before promotion; nothing adopted"
+      python3 - "$EXP_DIR" "$deployed" "$fingerprints" <<'EOF' || die "passing samples and measured candidate resources must match the deployed target before promotion"
 import glob, json, sys
-d, rev = sys.argv[1:]
+d, rev, fingerprints = sys.argv[1:]
 samples=[json.load(open(p)) for p in glob.glob(f"{d}/bench-candidate*.json")]
 ok=[s for s in samples if s['pass'] and not s.get('observed') and s['deployedRevision']==rev]
-sys.exit(0 if ok and all(s['pass'] for s in samples) else 1)
+if not ok or not all(s['pass'] for s in samples):
+    sys.exit(1)
+actual=dict(line.split('\t',1) for line in fingerprints.splitlines() if line)
+if any(s.get('resourceFingerprints',{}) != actual for s in ok):
+    print('current target differs from measured candidate resources; restore candidate resources and verify them before adopting',file=sys.stderr)
+    sys.exit(1)
 EOF
       mainrev=$(git_rev "$STABLE_BRANCH")
       git -C "$KAIZEN_PROJECT" merge-base --is-ancestor "$mainrev" "$head" || die "$STABLE_BRANCH ($(short "$mainrev")) is not an ancestor of the candidate; rebase the experiment branch on it and deploy again"

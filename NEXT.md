@@ -4,6 +4,11 @@
 
 ## 現行の優先事項（0.6.0とその後のmain更新）
 
+0.7.4ではpromote直前の実資源を、同candidate SHAの非観測sampleのfingerprintと照合する。
+human待ちrecoverでschemaが戻り、コード再deployだけで異なる資源を採用できる問題を
+fake remoteで再現して修正した。probe失敗もmain/STABLE_REV更新前に拒否し、
+元sampleは保持する。スコア・evaluate・benchの判定は変更しない。実測中の旧版更新は境界まで保留する。
+
 0.7.3では未解消の品質保留をtask IDを越えて継承し、提出sourceの変更内容が実測SHAに
 含まれることを検証する。公式promote前とtask採用時の両方で確認し、重なる編集は実際の
 統合SHAで再提出する。全93unit/E2Eと実候補のread-only replayで確認済み。

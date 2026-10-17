@@ -44,4 +44,20 @@ manifestの`changedResources`にdatabase/configuration/data/external等の変更
 
 `recover.sh`は同じ配備lockの下で安定コードの配備→RECOVERY_CMD→ファイルと資源の一致確認を行う。全て成功して初めてhealthy/revert状態を回復する。安定SHAを再配備しただけのbaselineも、資源が異なれば拒否する。復旧失敗をcaptureし直して安定と扱ってはいけない。
 
+## 採用直前の資源確認
+
+人間判断を待つ間にrecoverした場合、SQLやindexも安定版へ戻る。
+承認後に同じ候補コードを再deployしても、候補のschemaや設定まで復元されるとは限らない。
+対象に定義した初期化手順で候補資源を戻し、必要なら同じ実験で追加ベンチを取り、
+元の測定・警告を保持したまま再確認する。
+
+0.7.4の`experiment.sh record`は、main/STABLE_REVを更新する直前に現在の資源fingerprintを
+取得し、同じcandidate SHAを測った非観測sampleすべてと完全一致する場合だけpromoteする。
+比較対象は採用候補の資源であり、改善前のstable資源へ戻すことを要求するものではない。
+probeの失敗や不一致は採用を拒否し、main・stableと開いた実験、元sampleを保持する。
+evaluateのスコア判定がpromoteでも、この確認が失敗した状態は採用済みではない。
+
+probe未設定の既存運用は空fingerprint同士の比較として互換性を保つ。その場合、未計測の
+DB資源まで検証したとは扱わない。probeが宣言した対象を十分にカバーすることは設定者が確認する。
+
 0.2.0の既存baselineにはbundle IDがないため、0.3.0では判定に再利用しない。初期ドリル・capture・新baselineから再開する。
