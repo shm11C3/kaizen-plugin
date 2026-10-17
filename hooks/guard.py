@@ -27,7 +27,7 @@ import re
 import sys
 from pathlib import Path
 
-SCRIPT = re.compile(r"scripts/(deploy|bench|recover|verify|evaluate|experiment|observe|status)\.sh\b")
+SCRIPT = re.compile(r"scripts/(deploy|bench|recover|verify|evaluate|experiment|observe|status|stable|knowledge|retro)\.sh\b")
 LOCKED_SCRIPT = re.compile(r"scripts/(deploy|bench|recover)\.sh\b")
 BENCH_BYPASS = re.compile(r"\bbench(marker)?\s+run\b|--payment-url|\bisuxbench\b|/bench\s+-", re.I)
 REMOTE_TOOL = re.compile(r"\b(ssh|rsync|scp)\b")

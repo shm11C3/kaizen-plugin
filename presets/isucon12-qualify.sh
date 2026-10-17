@@ -21,10 +21,12 @@ RSYNC_PATH="sudo -u isucon rsync"
 # The image (go/Dockerfile) only COPYs the sources; the container's CMD is
 # `go run ./cmd/isuports/main.go`, so the compile happens at container
 # start (GOCACHE is on a mounted volume, so it is incremental). BUILD_CMD
-# refreshes the image layers so the restart's --build is a cache hit.
+# refreshes the image layers so the restart's --build is a cache hit. The
+# compose plugin is installed for the isucon user only (root has none), so
+# build as isucon.
 # Measured on isu12 (2 vCPU): build ~5 s, restart until the first HTTP
 # answer ~20-40 s; HEALTH_RETRIES covers a cold compile.
-BUILD_CMD='cd /home/isucon/webapp && sudo docker compose -f docker-compose-go.yml build'
+BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp && docker compose -f docker-compose-go.yml build"'
 RESTART_CMD='sudo systemctl restart isuports.service'
 SERVICE_NAME=isuports.service
 # Any HTTP answer (401 without a cookie) means the process is up; the

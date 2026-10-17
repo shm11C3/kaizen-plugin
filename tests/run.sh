@@ -82,6 +82,19 @@ expect_fail "$S/bench.sh" candidate                   # no experiment open
 "$S/bench.sh" baseline-2 >/dev/null
 [ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples filed"
 
+echo "== repin: records committed on main move the branch, not the servers"
+echo "- no rule" > .kaizen/RULES.md && git add .kaizen/RULES.md && git commit -qm "records"
+"$S/stable.sh" repin >/dev/null
+[ "$(state STABLE_REV)" = "$(git rev-parse main)" ] || fail "STABLE_REV follows main after repin"
+[ "$(state DEPLOYED_REV)" = "$(git rev-parse main)" ] || fail "DEPLOYED_REV re-keyed"
+[ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/webapp/.deployed-revision")" = "$(git rev-parse main)" ] || fail "marker re-keyed"
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples re-keyed"
+grep -q repinnedFrom .kaizen/baseline/"$(git rev-parse main)"/*baseline.json || fail "re-keyed sample notes its origin"
+"$S/verify.sh" main >/dev/null
+git switch -q -c tmp-code && echo 3000 > go/score && git commit -qam "code change"
+expect_fail "$S/stable.sh" repin tmp-code              # deployable tree differs: a candidate, not a repin
+git switch -q main && git branch -q -D tmp-code
+
 echo "== experiment 1: promoted, with overlay change"
 expect_fail "$S/deploy.sh" HEAD~0 --dirty             # bad usage
 "$S/experiment.sh" new flush-log >/dev/null
