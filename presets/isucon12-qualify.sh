@@ -94,3 +94,6 @@ parse_bench() {
   case "$errors" in errors=0,critical=0) errors=none ;; esac
   echo "$pass $score ${errors:-none}"
 }
+
+# Request denominator for error rates: access-log lines before and after a run.
+REQUEST_COUNT_CMD='sudo wc -l < /var/log/nginx/access.log'

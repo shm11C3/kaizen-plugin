@@ -1,0 +1,12 @@
+{
+  "label": "candidate-2",
+  "experiment": "002-notification-interval",
+  "deployedRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "pass": true,
+  "score": 3627,
+  "errors": "map[25:19]",
+  "durationSec": 68,
+  "finishedAt": "2026-10-17T09:07:08Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/002-notification-interval/bench-candidate-2.log"
+}

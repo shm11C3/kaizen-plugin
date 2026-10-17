@@ -38,6 +38,10 @@ DB_NAME=<database>
 PATH_ID_REGEX='/[0-9A-Za-z]{20,}'    # how ids look in URLs, for grouping
 # OBSERVE_EXTRA_CMD='sudo alp ltsv --file /var/log/nginx/access.log --sort sum -r --limit 30'
 
+# Request denominator for error rates when the benchmarker gives no total.
+REQUEST_COUNT_CMD='sudo wc -l < /var/log/nginx/access.log'
+# EVALUATION_RULE=v3  # sequential rule; opt in only after the comparison in DESIGN_REVIEW.md
+
 # Benchmark. On contest day the portal runs it: BENCH_MODE=manual and
 # bench.sh <label> --reserve before the portal, --result 'pass=true score=1234 errors=...' after it ended.
 # In practice with a reachable benchmarker: BENCH_MODE=ssh plus the two

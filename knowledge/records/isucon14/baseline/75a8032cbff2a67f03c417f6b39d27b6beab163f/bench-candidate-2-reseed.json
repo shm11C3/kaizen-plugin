@@ -1,0 +1,12 @@
+{
+  "label": "candidate-2",
+  "experiment": "005-nearest-chair-matching-notified",
+  "deployedRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "pass": true,
+  "score": 7763,
+  "errors": "map[25:20]",
+  "durationSec": 68,
+  "finishedAt": "2026-10-17T09:15:19Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/005-nearest-chair-matching-notified/bench-candidate-2.log"
+}

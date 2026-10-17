@@ -1,0 +1,13 @@
+{
+  "label": "candidate-2",
+  "experiment": "003-upload-batch-dedupe",
+  "deployedRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+  "pass": true,
+  "score": 2504,
+  "errors": "none",
+  "durationSec": 87,
+  "finishedAt": "2026-10-17T10:23:00Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/003-upload-batch-dedupe/bench-candidate-2.log",
+  "observed": false
+}

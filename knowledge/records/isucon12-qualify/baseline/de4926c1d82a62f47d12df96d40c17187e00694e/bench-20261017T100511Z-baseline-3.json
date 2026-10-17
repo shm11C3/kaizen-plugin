@@ -1,0 +1,13 @@
+{
+  "label": "baseline-3",
+  "experiment": null,
+  "deployedRevision": "de4926c1d82a62f47d12df96d40c17187e00694e",
+  "pass": true,
+  "score": 2130,
+  "errors": "none",
+  "durationSec": 81,
+  "finishedAt": "2026-10-17T10:06:33Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/baseline/de4926c1d82a62f47d12df96d40c17187e00694e/bench-20261017T100511Z-baseline-3.log",
+  "observed": false
+}

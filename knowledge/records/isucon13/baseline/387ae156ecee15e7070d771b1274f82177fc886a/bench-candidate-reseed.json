@@ -1,0 +1,12 @@
+{
+  "label": "candidate",
+  "experiment": "001-add-secondary-indexes",
+  "deployedRevision": "387ae156ecee15e7070d771b1274f82177fc886a",
+  "pass": true,
+  "score": 6815,
+  "errors": "リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:GET:/api/livestream/:id/reportx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1",
+  "durationSec": 99,
+  "finishedAt": "2026-10-17T09:16:49Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/001-add-secondary-indexes/bench-candidate.log"
+}

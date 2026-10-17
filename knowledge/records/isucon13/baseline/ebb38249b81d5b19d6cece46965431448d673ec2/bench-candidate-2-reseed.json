@@ -1,0 +1,13 @@
+{
+  "label": "candidate-2",
+  "experiment": "003-tags-in-memory",
+  "deployedRevision": "ebb38249b81d5b19d6cece46965431448d673ec2",
+  "pass": true,
+  "score": 9109,
+  "errors": "リクエストタイムアウト:GET:/api/user/:name/iconx1,リクエストタイムアウト:GET:/api/user/:name/statisticsx3,リクエストタイムアウト:POST:/api/livestream/:id/livecommentx1,リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx4",
+  "durationSec": 106,
+  "finishedAt": "2026-10-17T09:34:28Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/003-tags-in-memory/bench-candidate-2.log",
+  "observed": false
+}

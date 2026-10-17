@@ -95,14 +95,16 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | `MAX_BENCH_PER_EXP` | 6 | 復旧・結果なし・実験終了後の追加復旧も含む物理試行上限 |
 | `MAX_BENCH_TOTAL` / `MAX_BENCH_PER_HOUR` | 120 / 30 | project全体 / 直近1時間の物理試行上限 |
 | `RECOVERY_BENCH_RESERVE` | 1 | 実験内で最後のstable計測用に残す枠 |
-| `MIN_SAMPLES` | 2 | baseline/candidateそれぞれの最低サンプル数 |
+| `MIN_SAMPLES` | 2 | baseline/candidateそれぞれの最低サンプル数（v2） |
+| `EVALUATION_RULE` | v2 | v2: 両側 2 本以上、エラー率はリクエスト分母で比較。v3: 逐次判定（1 本で幅を超えれば promote、全 baseline を下回れば reject、幅内なら追加）。v3 は実測比較が済むまで opt-in |
+| `REQUEST_COUNT_CMD` | なし | エラー率の分母。ベンチ前後のアクセスログ行数の差（プリセットは nginx のログ）。プリセットが `parse_bench_requests` を持つ場合はそちら |
 | `BASELINE_MAX_AGE_MINUTES` | 60 | 古いbaselineを判定から外す期限 |
 | `MAX_EXP_MINUTES` | 30 | 1 実験の制限時間 |
 | `MAX_EXP_PER_HOUR` | 6 | 1 時間に開ける実験数 |
 
 stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘルスチェック・復旧・ベンチのコマンド、資源の指紋）だけで決まります。予算や閾値、観測の設定、plugin 自体の更新では bundle は無効になりません。本番中に plugin を直す前提なので、どの plugin 版で測ったかは bundle と各サンプルの `pluginRevision` に記録します。
 
-promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、比較可能なrequest分母がない・新種がある・率が増える候補は調査へ戻します。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
+promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、v2 では比較可能なrequest分母がない・新種がある・率が増える候補を調査へ戻します。v3 では分母がなくても既知の種類は件数で比べ、急増（最悪 baseline の 2 倍かつ +5 件超）と新種だけを調査へ戻します。エラー要約は `map[k:v]`、`種別:METHOD:/path xN`、`key=value` の各形式を読みます。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
 
 ## テスト
 

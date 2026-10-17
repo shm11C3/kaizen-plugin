@@ -1,0 +1,12 @@
+{
+  "label": "baseline-5",
+  "experiment": null,
+  "deployedRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "pass": true,
+  "score": 7588,
+  "errors": "map[25:16]",
+  "durationSec": 68,
+  "finishedAt": "2026-10-17T09:26:16Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/bench-baseline-5.log"
+}

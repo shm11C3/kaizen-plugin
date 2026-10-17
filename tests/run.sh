@@ -68,6 +68,8 @@ RECOVERY_CMD='test ! -f fail-recovery && cp webapp/sql/1-schema.sql database.sta
 BENCH_PRECHECK_CMD='test ! -f busy.marker'
 PROBLEM=test
 RETRO_BLOCK_AFTER=1000
+EVALUATION_RULE=v2
+REQUEST_COUNT_CMD='wc -l < access.log 2>/dev/null || echo 0'
 EOF
 
 S="$PLUGIN/scripts"
@@ -180,7 +182,7 @@ grep -q "restart mysql.service (isu1)" "$KAIZEN_FAKE_REMOTE/systemctl.log" || fa
 grep -q "restart mysql.service (isu2)" "$KAIZEN_FAKE_REMOTE/systemctl.log" || fail "mysql restarted on isu2"
 expect_fail "$S/bench.sh" baseline                     # candidate deployed, not stable
 "$S/bench.sh" candidate >/dev/null
-python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); assert s.get("pluginRevision"), s' .kaizen/experiments/001-flush-log/bench-candidate.json || fail "sample records the plugin revision"
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); assert s.get("pluginRevision"), s; assert isinstance(s.get("requests"), int) and s["requests"] > 100, s.get("requests")' .kaizen/experiments/001-flush-log/bench-candidate.json || fail "sample records the plugin revision and the access-log request delta"
 "$S/bench.sh" candidate-2 >/dev/null
 "$S/evaluate.sh" >/dev/null
 [ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/001-flush-log/decision.json"))["decision"])')" = promote ] || fail "rule should promote"
@@ -458,6 +460,49 @@ expect_fail "$S/stable.sh" capture
 "$S/bench.sh" baseline-abandoned --abandon 'fixture: portal run confirmed ended without a result' >/dev/null
 after=$(wc -l < .kaizen/bench-attempts.jsonl)
 [ "$after" -eq "$((before + 1))" ] || fail 'abandoned portal attempt stays counted'
+
+echo "== rule v3 (opt-in): one clear sample promotes, one below every baseline rejects, surges and new kinds block"
+cat >> .kaizen/config.sh <<'EOF'
+EVALUATION_RULE=v3
+MAX_EXP_PER_HOUR=50
+EOF
+v3_stable=$(state STABLE_REV)
+[ "$(state DEPLOYED_REV)" = "$v3_stable" ] || "$S/recover.sh" >/dev/null
+"$S/bench.sh" baseline --reserve >/dev/null && "$S/bench.sh" baseline --result 'pass=true score=2000 errors=map[25:3]' >/dev/null
+"$S/bench.sh" baseline-2 --reserve >/dev/null && "$S/bench.sh" baseline-2 --result 'pass=true score=2200 errors=map[25:5]' >/dev/null
+"$S/experiment.sh" new v3-big >/dev/null
+echo 9000 > go/score; git commit -qam "candidate: big"
+d=$(ls -d .kaizen/experiments/*-v3-big)
+python3 - "$d/manifest.json" <<'EOF'
+import json, sys
+p = sys.argv[1]; m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observations=[{"summary": "s", "artifact": "a"}]); json.dump(m, open(p, "w"))
+EOF
+"$S/deploy.sh" HEAD >/dev/null
+"$S/bench.sh" candidate --reserve >/dev/null && "$S/bench.sh" candidate --result 'pass=true score=9000 errors=map[25:4]' >/dev/null
+"$S/evaluate.sh" >/dev/null
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["ruleVersion"]=="plugin-rule-v3" and d["decision"]=="promote" and d["singleSample"] is True, d' "$d/decision.json" || fail "v3 promotes on one clear sample with known error kinds at similar counts"
+"$S/experiment.sh" record "v3 one-sample promote" >/dev/null
+[ "$(state STABLE_REV)" = "$(git rev-parse HEAD)" ] || fail "v3 promote moved stable"
+"$S/bench.sh" baseline --reserve >/dev/null && "$S/bench.sh" baseline --result 'pass=true score=9100 errors=map[25:4]' >/dev/null
+"$S/experiment.sh" new v3-worse >/dev/null
+echo 100 > go/score; git commit -qam "candidate: worse"
+d=$(ls -d .kaizen/experiments/*-v3-worse)
+python3 - "$d/manifest.json" <<'EOF'
+import json, sys
+p = sys.argv[1]; m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observations=[{"summary": "s", "artifact": "a"}]); json.dump(m, open(p, "w"))
+EOF
+"$S/deploy.sh" HEAD >/dev/null
+"$S/bench.sh" candidate --reserve >/dev/null && "$S/bench.sh" candidate --result 'pass=true score=5000 errors=map[25:4]' >/dev/null
+"$S/evaluate.sh" >/dev/null
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["decision"]=="reject" and d["nextAction"]=="reject", d' "$d/decision.json" || fail "v3 rejects a single sample below every baseline sample"
+"$S/bench.sh" candidate-2 --reserve >/dev/null && "$S/bench.sh" candidate-2 --result 'pass=true score=20000 errors=map[25:40]' >/dev/null   # median now above baseline: only the error surge blocks
+"$S/evaluate.sh" >/dev/null
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["decision"]=="inconclusive" and d["nextAction"]=="investigate" and "sharply" in d["reason"], d' "$d/decision.json" || fail "v3 blocks a sharp rise of a known error kind even without denominators"
+"$S/bench.sh" candidate-3 --reserve >/dev/null && "$S/bench.sh" candidate-3 --result 'pass=true score=20000 errors=map[25:4,27:1]' >/dev/null
+"$S/evaluate.sh" >/dev/null
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["decision"]=="inconclusive" and d["nextAction"]=="investigate" and "never showed" in d["reason"], d' "$d/decision.json" || fail "v3 blocks on an error family the baseline never showed"
+"$S/experiment.sh" record "v3 reject" >/dev/null
+[ "$(state DEPLOYED_REV)" = "$(state STABLE_REV)" ] || fail "stable back after v3 reject"
 
 echo "== observe: slow-log digest aggregator"
 out=$(python3 "$PLUGIN/scripts/slowlog_digest.py" "$PLUGIN/tests/fixtures/mysql-slow.log")

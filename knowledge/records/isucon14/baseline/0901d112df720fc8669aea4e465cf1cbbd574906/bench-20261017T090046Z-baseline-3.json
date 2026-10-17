@@ -1,0 +1,12 @@
+{
+  "label": "baseline-3",
+  "experiment": "001-fsync-commit",
+  "deployedRevision": "0901d112df720fc8669aea4e465cf1cbbd574906",
+  "pass": true,
+  "score": 2527,
+  "errors": "map[25:16]",
+  "durationSec": 69,
+  "finishedAt": "2026-10-17T09:00:46Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/001-fsync-commit/bench-baseline-3.log"
+}

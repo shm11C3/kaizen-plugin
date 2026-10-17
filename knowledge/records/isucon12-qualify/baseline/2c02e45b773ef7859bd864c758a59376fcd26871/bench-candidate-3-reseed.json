@@ -1,0 +1,13 @@
+{
+  "label": "candidate-3",
+  "experiment": "005-inprocess-id-generation",
+  "deployedRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+  "pass": true,
+  "score": 8230,
+  "errors": "none",
+  "durationSec": 83,
+  "finishedAt": "2026-10-17T12:19:21Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/005-inprocess-id-generation/bench-candidate-3.log",
+  "observed": false
+}

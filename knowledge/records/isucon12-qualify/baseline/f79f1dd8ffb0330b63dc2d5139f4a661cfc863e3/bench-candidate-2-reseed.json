@@ -1,0 +1,13 @@
+{
+  "label": "candidate-2",
+  "experiment": "004-drop-reader-flock",
+  "deployedRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+  "pass": true,
+  "score": 4778,
+  "errors": "none",
+  "durationSec": 89,
+  "finishedAt": "2026-10-17T10:31:09Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/004-drop-reader-flock/bench-candidate-2.log",
+  "observed": false
+}

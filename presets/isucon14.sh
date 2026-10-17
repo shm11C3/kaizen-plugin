@@ -51,3 +51,6 @@ parse_bench() {
   errors=$(sed -n 's/.*種別エラー数="\{0,1\}\(map\[[^]]*\]\).*/\1/p' "$1" | tail -1 | tr ' ' ',')
   echo "$pass $score ${errors:-unknown}"
 }
+
+# Request denominator for error rates: access-log lines before and after a run.
+REQUEST_COUNT_CMD='sudo wc -l < /var/log/nginx/access.log'

@@ -78,6 +78,10 @@ load_config() {
   : "${STABLE_BRANCH:=main}" "${OVERLAY_DIR:=etc}" "${OVERLAY_SERVICES:=}" "${VERIFY_EXCLUDE_REGEX:=\.gz$}"
   : "${MIN_IMPROVEMENT_BP:=300}" "${MAX_BENCH_PER_EXP:=6}" "${MAX_EXP_MINUTES:=30}" "${MAX_EXP_PER_HOUR:=6}"
   : "${MIN_SAMPLES:=2}" "${BASELINE_MAX_AGE_MINUTES:=60}" "${CORRECTNESS_ERROR_TYPES:=}"
+  # v2: practice, two samples per side, error rates need request denominators.
+  # v3: contest (opt-in), sequential by effect size against the baseline spread.
+  : "${EVALUATION_RULE:=v2}" "${REQUEST_COUNT_CMD:=}" "${NGINX_HOST:=${APP_HOSTS%% *}}"
+  case "$EVALUATION_RULE" in v2|v3) ;; *) die "EVALUATION_RULE must be v2 or v3" ;; esac
   : "${MAX_BENCH_TOTAL:=120}" "${MAX_BENCH_PER_HOUR:=30}" "${RECOVERY_BENCH_RESERVE:=1}"
   : "${RESOURCE_HOSTS:=$APP_HOSTS}" "${RESOURCE_FINGERPRINT_CMD:=}" "${RECOVERY_CMD:=}"
   : "${RESOURCE_PATHS:=sql $OVERLAY_DIR}"

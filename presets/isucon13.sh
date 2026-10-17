@@ -102,3 +102,6 @@ errors = ",".join(f"{k}x{n}" for k, n in sorted(kinds.items())) or "none"
 print("true" if r.get("pass") else "false", int(r.get("score", 0)), errors)
 PY
 }
+
+# Request denominator for error rates: access-log lines before and after a run.
+REQUEST_COUNT_CMD='sudo wc -l < /var/log/nginx/access.log'

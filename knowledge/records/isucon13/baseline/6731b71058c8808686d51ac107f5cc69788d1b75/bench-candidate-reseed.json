@@ -1,0 +1,13 @@
+{
+  "label": "candidate",
+  "experiment": "002-icon-etag-304",
+  "deployedRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+  "pass": true,
+  "score": 7907,
+  "errors": "一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx2",
+  "durationSec": 100,
+  "finishedAt": "2026-10-17T09:24:39Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/002-icon-etag-304/bench-candidate.log",
+  "observed": false
+}

@@ -1,0 +1,12 @@
+{
+  "label": "baseline-3",
+  "experiment": null,
+  "deployedRevision": "0ba87fe6dbe92c3b09782133b61da0dbc3c88599",
+  "pass": true,
+  "score": 3867,
+  "errors": "リクエストタイムアウト:GET:/api/user/:name/statisticsx3,リクエストタイムアウト:POST:/api/livestream/:id/livecommentx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx3",
+  "durationSec": 110,
+  "finishedAt": "2026-10-17T09:14:57Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/bench-baseline-3.log"
+}

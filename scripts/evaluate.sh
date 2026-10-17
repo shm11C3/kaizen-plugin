@@ -9,5 +9,5 @@ bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])'
 if [ $# -eq 0 ]; then
   set -- "$KAIZEN_DIR/baseline/$stable"/*.json -- "$EXP_DIR"/bench-candidate*.json
 fi
-python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" evaluate "$EXP_DIR/decision.json" \
+python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" evaluate --rule "$EVALUATION_RULE" "$EXP_DIR/decision.json" \
   "$stable" "$bundle" "$MIN_IMPROVEMENT_BP" "$MIN_SAMPLES" "$BASELINE_MAX_AGE_MINUTES" "$CORRECTNESS_ERROR_TYPES" "$@"

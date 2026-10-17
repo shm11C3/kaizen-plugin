@@ -151,6 +151,13 @@ if [ "$BENCH_MODE" = manual ]; then
   [ -n "$pass" ] && [ -n "$score" ] || die "--result must contain pass=<true|false> and score=<n>"
 else
   log "bench $label on $(short "$deployed") via $BENCH_HOST; log $logfile"
+  # Request denominator for error rates: the access-log line count before and
+  # after the run (REQUEST_COUNT_CMD on NGINX_HOST), unless the preset parses
+  # a total from the benchmarker's output.
+  before=""
+  if [ -n "$REQUEST_COUNT_CMD" ] && ! declare -f parse_bench_requests >/dev/null; then
+    before=$(remote "$NGINX_HOST" "$REQUEST_COUNT_CMD" 2>/dev/null | tr -dc '0-9' || true)
+  fi
   start=$(epoch)
   remote "$BENCH_HOST" "$(bench_command)" > "$logfile" 2>&1 || true
   secs=$(( $(epoch) - start ))
@@ -160,7 +167,12 @@ else
     die "no result line in $logfile; an infrastructure failure, not a verdict (nothing recorded as a sample)"
   fi
   read -r pass score errors <<<"$result"
-  if declare -f parse_bench_requests >/dev/null; then requests=$(parse_bench_requests "$logfile"); fi
+  if declare -f parse_bench_requests >/dev/null; then
+    requests=$(parse_bench_requests "$logfile")
+  elif [ -n "$before" ]; then
+    after=$(remote "$NGINX_HOST" "$REQUEST_COUNT_CMD" 2>/dev/null | tr -dc '0-9' || true)
+    if [ -n "$after" ] && [ "$after" -ge "$before" ]; then requests=$((after - before)); fi
+  fi
 fi
 case "$pass" in true|false) ;; *) die "result pass must be true or false" ;; esac
 case "$score" in ''|*[!0-9]*) die "result score must be a nonnegative integer" ;; esac

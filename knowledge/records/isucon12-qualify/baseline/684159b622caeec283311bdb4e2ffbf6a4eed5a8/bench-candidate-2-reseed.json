@@ -1,0 +1,13 @@
+{
+  "label": "candidate-2",
+  "experiment": "002-sqlite-player-score-index",
+  "deployedRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+  "pass": true,
+  "score": 2708,
+  "errors": "none",
+  "durationSec": 90,
+  "finishedAt": "2026-10-17T10:12:51Z",
+  "mode": "ssh",
+  "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/002-sqlite-player-score-index/bench-candidate-2.log",
+  "observed": false
+}

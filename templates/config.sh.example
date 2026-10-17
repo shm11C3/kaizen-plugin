@@ -24,6 +24,7 @@ MIN_IMPROVEMENT_BP=300     # promote needs median +3% and noise separation
 MAX_BENCH_PER_EXP=6
 MAX_EXP_MINUTES=30
 MAX_EXP_PER_HOUR=6
+EVALUATION_RULE=v2         # v2: two samples per side, error rates by denominator. v3 (sequential, one clear sample) is opt-in until compared on real runs
 MIN_SAMPLES=2
 BASELINE_MAX_AGE_MINUTES=60
 MAX_BENCH_TOTAL=120        # includes baseline/recovery/no-result/portal attempts
