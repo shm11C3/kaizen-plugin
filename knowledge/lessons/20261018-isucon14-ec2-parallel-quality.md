@@ -1,7 +1,7 @@
 # ISUCON14：実EC2並列検証と品質保留からの修復
 
 - モード：practice。ISUCON14のGo/MySQL固有の知見であり、当日用Skillや自動化の実装ではない。
-- 範囲：2026-10-18 02:40–05:40 JST予定の3時間試行。採用表は **05:00 JST時点、採用589まで**の確定記録。末尾に05:04時点のT15を追記し、終了処理・最終得点はまだ含めない。
+- 範囲：2026-10-18 02:40–05:40 JST予定の3時間試行。採用表は **05:00 JST時点、採用589まで**の確定記録。末尾にT15の不採用と05:09時点の固定最終計測を追記した。原状復旧・EC2停止は別の監査を参照する。
 - 構成：独立した単独app/MySQL＋専用benchを3組。SubAgentとローカル共有Git/台帳がDiscordの代替fixture。実際の公式複数app構成ではない。
 - 準備・配布・中断・人間待ちも競技時計へ含めた。既知の過去問題に対する一試行の結果で、他チームとの優位性や未知問題への再現性は未証明。
 
@@ -75,11 +75,11 @@ CODE32はユーザーが30秒MATCHINGのままというliveness違反。DB未割
 
 ## 未検証と証拠への戻り方
 
-native Discord/Gateway/MCP連携、3人の別PCでclone→Claude/Codex plugin install→参加、Rustのbuild/test/runtime比較、元の複数app構成、8時間運用、pluginなしの直列対照、未知問題での再現性は未検証。最終スコアや進行中候補の採否は、この時点の採用表へ遡及して混ぜない。
+native Discord/Gateway/MCP連携、3人の別PCでclone→Claude/Codex plugin install→参加、Rustのbuild/test/runtime比較、元の複数app構成、8時間運用、pluginなしの直列対照、未知問題での再現性は未検証。採用時のpairと末尾の最終確認pairを混ぜない。
 
 一次証拠はPrivate検証リポジトリ [isucon14-ec2-parallel-validation-20261018](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018) の以下にある。TRIAL-RESULTSは更新される報告であり、確定source・sample・recordを優先する。
 
-- [TRIAL-RESULTS](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/TRIAL-RESULTS.md)、`controller/protocol.json`、`evidence/scheduling-partial.md`。
+- [FINAL-RESULTS](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/FINAL-RESULTS.md)、途中の`evidence/TRIAL-RESULTS.md`、`controller/protocol.json`、`evidence/scheduling-partial.md`。
 - `evidence/member-b-preparation.md`、`evidence/member-c-covering-index.md`、`evidence/member-b-code32-assessment.md`、`evidence/pool-mechanism.md`、`evidence/T-0013-candidate.md`。
 - 実採用record：`integration/.kaizen/experiments/{003-scheduling-crossover,004-lookup-driver-combination,007-mysql-idle-pool-mechanism,008-eligible-chair-after-pool}/record.json`。可視性・export範囲により、実行cloneのcanonical artifactを参照する。
 - immutable source（検証の共有bare Git内）：initial `a09a95052135d05a28e8b7981384a5db49d6dd39`、repair `313e1795a85839786a946f16881f5e81fe664965`、lookup `0656a6bc89a500909b77efd33aae6f24a5db0411`、pool `4177b3412c1069674d5c9cc0897d13e519356104`、matching `589fa316fa1a4fb8b2cb3989a795ad93426567ad`。
@@ -96,3 +96,17 @@ source `0f45cde17a7ab3e7d1ef1a1afbbd9b95347c3960` の実MySQL9件＋11状態ケ�
 索引未使用やlock用索引の切替えが原因という証拠はなく、得点低下の機序は未分離である。
 SQL処理量の削減を得点効果と同一視せず、T10/T15を今回不採用として589へ復旧した。
 最終2走はこの後に固定した589で行い、観測最高値を最終得点にしない。
+
+## 05:09 JST追記：固定した最終確認
+
+589を選定し、canonical recoveryによるapp/matcher再起動・DB復旧後の事前固定通常2走は
+**4007 /3263、両PASS・警告0、中央値3635**。初期中央値1061とのraw比は3.426倍だが、
+初期にはCODE25警告があり、pluginや並列化の因果効果ではない。採用pair4045/4688や
+observed最高5843を最終値へ差し替えていない。実source/DB schemaを含む資源指紋も一致した。
+EC2 OS全体のrebootは未実施。レプリカのlane-a2638/2912、lane-b4095/3567もすべてcleanだが、
+異なる環境のスコアは混ぜず、独立な稼働確認として保持した。
+
+最終集計はphysical sample69件（normal61/observed8）、最大3環境同時、重複wall clock998.738秒。
+制御された直列対照がないため、その値を実際の短縮時間とは呼ばない。
+`FINAL_MEASUREMENT.json`と`EVIDENCE.json`は原状復旧前の最後の実測状態を表す。
+その後の開始前snapshot復旧とEC2停止は、検証repoの`CLEANUP.md`と独立した監査へ分離した。
