@@ -41,8 +41,12 @@ In order of cost:
   to drop after this change (re-measure the baseline).
 - Changing the interval is a configuration change: deploy it through the
   overlay or the env file, and record it in the manifest.
+- 003-matching-interval (isucon14): interval 0.5s -> 0.1s with the random
+  picker unchanged was rejected (median -5%); the picker retries up to ten
+  random chairs per call and most are busy, so more calls mostly add DB
+  load. Fix the picker before the interval.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
-
+| isucon14 | 003-matching-interval | 3627/4119 | 3441/3934 | -5% | 2+2 | 2 | reject | reject | map[25:13]; map[25:15] |

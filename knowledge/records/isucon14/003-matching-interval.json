@@ -1,0 +1,91 @@
+{
+  "experimentId": "003-matching-interval",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "003-matching-interval",
+    "patternId": "random-order-matching",
+    "hypothesisId": "matching-interval-0.1s",
+    "hypothesis": "isuride-matcher calls /api/internal/matching every 0.5s and the handler assigns one ride per call, so at most 2 rides/s get a chair while rides queue; a 0.1s interval assigns up to 10 rides/s with no code change, so more rides complete and the satisfaction terms improve.",
+    "observations": [
+      {
+        "summary": "observe-candidate (exp 002): SELECT * FROM rides WHERE chair_id IS NULL ... LIMIT 1 called ~every 0.5s (matcher loop); notification polling cut, rides still waiting on matching",
+        "artifact": ".kaizen/experiments/002-notification-interval/observe-candidate.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "etc/systemd/system/isuride-matcher.service.d/override.conf",
+        "changeKind": "add",
+        "reason": "systemd drop-in sets ISUCON_MATCHING_INTERVAL=0.1; overlay runs daemon-reload and RESTART_CMD restarts the matcher"
+      }
+    ],
+    "changeSummary": "systemd drop-in: ISUCON_MATCHING_INTERVAL=0.1 (was 0.5 in env.sh)",
+    "expectedEffect": "rides matched 5x faster; score up via completed rides; DB load from the matching query rises 5x (it scans rides with chair_id IS NULL)",
+    "stableRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+    "candidateRevision": "a742c24e64ea27b12d17a694859513a5ab974f70",
+    "startedAt": "2026-10-17T09:08:16Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "reject",
+    "reason": "candidate median 3687.5 does not beat baseline median 3873.0 (-479 bp)",
+    "improvementBasisPoints": -479,
+    "baselineScores": [
+      3627,
+      4119
+    ],
+    "candidateScores": [
+      3441,
+      3934
+    ],
+    "baselineRevisions": [
+      "882a7bac000e27170e39bea65da7bbdb96975083"
+    ],
+    "candidateRevisions": [
+      "a742c24e64ea27b12d17a694859513a5ab974f70"
+    ],
+    "decidedAt": "2026-10-17T09:10:41Z"
+  },
+  "finalDecision": "reject",
+  "override": null,
+  "reason": "rule decision as evaluated",
+  "stableBefore": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "stableAfter": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "candidateRevision": "a742c24e64ea27b12d17a694859513a5ab974f70",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "003-matching-interval",
+      "deployedRevision": "a742c24e64ea27b12d17a694859513a5ab974f70",
+      "pass": true,
+      "score": 3934,
+      "errors": "map[25:15]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:10:41Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/003-matching-interval/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "003-matching-interval",
+      "deployedRevision": "a742c24e64ea27b12d17a694859513a5ab974f70",
+      "pass": true,
+      "score": 3441,
+      "errors": "map[25:13]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:09:31Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/003-matching-interval/bench-candidate.log"
+    }
+  ],
+  "recovery": "ok",
+  "timeline": [
+    "2026-10-17T09:08:22Z\tdeploy\tHEAD\t5s\tok",
+    "2026-10-17T09:09:31Z\tbench\tcandidate\t68s\tpass=true score=3441",
+    "2026-10-17T09:10:41Z\tbench\tcandidate-2\t68s\tpass=true score=3934",
+    "2026-10-17T09:10:45Z\tdeploy\t882a7bac000e27170e39bea65da7bbdb96975083\t3s\tok",
+    "2026-10-17T09:10:46Z\trecover\t882a7ba\t4s\tok"
+  ],
+  "closedAt": "2026-10-17T09:10:46Z"
+}

@@ -9,3 +9,5 @@ What real targets taught the plugin, one row per resolved friction group.
 | 2026-10-17T08:59:31Z | - | experiment.sh | commit or discard the working tree changes before closing the experiment | 1721267 |
 | 2026-10-17T09:03:23Z | - | experiment.sh | command failed with status 1 | 5742a45 |
 | 2026-10-17T09:03:23Z | - | retro.sh | defect: tracked .kaizen records blocked git switch main at record | 5742a45 |
+| 2026-10-17T09:08:08Z | - | status.sh | command failed with status 141 | 521751d |
+| 2026-10-17T09:08:08Z | - | status.sh | command failed with status 141 | 521751d |
