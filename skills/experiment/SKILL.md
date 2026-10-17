@@ -53,6 +53,14 @@ other order costs an extra deploy.
 
 ## 3. Evaluate and record
 
+Before recording, make the manifest describe the final tested change and its
+hypothesis. If steering changed the experiment's purpose, preserve the original
+plan as an artifact and update the pattern, hypothesis, strategy and review
+classification with the reason before closing. A score gain from application
+changes is not evidence for a scheduling or diagnostic method. Closed records
+and proof digests stay immutable; correct later knowledge attribution with an
+explicit annotation instead of rewriting the adoption proof.
+
 ```bash
 $K/scripts/evaluate.sh                           # decision.json: promote / reject / inconclusive, with reason
 $K/scripts/experiment.sh record <reason>         # follows decision.json
