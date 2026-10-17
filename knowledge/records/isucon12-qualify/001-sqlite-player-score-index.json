@@ -1,0 +1,96 @@
+{
+  "experimentId": "001-sqlite-player-score-index",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "001-sqlite-player-score-index",
+    "patternId": "missing-secondary-index",
+    "hypothesisId": "idx-player-score-sqlite",
+    "hypothesis": "player_score in every tenant SQLite file has only PRIMARY KEY(id). Ranking (472 req, avg 1585 ms), player (380 req, avg 1857 ms, 20 full scans per request: one per competition), billing and the CSV upload's DELETE all filter by (tenant_id, competition_id[, player_id]) and sort by row_num, so each request scans the whole table (tenant 1: 1.67M rows, 126 MB) while holding the tenant flock. Composite indexes on (tenant_id, competition_id, player_id, row_num) and (tenant_id, competition_id, row_num) turn the scans into range reads, shorten the time under the lock, and the player workers stop leaving (35 ranking requests timed out at 12.9 s avg).",
+    "observations": [
+      {
+        "summary": "observe-baseline: app log ranking 472x avg 1585ms max 9815ms; player 380x avg 1857ms max 18763ms; ranking 500 35x avg 12875ms; score upload 43x avg 3675ms; MySQL digest shows nothing of the app (prepared statements invisible) but statement/com/Execute totals 420 s per run; tenant_db/1.db player_score 1,674,797 rows, 5001 players, 20 competitions; no secondary index on player_score in sql/tenant/10_schema.sql.",
+        "artifact": ".kaizen/observe-baseline.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "sql/tenant/10_schema.sql",
+        "changeKind": "modify",
+        "reason": "CREATE INDEX lines so new tenants (createTenantDB) get the indexes"
+      },
+      {
+        "path": "sql/init.sh",
+        "changeKind": "modify",
+        "reason": "after copying initial_data, apply the CREATE INDEX lines of 10_schema.sql to every tenant_db/*.db so /initialize restores indexed files"
+      }
+    ],
+    "changeSummary": "Two composite indexes on player_score in every tenant SQLite DB: (tenant_id, competition_id, player_id, row_num) for player/billing/DELETE and (tenant_id, competition_id, row_num) for ranking; built in /initialize after the copy and in the schema for new tenants.",
+    "expectedEffect": "GET /api/player/player/:id and GET /api/player/competition/:id/ranking latency drops from seconds to tens of ms on the big tenant, fewer player workers leave, score up. Risk: /initialize grows by the index build (must stay under 30 s; baseline 5.3 s).",
+    "stableRevision": "eec9d9ba7ecc256ae24f7d22a049746a38882d22",
+    "candidateRevision": "667aa81cde7ba6b4ef5df9e2101e4440827e7c7d",
+    "startedAt": "2026-10-17T09:11:47Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "reject",
+    "reason": "a candidate sample failed correctness (pass=false)",
+    "improvementBasisPoints": null,
+    "baselineScores": [
+      2018,
+      2111
+    ],
+    "candidateScores": null,
+    "baselineRevisions": [
+      "eec9d9ba7ecc256ae24f7d22a049746a38882d22"
+    ],
+    "candidateRevisions": [
+      "bdc852704db798f3f03ff900aeb9460e384fb96e"
+    ],
+    "decidedAt": "2026-10-17T09:17:58Z"
+  },
+  "finalDecision": "inconclusive",
+  "override": {
+    "decision": "inconclusive",
+    "reason": "candidate-2 passed at 2386 (+15.6% over the 2064.5 baseline median) but the candidate sample failed with 3 errors because unattended-upgrades replaced mysql-server 8.0.34->8.0.46 and restarted mysqld mid-run (apt history 09:14:30); the upgrade also ran at half a core during the baseline samples, so neither side is a clean measurement. Retry the same index change after the host is quiet and the baseline is retaken. candidateRevision is the records-untrack commit on top of the benchmarked bdc8527 (same code)."
+  },
+  "reason": "candidate-2 passed at 2386 (+15.6% over the 2064.5 baseline median) but the candidate sample failed with 3 errors because unattended-upgrades replaced mysql-server 8.0.34->8.0.46 and restarted mysqld mid-run (apt history 09:14:30); the upgrade also ran at half a core during the baseline samples, so neither side is a clean measurement. Retry the same index change after the host is quiet and the baseline is retaken. candidateRevision is the records-untrack commit on top of the benchmarked bdc8527 (same code).",
+  "stableBefore": "eec9d9ba7ecc256ae24f7d22a049746a38882d22",
+  "stableAfter": "eec9d9ba7ecc256ae24f7d22a049746a38882d22",
+  "candidateRevision": "667aa81cde7ba6b4ef5df9e2101e4440827e7c7d",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "001-sqlite-player-score-index",
+      "deployedRevision": "bdc852704db798f3f03ff900aeb9460e384fb96e",
+      "pass": true,
+      "score": 2386,
+      "errors": "none",
+      "durationSec": 98,
+      "finishedAt": "2026-10-17T09:13:49Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/001-sqlite-player-score-index/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "001-sqlite-player-score-index",
+      "deployedRevision": "bdc852704db798f3f03ff900aeb9460e384fb96e",
+      "pass": false,
+      "score": 0,
+      "errors": "errors=3,critical=0",
+      "durationSec": 31,
+      "finishedAt": "2026-10-17T09:14:31Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/001-sqlite-player-score-index/bench-candidate.log"
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:11:58Z\tdeploy\tHEAD\t11s\tok",
+    "2026-10-17T09:13:49Z\tbench\tcandidate-2\t98s\tpass=true score=2386",
+    "2026-10-17T09:14:31Z\tbench\tcandidate\t31s\tpass=false score=0",
+    "2026-10-17T09:18:06Z\tdeploy\teec9d9ba7ecc256ae24f7d22a049746a38882d22\t8s\tok",
+    "2026-10-17T09:18:07Z\trecover\teec9d9b\t9s\tok"
+  ],
+  "closedAt": "2026-10-17T09:19:18Z"
+}

@@ -115,12 +115,16 @@ echo "a record changed" >> .kaizen/RULES.md             # tracked records never 
 
 echo "== experiment 1: promoted, with overlay change"
 expect_fail "$S/deploy.sh" HEAD~0 --dirty             # bad usage
-"$S/experiment.sh" new flush-log >/dev/null
+"$S/experiment.sh" new flush-log >/dev/null             # succeeds with the record modified above
+git restore .kaizen/RULES.md
 [ "$(git branch --show-current)" = "exp/001-flush-log" ] || fail "experiment branch"
 echo 2000 > go/score
 echo 'innodb_flush_log_at_trx_commit=2' > etc/mysql/my.cnf
 git commit -qam "candidate: flush log every second"
 expect_fail "$S/deploy.sh" HEAD                        # manifest not filled
+git add -f .kaizen/experiments/001-flush-log/manifest.json && git commit -qm "oops: records in the candidate"
+expect_fail "$S/deploy.sh" HEAD                        # candidate carries .kaizen records
+git rm -q --cached .kaizen/experiments/001-flush-log/manifest.json && git commit -qm "records untracked"
 python3 - <<'EOF'
 import json
 p = ".kaizen/experiments/001-flush-log/manifest.json"

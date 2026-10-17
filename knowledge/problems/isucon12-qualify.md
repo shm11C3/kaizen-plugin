@@ -14,3 +14,4 @@ Experiments in the order they were run.
 
 | experiment | pattern | delta | final | reason |
 |---|---|---|---|---|
+| 001-sqlite-player-score-index | missing-secondary-index | - | inconclusive | candidate-2 passed at 2386 (+15.6% over the 2064.5 baseline median) but the candidate sample failed with 3 errors because unattended-upgrades replaced mysql-server 8.0.34->8.0.46 and restarted mysqld mid-run (apt history 09:14:30); the upgrade also ran at half a core during the baseline samples, so neither side is a clean measurement. Retry the same index change after the host is quiet and the baseline is retaken. candidateRevision is the records-untrack commit on top of the benchmarked bdc8527 (same code). |
