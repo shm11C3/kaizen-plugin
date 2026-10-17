@@ -42,7 +42,7 @@ def parse_observation(text: str) -> dict:
                     "rows_examined": int(cols[3]), "rows_sent": int(cols[4]), "query": "\t".join(cols[5:]).strip(),
                 })
         elif section == "requests":
-            m = re.match(r"^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\d{3})\s*$", line)
+            m = re.match(r"^\s*(\d+)\s+\"?(\w+)\"?\s+(\S+)\s+(\d{3})\s*$", line)
             if m:
                 obs["requests"].append({"count": int(m.group(1)), "method": m.group(2),
                                         "path": m.group(3), "status": m.group(4)})

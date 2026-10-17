@@ -11,7 +11,9 @@ LOCAL_SYNC_PATHS="go sql"
 SYNC_EXCLUDES="--exclude isuride"
 RSYNC_PATH="sudo -u isucon rsync"
 BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/go && go build -o isuride ."'
-RESTART_CMD='sudo systemctl daemon-reload && sudo systemctl restart isuride-go.service'
+# The matcher reads ISUCON_MATCHING_INTERVAL from env.sh; a systemd drop-in in
+# etc/systemd/system/isuride-matcher.service.d/ overrides it, so restart both.
+RESTART_CMD='sudo systemctl daemon-reload && sudo systemctl restart isuride-go.service isuride-matcher.service'
 SERVICE_NAME=isuride-go.service
 # Any HTTP answer means the process is up; the benchmarker checks correctness.
 HEALTH_CMD='curl -s -o /dev/null -m 3 http://127.0.0.1:8080/api/app/users'

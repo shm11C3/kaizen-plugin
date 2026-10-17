@@ -18,7 +18,7 @@ total_s	calls	avg_ms	rows_examined	rows_sent	query
 0.04	21	1.87	21	21	SELECT VALUE FROM `settings` WHERE NAME = ?
 
 ## requests by method, path (ids normalized), status (isu1:/var/log/nginx/access.log)
-9595 GET /api/chair/notification 200
+9595 "GET /api/chair/notification 200
 1622 GET /api/app/notification 200
 420 POST /api/chair/coordinate 200
 120 GET /api/app/nearby-chairs 200

@@ -31,7 +31,7 @@ case "${1:-}" in
       remote "$DB_HOST" "$MYSQL_CMD -e \"SELECT ROUND(SUM_TIMER_WAIT/1e12,2) total_s, COUNT_STAR calls, ROUND(AVG_TIMER_WAIT/1e9,2) avg_ms, SUM_ROWS_EXAMINED rows_examined, SUM_ROWS_SENT rows_sent, LEFT(DIGEST_TEXT,150) query FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME='$DB_NAME' ORDER BY SUM_TIMER_WAIT DESC LIMIT 25\""
       echo
       echo "## requests by method, path (ids normalized), status ($NGINX_HOST:$ACCESS_LOG)"
-      remote "$NGINX_HOST" "sudo awk '{p=\$7; sub(/\\?.*/,\"\",p); gsub(/${PATH_ID_REGEX//\//\\/}/,\"/:id\",p); k=\$6\" \"p\" \"\$9; c[k]++} END{for(k in c) print c[k], k}' $ACCESS_LOG | sort -rn | head -25"
+      remote "$NGINX_HOST" "sudo awk '{m=\$6; gsub(/\"/,\"\",m); p=\$7; sub(/\\?.*/,\"\",p); gsub(/${PATH_ID_REGEX//\//\\/}/,\"/:id\",p); k=m\" \"p\" \"\$9; c[k]++} END{for(k in c) print c[k], k}' $ACCESS_LOG | sort -rn | head -25"
       echo
       echo "## secondary indexes present"
       remote "$DB_HOST" "$MYSQL_CMD -N -e \"SELECT CONCAT(TABLE_NAME,'.',INDEX_NAME,'(',GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX),')') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='$DB_NAME' GROUP BY TABLE_NAME, INDEX_NAME ORDER BY 1\""
