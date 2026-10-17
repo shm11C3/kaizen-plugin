@@ -1,45 +1,46 @@
 ---
 name: retro
-description: "Turn what broke into plugin fixes. Use after every closed experiment, whenever a script refused or failed on a real host, and before ending a practice session: reads .kaizen/friction.jsonl (written automatically by every script), fixes the plugin (script, skill, signature, checklist) with a test, and marks the entries resolved so the plugin keeps its own improvement log."
+description: "Capture ISUCON failures and recurring friction. Refine reusable skills during practice; preserve practice problem-specific procedures as knowledge. During competition also turn target-specific recurring work into tested skills through improve-workflow and private plugin-main integration."
 ---
 
 # Retro
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
-`KAIZEN_PROJECT` exported (see setup). The plugin repository is `$K` itself.
+Set `K` to this skill's plugin root (`../..`) and export `KAIZEN_PROJECT`.
+Read `../../team/docs/WORKFLOW.md` for the mode and change policy.
 
 ```bash
-$K/scripts/retro.sh list                 # unresolved friction, grouped, with ids
-$K/scripts/retro.sh note "<what misled you>"   # friction the scripts could not see
+"$K/scripts/retro.sh" list
+"$K/scripts/retro.sh" note "observed friction and evidence reference"
 ```
 
-Every `die` and every unexpected command failure in the scripts lands in
-`.kaizen/friction.jsonl` with the script, the message, the command, and the
-experiment. Add by hand what only you saw: a skill step that was unclear, a
-manual workaround, a wrong assumption in a pattern checklist.
+Scripts capture refusals and unexpected failures in `.kaizen/friction.jsonl`.
+Add unclear instructions, repeated commands and workarounds. Separate a correct
+guard, a misleading instruction, a defect, a missed signal and a candidate failure.
 
-## For each group, decide what it is
+During **practice**, classify reusable versus problem/environment-specific work.
+For the specific work, save artifact references, diagnosis, proposed remedy,
+validation and payoff in the shared knowledge directory's `lessons/`, using
+`../../team/templates/WORKFLOW.md`. Link error investigations and later recovery
+experiments. Keep that problem-specific procedure as knowledge. For reusable
+skill/procedure improvements, use `../improve-workflow/SKILL.md`, validate
+against another problem or fixture, and integrate through plugin main.
 
-| kind | example | fix goes to |
-|---|---|---|
-| defect | a script fails on a real host (bash 3.2, a path, a missing sudo) | `scripts/` + a case in `tests/run.sh` |
-| guard that fired for a good reason | "no baseline sample", "budget" | nothing, or a clearer message |
-| guard that fired because the skill led you wrong | you ran bench before baseline because the skill said so | the skill text |
-| missed signal | the dump showed a bottleneck the matcher did not name | `knowledge/signatures.py` + the pattern's `signature:` |
-| broke correctness | a candidate failed the benchmark | the pattern's Checklist, with the experiment id |
-
-## Fix, test, resolve
-
-Make the change in the plugin repository on the current branch (practice:
-`corpus/<problem>` or `fix/real-run`; never `main` directly), run
-`$K/tests/run.sh`, commit with a message that names the friction, then:
+After saving, acknowledge captured entries if the Stop hook requires them handled,
+without claiming that the defect was fixed:
 
 ```bash
-$K/scripts/retro.sh resolve <id> <id> --fix <commit sha>
-$K/scripts/retro.sh resolve <id> --fix "guard correct; message reworded"   # when no code changed
+"$K/scripts/retro.sh" resolve ID --fix "knowledge-only: LESSON_REFERENCE; implementation deferred"
 ```
 
-Resolutions append to `$K/retro/log.md`: the plugin's own record of what
-real targets taught it. The Stop hook asks for a retro when unresolved
-entries pile up (`RETRO_BLOCK_AFTER` in config.sh, default 5); on contest
-day set it high and run the retro afterwards.
+Here `resolve` acknowledges reporting; the lesson remains visibly unimplemented.
+Do not invent a fixing commit.
+
+During **competition**, use `../improve-workflow/SKILL.md`: build worthwhile
+automation in the editable plugin source on a separate branch, test, integrate
+into plugin main through its release owner, then roll out a pinned release at
+an idle boundary. Resolve with the actual fixing commit. Application candidates
+continue through the usual experiment loop.
+
+Neither reusable self-improvement nor a separate human development request
+changes an active comparison's frozen plugin, inputs or rules. Record a new
+release separately and evaluate it in a subsequent trial.

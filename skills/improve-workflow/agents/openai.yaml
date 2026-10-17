@@ -1,0 +1,4 @@
+interface:
+  display_name: "Improve competition workflow"
+  short_description: "Turn repeated contest work into tested tools"
+  default_prompt: "Use $improve-workflow to handle this repeated operation for the current session mode."

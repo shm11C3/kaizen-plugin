@@ -34,3 +34,10 @@ Optimize the final valid score, not experiment count. Strategy notifications
 are advisory AI investigation triggers; they never waive correctness or add
 routine human approval. Preserve the human's strategy and stop instructions.
 Use `team/docs/COMPARISON.md` before claiming an advantage from the plugin.
+
+For repeated operations, follow `skills/improve-workflow/SKILL.md` and
+`team/docs/WORKFLOW.md`: practice refines reusable skills while keeping
+problem-specific procedures as knowledge; competition can also specialize skills.
+Integrate tested tools into private plugin main and roll out at an idle boundary.
+Keep competition main separate. Read `team/docs/REGULATIONS.md`
+before choosing manual operations or isolated parallel validation environments.

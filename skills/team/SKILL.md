@@ -15,6 +15,10 @@ installation and the competition clone are separate directories.
    `$K/team/docs/RUNBOOK.md`. These are the shared operational source of truth.
 2. Pick a unique session ID, e.g. `a-codex-01`. Read the human's current
    strategy, exclusions, time budget, and stop instructions.
+   Record practice/competition mode and consult `../../team/docs/REGULATIONS.md`
+   for permitted methods and operator handoffs. For recurring work use
+   `../improve-workflow/SKILL.md`: practice refines reusable skills and saves
+   problem-specific procedures as knowledge; competition can also specialize skills.
 3. Run `python3 "$K/scripts/team/join.py" --project "$KAIZEN_PROJECT" --agent SESSION --provider codex`
    (or `--provider claude`). This checks the clone/Git access, makes a tiny model
    request with no source in an empty directory, checks AWS/SSM and the control

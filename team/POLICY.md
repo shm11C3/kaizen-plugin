@@ -19,6 +19,12 @@ contains source and minimal bootstrap files, not these rules or management tools
 - Prioritize measured bottlenecks and the scoring path. Do not perform unrelated
   cleanup, speculative refactoring, or unmeasured modernization.
 - Follow human strategy, time limits, exclusions, and stop requests.
+- Follow `team/docs/REGULATIONS.md` for per-operation automated/manual methods
+  and isolated sandbox validation. Official target integration stays serial.
+- Use `skills/improve-workflow/SKILL.md` for recurring work: practice refines
+  reusable skills but captures problem-specific procedures as knowledge;
+  competition may also ship target-specific tools through private plugin main.
+  Roll out pinned releases at an idle boundary; keep competition main separate.
 
 ## Shared state and task ownership
 

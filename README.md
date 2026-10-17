@@ -12,13 +12,15 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
+- [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
+- [繰り返し作業の改善](team/docs/WORKFLOW.md)と[improve-workflowスキル](skills/improve-workflow/SKILL.md)
 
 チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
 
 ## 構成
 
 ```
-skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team（Claude・Codex が読む手順）
+skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, improve-workflow
 scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める
