@@ -58,3 +58,4 @@ In order of cost:
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | 003-matching-interval | 3627/4119 | 3441/3934 | -5% | 2+2 | 2 | reject | reject | map[25:13]; map[25:15] |
 | isucon14 | 004-nearest-chair-matching | 3627/4119 | - | - | 2+0 | 1 | reject | reject | map[15:1] |
+| isucon14 | 005-nearest-chair-matching-notified | 3627/4119 | 7763/9538 | +123% | 2+2 | 2 | promote | promote | map[25:13]; map[25:20] |

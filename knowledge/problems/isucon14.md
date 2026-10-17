@@ -20,3 +20,4 @@ Experiments in the order they were run.
 | 002-notification-interval | hot-polling-endpoint | +53% | promote | rule decision as evaluated |
 | 003-matching-interval | random-order-matching | -5% | reject | rule decision as evaluated |
 | 004-nearest-chair-matching | random-order-matching | - | reject | correctness failure CODE=15: a chair was assigned a new ride before it was notified of the previous ride's completion; 'free' must mean all six statuses were sent to the chair, not evaluation IS NULL |
+| 005-nearest-chair-matching-notified | random-order-matching | +123% | promote | rule decision as evaluated |

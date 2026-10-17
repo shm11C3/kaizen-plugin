@@ -1,0 +1,89 @@
+{
+  "experimentId": "005-nearest-chair-matching-notified",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "005-nearest-chair-matching-notified",
+    "patternId": "random-order-matching",
+    "hypothesisId": "nearest-free-chair-greedy",
+    "hypothesis": "Same mechanism as 004 (assign every waiting ride per call to the nearest free chair) with the correct freeness: a chair is free only when every status of its rides has been sent to the chair (COUNT(chair_sent_at)=6), which is what the benchmark checks (error 15 in 004).",
+    "observations": [
+      {
+        "summary": "004 failed correctness with CODE=15 after 12s (new ride before completion notification); 003 showed interval alone does not help; the random picker scans 375k rows per minute",
+        "artifact": ".kaizen/experiments/004-nearest-chair-matching/bench-candidate.log"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/internal_handlers.go",
+        "changeKind": "modify",
+        "reason": "greedy nearest-free-chair over all waiting rides; freeness = all six statuses sent to the chair"
+      }
+    ],
+    "changeSummary": "internalGetMatching: all waiting rides + free active chairs with latest location (freeness by chair_sent_at count), greedy nearest assignment",
+    "expectedEffect": "rides matched within one tick with nearer chairs; completions and satisfaction up; no error 15",
+    "stableRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+    "candidateRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+    "startedAt": "2026-10-17T09:12:55Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 12335 bp >= 300 bp and worst candidate 7763 > best baseline 4119",
+    "improvementBasisPoints": 12335,
+    "baselineScores": [
+      3627,
+      4119
+    ],
+    "candidateScores": [
+      7763,
+      9538
+    ],
+    "baselineRevisions": [
+      "882a7bac000e27170e39bea65da7bbdb96975083"
+    ],
+    "candidateRevisions": [
+      "75a8032cbff2a67f03c417f6b39d27b6beab163f"
+    ],
+    "decidedAt": "2026-10-17T09:15:19Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "rule decision as evaluated",
+  "stableBefore": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "stableAfter": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "candidateRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "005-nearest-chair-matching-notified",
+      "deployedRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+      "pass": true,
+      "score": 7763,
+      "errors": "map[25:20]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:15:19Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/005-nearest-chair-matching-notified/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "005-nearest-chair-matching-notified",
+      "deployedRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+      "pass": true,
+      "score": 9538,
+      "errors": "map[25:13]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:14:09Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/005-nearest-chair-matching-notified/bench-candidate.log"
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:12:59Z\tdeploy\tHEAD\t4s\tok",
+    "2026-10-17T09:14:09Z\tbench\tcandidate\t68s\tpass=true score=9538",
+    "2026-10-17T09:15:19Z\tbench\tcandidate-2\t68s\tpass=true score=7763"
+  ],
+  "closedAt": "2026-10-17T09:15:20Z"
+}
