@@ -103,8 +103,11 @@ class CoordinationTests(unittest.TestCase):
         args = ('task-finish', '--id', task_id, '--agent', 'integrator', '--result', 'ACCEPTED', '--reason', 'verified')
         self.assertNotEqual(self.run_cli(*args).returncode, 0)
         self.assertEqual(self.call('task-list')[0]['status'], 'READY')
-        result = self.call(*args, '--human-decision', 'fixture: human approved SHA in the test')
-        self.assertEqual(result['human_decision'], 'fixture: human approved SHA in the test')
+        # A human reference cannot replace the source-bound official record.
+        # Actual Git + matching human-record acceptance is in test_source_proof.
+        result = self.run_cli(*args, '--human-decision', 'fixture: human approved SHA in the test')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('--record', result.stderr)
 
     def test_unconfigured_target_never_invokes_plugin(self):
         result = subprocess.run([sys.executable, str(ROOT / 'scripts/team/target.py'), '--agent', 'a',

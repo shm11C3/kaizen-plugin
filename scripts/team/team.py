@@ -15,6 +15,7 @@ import uuid
 
 from environments import OFFICIAL, environment_name, register, schema, state_path
 from record_proof import promoted_record
+from source_proof import SourceProof, fresh_retest_samples, guard_holds
 
 
 def now():
@@ -90,15 +91,19 @@ def reservation(db, agent=None, token=None, environment=OFFICIAL):
 
 
 def resolve_quality_holds(db, args, row):
-    holds = db.execute("SELECT * FROM quality_holds WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
-                       (row['id'],)).fetchall()
-    if not holds:
-        return
-    if any(h['state'] != 'RETEST_PENDING' or h['repair_sha'] != row['source_sha'] for h in holds):
-        raise ValueError('resume investigation and submit the repaired/retest candidate before adoption')
     official = db.execute('SELECT project FROM environments WHERE name=?', (OFFICIAL,)).fetchone()
     if not official or not args.record or not args.tested_sha:
-        raise ValueError('quality recovery needs a registered official environment, --record and --tested-sha')
+        raise ValueError('adoption needs a registered official environment, --record and --tested-sha')
+    proof = SourceProof(official['project'])
+    if not proof.contains(row['base_sha'], row['source_sha'], args.tested_sha):
+        raise ValueError('tested source does not preserve submitted changed blobs; resubmit the actual integrated SHA')
+    holds = guard_holds(db, proof, args.tested_sha)
+    own = db.execute("SELECT * FROM quality_holds WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
+                     (row['id'],)).fetchall()
+    if any(h['state'] != 'RETEST_PENDING' or h['repair_sha'] != row['source_sha'] for h in own):
+        raise ValueError('resume investigation and submit the repaired/retest candidate before adoption')
+    pending = {h['id']: h for h in holds if h['state'] == 'RETEST_PENDING'}
+    pending.update({h['id']: dict(h) for h in own})
     record_path = Path(args.record).resolve()
     root = Path(official['project']) / '.kaizen/experiments'
     if not record_path.is_relative_to(root.resolve()) or record_path.name != 'record.json':
@@ -109,7 +114,8 @@ def resolve_quality_holds(db, args, row):
     promoted_record(record, args.tested_sha)
     try:
         closed = datetime.datetime.fromisoformat(record['closedAt'].replace('Z', '+00:00'))
-        submitted = max(datetime.datetime.fromisoformat(h['repair_submitted_at']) for h in holds)
+        submitted = max((datetime.datetime.fromisoformat(h['repair_submitted_at']) for h in pending.values()),
+                        default=datetime.datetime.min.replace(tzinfo=datetime.timezone.utc))
         # experiment.sh writes timestamps at second precision.
         fresh = closed.tzinfo is not None and closed >= submitted.replace(microsecond=0)
     except (KeyError, TypeError, ValueError):
@@ -126,12 +132,16 @@ def resolve_quality_holds(db, args, row):
                if s.get('label', '').startswith('candidate') and not s.get('observed')]
     if not samples or any(s.get('pass') is not True or s.get('deployedRevision') != args.tested_sha for s in samples):
         raise ValueError('retest samples must pass on the tested integrated SHA')
-    if (row['review'] == 'human' or row['status'] == 'NEEDS_HUMAN') and (record.get('manifest', {}).get('review') != 'human'
+    fresh_retest_samples(pending.values(), samples)
+    affected_human = any(db.execute('SELECT review FROM tasks WHERE id=?', (h['task_id'],)).fetchone()['review'] == 'human'
+                         for h in pending.values())
+    if (affected_human or row['review'] == 'human' or row['status'] == 'NEEDS_HUMAN') and (not args.human_decision or record.get('manifest', {}).get('review') != 'human'
                                      or record.get('humanDecision') != args.human_decision):
         raise ValueError('human decision must match the official retest record')
-    db.execute("UPDATE quality_holds SET state='RESOLVED',retest_record=?,retest_digest=?,tested_sha=?,closed_at=? "
-               "WHERE task_id=? AND state='RETEST_PENDING'",
-               (str(record_path), hashlib.sha256(record_bytes).hexdigest(), args.tested_sha, now(), row['id']))
+    db.executemany("UPDATE quality_holds SET state='RESOLVED',retest_record=?,retest_digest=?,tested_sha=?,closed_at=? "
+                   "WHERE id=? AND state='RETEST_PENDING'",
+                   [(str(record_path), hashlib.sha256(record_bytes).hexdigest(), args.tested_sha, now(), hold_id)
+                    for hold_id in pending])
 
 
 def task(db, name):
@@ -370,7 +380,7 @@ def parser():
                            choices=('ACCEPTED', 'REJECTED', 'NEEDS_HUMAN', 'NEEDS_MEASUREMENT', 'BLOCKED'))
             c.add_argument('--human-decision', help='reference to the actual human decision; never fabricate one')
             c.add_argument('--question', help='concrete human choice, with alternatives and a recommendation in --reason')
-            c.add_argument('--record', help='official experiment record.json for a quality-held candidate')
+            c.add_argument('--record', help='official promotion record.json required for every adoption')
             c.add_argument('--tested-sha', help='full integrated SHA actually measured in that record')
     inventory = commands.add_parser('env-register')
     inventory.add_argument('--agent', required=True)

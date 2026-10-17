@@ -166,6 +166,10 @@ contains source and minimal bootstrap files, not these rules or management tools
   Preserve failed source/evidence, repair and retest; only a passing official
   promotion record resolves a quality hold. A failed run does not forbid fixing
   its candidate. Later recurrence creates a linked investigation.
+  Every ACCEPTED task needs --record and --tested-sha bound to its submitted
+  source. Open/pending holds follow matching deployable source across tasks;
+  close a held experiment without promotion using explicit --override
+  inconclusive/reject. Overlapping source files require integrated-SHA resubmission.
 - Install/join success includes actual model readiness and matching control-host
   release. A filesystem-only check is not a joined member. Keep environment DB,
   target configuration and knowledge paths together and isolated for rehearsals.

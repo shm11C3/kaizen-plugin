@@ -100,8 +100,12 @@ Do this before overwriting the submitted source SHA. Preserve/recover the failed
 run through normal experiment scripts. The task owner resumes the held task,
 adds a reproducer, repairs and resubmits with task-ready; independent prerequisite
 tasks may link to it. Do not replace its immutable failure history with an unrelated
-new task. Resolve with task-finish ACCEPTED only after an official promotion,
-passing --record and --tested-sha. Sample shortage alone is remeasurement; known
+new task. Every task-finish ACCEPTED requires an official promotion record,
+passing --record and --tested-sha; submitted changed blobs must remain in that
+tested source. Unresolved holds follow matching source across task IDs. For
+overlapping file compositions, submit the actual integrated SHA before retesting.
+Close a held candidate without promotion using an explicit record --override
+inconclusive/reject; this remains available for recovery. Sample shortage alone is remeasurement; known
 candidate quality problems require the hold ledger. No routine human approval.
 For an unchanged-source retry, explain the newly identified cause, corrected
 conditions or discriminating measurement. Do not open fresh experiments merely

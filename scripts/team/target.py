@@ -13,6 +13,20 @@ import tempfile
 from team import connect, operation_lock, reservation
 from environments import OFFICIAL, environment_name, state_path, validate_target
 from record_proof import sync_proof
+from source_proof import SourceProof, fresh_retest_samples, guard_holds
+
+
+def record_can_promote(arguments):
+    """Match experiment.sh's option prefix; reason words are never options."""
+    override = None
+    index = 1  # the record subcommand
+    while index < len(arguments) and arguments[index] in ('--override', '--human-decision'):
+        if index + 1 >= len(arguments):
+            return True  # malformed input must not bypass the check
+        if arguments[index] == '--override':
+            override = arguments[index + 1]
+        index += 2
+    return override not in ('inconclusive', 'reject')
 
 
 def main():
@@ -79,6 +93,29 @@ def main():
             if args.action == 'bench' and '--reserve' in args.arguments:
                 portal_marker.touch()
             try:
+                record = args.action == 'experiment' and args.arguments[:1] == ['record']
+                if args.environment == OFFICIAL and record and record_can_promote(args.arguments):
+                    # Keep concurrent hold writers out of the short promotion boundary.
+                    # Benchmarks themselves never hold this database transaction.
+                    with contextlib.closing(connect(args.db)) as db, db:
+                        db.execute('BEGIN IMMEDIATE')
+                        candidate = subprocess.check_output(['git', '-C', str(project), 'rev-parse', 'HEAD'], text=True).strip()
+                        try:
+                            holds = guard_holds(db, SourceProof(project), candidate)
+                        except ValueError as error:
+                            raise ValueError(str(error) + '; to close/recover without promotion use '
+                                             '--override inconclusive or --override reject') from error
+                        if holds:
+                            state = dict(line.split('=', 1) for line in (project / '.kaizen/state.env').read_text().splitlines() if '=' in line)
+                            folder = project / '.kaizen/experiments' / state['CURRENT_EXPERIMENT']
+                            samples = [json.loads(path.read_text()) for path in folder.glob('bench-candidate*.json')]
+                            fresh_retest_samples(holds, samples)
+                        if any(db.execute('SELECT review FROM tasks WHERE id=?', (h['task_id'],)).fetchone()['review'] == 'human' for h in holds):
+                            manifest = json.loads((folder / 'manifest.json').read_text())
+                            if manifest.get('review') != 'human':
+                                raise ValueError('inherited human-review quality work requires a human-review manifest')
+                        return subprocess.run(['bash', str(script), *args.arguments], cwd=str(project),
+                                              env=environment, pass_fds=(lock_handle.fileno(),)).returncode
                 return subprocess.run(['bash', str(script), *args.arguments], cwd=str(project),
                                       env=environment, pass_fds=(lock_handle.fileno(),)).returncode
             finally:

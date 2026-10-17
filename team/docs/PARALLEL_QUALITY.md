@@ -184,12 +184,18 @@ python3 "$K/scripts/team/team.py" --db /srv/isucon/state/team.sqlite3 \
 cherry-pickで統合SHAが変わっても、同じworker sourceや同一のアプリtreeに残る警告を引き継ぐ。ソースを変えず
 再測定する場合は新たな原因証拠・修正した条件・説明を区別できる測定を示す。
 クリーンな2回が得られるまでの引き直しを解消として扱わず、未解明の過去警告も採否に含める。
-現在のスコア評価器は実験単位であり、別実験の同一内容を横断する強制判定は行わない。
-この履歴確認と専用保留の登録は統合担当が行う。
+スコア評価器は実験単位のまま維持する。競技用`target.py experiment record`入口は、
+共有台帳の`OPEN / RETEST_PENDING`をtask IDに関係なく確認する。元sourceがGit祖先、
+同じ配備対象tree、またはbaseからの変更blobを保持する候補には保留を引き継ぐ。
+未修復なら公式promoteを拒否する。独立したstableベースの候補は妨げない。
+保留中の候補を採用せず閉じて復旧する場合は、明示的に
+`record --override inconclusive <reason>`または`--override reject`を使う。
+省略時はpromoteの可能性を保守的に扱う。sandboxの明示inconclusiveも実行できる。
 
 修正版の提出で`OPEN → RETEST_PENDING`となるが、解消扱いにはしない。
 再計測で失敗すれば新たな保留にその結果を追加し、再び調査する。
-解消には公式環境の採用記録を使う。
+解消には公式環境の採用記録を使う。保留のない候補も含め、すべての`ACCEPTED`で
+`--record`と`--tested-sha`を指定する。
 
 ```bash
 python3 "$K/scripts/team/team.py" --db /srv/isucon/state/team.sqlite3 \
@@ -199,15 +205,29 @@ python3 "$K/scripts/team/team.py" --db /srv/isucon/state/team.sqlite3 \
 ```
 
 共通ホストに登録した公式project内の記録で、修正版提出後に閉じられ、品質pass、
-promote、candidate/stable-after/サンプルのSHA一致を確認できた場合だけ`RESOLVED`になる。
+promote、candidate/stable-after/サンプルのSHA一致と、修正版提出後のcandidate sampleを
+確認できた場合だけ`RESOLVED`になる。別taskの候補が修復を含む場合も、該当する
+`RETEST_PENDING`をこの公式記録で解消できる。
 元source、修正source、実測した統合SHAは別々に残す。実験記録のdigestも保存する。
-sourceをcherry-pickした統合版に修正が含まれることは統合担当が確認する。
-台帳はコードの意味や記録の偽造まで検証する仕組みではない。
+配備対象はcaptured stable bundleの`trees`に従い、Git objectを取得して照合する。
+提出sourceと実測版が同じ配備対象内容ならSHAが違ってもよい。それ以外はbaseから
+提出sourceへ変更したpathのblob・削除・modeが実測版に残ることを確認する。
+重複しないcherry-pickは受理し、提出修正を単純revertした子孫は拒否する。
+同じfileへ別の変更を重ねて一致しなくなった場合は、内容を確認した担当が元taskを
+resumeし、実際の統合SHAを`task-ready`で再提出してから測る。
+未解消保留の修復も同じblob条件で確認し、同一内容のclean sample引き直しを修復としない
+（計測条件の保留`conditions`は同じsourceで条件を直し再計測できる）。
+source包含の確認はコードの意味や記録の偽造まで証明する仕組みではない。
 人間判断対象は従来どおり実際の判断参照を両方の記録に残す。
 
 不採用なら保留は`ABANDONED`となり、修正成功として数えない。最終計測で再発した
 問題は採用済みタスクを巻き戻さず、`task-create --related T-0001 --kind investigation`
 で新しい調査へつなげる。公式PASSとpluginの追加品質確認も別々に報告する。
+`RESOLVED / ABANDONED`はこの自動継承ガードの対象外で、履歴を保持してAIが確認する。
+修復採用後に同じSQL fileへ別の索引を足す通常改善を永久に拒否しないため、閉じた
+保留を自動で再開するworkflowは追加しない。過去の不具合を再導入する任意の書換え、
+一部だけのcherry-pick、意味が同じ別実装まで自動検出できない。再発を観測したら
+新しい調査・保留と回帰テストを作る。
 
 ## 検証範囲
 

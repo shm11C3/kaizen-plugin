@@ -145,59 +145,77 @@ class ParallelQualityTests(unittest.TestCase):
 
     def test_quality_hold_repairs_require_official_passing_record_and_keep_history(self):
         official = self.config('competition'); sandbox = self.config('lane-a')
+        project = self.root / 'competition'
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(project), *args], text=True, stderr=subprocess.PIPE).strip()
+        git('init', '-q', '-b', 'main')
+        git('config', 'user.name', 'fixture'); git('config', 'user.email', 'fixture@example.invalid')
+        git('config', 'commit.gpgsign', 'false')
+        (project / '.git/info/exclude').write_text('.kaizen/\n')
+        (project / 'go').mkdir()
+        def commit(value):
+            (project / 'go/source').write_text(value)
+            git('add', '.'); git('commit', '-qm', value)
+            return git('rev-parse', 'HEAD')
+        base, source, repaired = [commit(value) for value in ('base', 'known failure', 'repaired')]
+        (project / 'README.md').write_text('metadata composition')
+        git('add', '.'); git('commit', '-qm', 'integrated metadata')
+        tested = git('rev-parse', 'HEAD')
+        (project / '.kaizen/stable-bundle.json').write_text(json.dumps(dict(trees={'go': None})))
         self.register('competition', official); self.register('lane-a', sandbox)
         official_token = self.acquire('competition', 'integrator')
         lane_token = self.acquire('lane-a', 'worker')
         task = self.cli('task-create', '--title', 'fast but errors', '--evidence', 'observations')['id']
         self.cli('task-claim', '--id', task, '--agent', 'worker')
         def ready(sha):
-            self.cli('task-ready', '--id', task, '--agent', 'worker', '--base', '1'*40,
+            self.cli('task-ready', '--id', task, '--agent', 'worker', '--base', base,
                      '--sha', sha, '--review', 'auto', '--reason', 'candidate with tests')
-        ready('2'*40)
+        ready(source)
         self.cli('task-quality-hold', '--id', task, '--agent', 'worker', '--token', lane_token,
                  '--category', 'warning', '--evidence', 'E-01/raw.log CODE26; requests unknown',
                  '--reason', 'isolate timestamp visibility', environment='lane-a')
         finish = ('task-finish', '--id', task, '--agent', 'integrator', '--result', 'ACCEPTED', '--reason', 'retest')
         self.cli(*finish, ok=False)
         self.cli('task-resume', '--id', task, '--agent', 'worker', '--reason', 'move timestamp near commit')
-        ready('3'*40)
+        ready(repaired)
         hold = self.cli('status')['quality_holds'][0]
-        self.assertEqual((hold['source_sha'], hold['repair_sha'], hold['state']), ('2'*40, '3'*40, 'RETEST_PENDING'))
+        self.assertEqual((hold['source_sha'], hold['repair_sha'], hold['state']), (source, repaired, 'RETEST_PENDING'))
         self.cli('task-finish', '--id', task, '--agent', 'worker', '--result', 'ACCEPTED',
                  '--reason', 'sandbox score rose', environment='lane-a', ok=False)
         directory = self.root / 'competition/.kaizen/experiments/002-retest'
         directory.mkdir(parents=True)
         record = directory / 'record.json'
-        data = dict(finalDecision='promote', candidateRevision='4'*40, stableAfter='4'*40,
-                    manifest=dict(candidateRevision='4'*40),
+        data = dict(finalDecision='promote', candidateRevision=tested, stableAfter=tested,
+                    manifest=dict(candidateRevision=tested),
                     closedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     ruleDecision=dict(quality=dict(status='unknown'), qualityBlockPromotion=True))
-        data['samples'] = [{'label': 'candidate', 'pass': True, 'deployedRevision': '4'*40}]
+        data['samples'] = [{'label': 'candidate', 'pass': True, 'deployedRevision': tested,
+                            'finishedAt': datetime.datetime.now(datetime.timezone.utc).isoformat()}]
         record.write_text(json.dumps(data))
-        self.cli(*finish, '--record', str(record), '--tested-sha', '4'*40, ok=False)
+        self.cli(*finish, '--record', str(record), '--tested-sha', tested, ok=False)
         data['ruleDecision'] = dict(quality=dict(status='pass'), qualityBlockPromotion=False)
         record.write_text(json.dumps(data))
         self.cli(*finish, '--record', str(record), '--tested-sha', '5'*40, ok=False)
         # A good sandbox record is still not an official adoption record.
         other = self.root / 'lane-a/record.json'; other.write_text(record.read_text())
-        self.cli(*finish, '--record', str(other), '--tested-sha', '4'*40, ok=False)
+        self.cli(*finish, '--record', str(other), '--tested-sha', tested, ok=False)
         data['closedAt'] = '2020-01-01T00:00:00Z'; record.write_text(json.dumps(data))
-        self.cli(*finish, '--record', str(record), '--tested-sha', '4'*40, ok=False)
+        self.cli(*finish, '--record', str(record), '--tested-sha', tested, ok=False)
         data['closedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat(); record.write_text(json.dumps(data))
-        data['samples'].append({'label': 'baseline-3', 'pass': True, 'deployedRevision': '1'*40})
+        data['samples'].append({'label': 'baseline-3', 'pass': True, 'deployedRevision': base})
         data['samples'].append({'label': 'candidate-observed', 'pass': True, 'observed': True, 'deployedRevision': '6'*40})
         record.write_text(json.dumps(data))
         self.cli('task-finish', '--id', task, '--agent', 'integrator', '--result', 'NEEDS_HUMAN',
                  '--question', 'Accept the measured latency tradeoff?', '--reason', 'safe comparison complete')
-        self.cli(*finish, '--record', str(record), '--tested-sha', '4'*40,
+        self.cli(*finish, '--record', str(record), '--tested-sha', tested,
                  '--human-decision', 'fixture: actual human choice', ok=False)
         data['manifest']['review'] = 'human'; data['humanDecision'] = 'fixture: actual human choice'
         record.write_text(json.dumps(data))
-        self.cli(*finish, '--record', str(record), '--tested-sha', '4'*40,
+        self.cli(*finish, '--record', str(record), '--tested-sha', tested,
                  '--human-decision', 'fixture: actual human choice')
         hold = self.cli('status')['quality_holds'][0]
         self.assertEqual((hold['source_sha'], hold['repair_sha'], hold['tested_sha'], hold['state']),
-                         ('2'*40, '3'*40, '4'*40, 'RESOLVED'))
+                         (source, repaired, tested, 'RESOLVED'))
         self.cli('task-quality-hold', '--id', task, '--agent', 'integrator', '--token', official_token,
                  '--category', 'warning', '--evidence', 'later warning', '--reason', 'recurrence', ok=False)
         followup = self.cli('task-create', '--related', task, '--title', 'recurrence', '--kind', 'investigation',
