@@ -22,3 +22,4 @@ Experiments in the order they were run.
 | 004-nearest-chair-matching | random-order-matching | - | reject | correctness failure CODE=15: a chair was assigned a new ride before it was notified of the previous ride's completion; 'free' must mean all six statuses were sent to the chair, not evaluation IS NULL |
 | 005-nearest-chair-matching-notified | random-order-matching | +123% | promote | rule decision as evaluated |
 | 006-owner-chairs-filter-first | heavy-aggregate-query | +2% | inconclusive | rule decision as evaluated |
+| 007-nearby-chairs-single-query | n-plus-one-query | -5% | reject | rule decision as evaluated |

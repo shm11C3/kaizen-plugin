@@ -1,0 +1,91 @@
+{
+  "experimentId": "007-nearby-chairs-single-query",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "007-nearby-chairs-single-query",
+    "patternId": "n-plus-one-query",
+    "hypothesisId": "nearby-chairs-single-query",
+    "hypothesis": "GET /api/app/nearby-chairs loads every chair, then per chair its rides, per ride its latest status, and its latest location (2N+1 queries per request); one query that joins the latest location and excludes chairs with an uncompleted ride returns the same set, so the endpoint stops dominating per-request DB round trips.",
+    "observations": [
+      {
+        "summary": "observe-candidate (exp 006): SELECT * FROM rides WHERE chair_id = ? ORDER BY created_at DESC and the per-ride latest-status lookup are among the most called statements; nearby-chairs is requested by every app client before a ride",
+        "artifact": ".kaizen/experiments/006-owner-chairs-filter-first/observe-candidate.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/app_handlers.go",
+        "changeKind": "modify",
+        "reason": "appGetNearbyChairs: one query for active free chairs with latest location; distance filter in Go"
+      }
+    ],
+    "changeSummary": "appGetNearbyChairs: replace the per-chair loop (rides, latest status, latest location) with one SQL query; same response shape",
+    "expectedEffect": "per-request queries drop from 2N+1 to 2; app client flow before each ride gets faster; score up if ride creation is throttled by this endpoint",
+    "stableRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+    "candidateRevision": "650cd19216e3979ce90ef35ff081e25950eafefa",
+    "startedAt": "2026-10-17T09:19:55Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "reject",
+    "reason": "candidate median 8242.0 does not beat baseline median 8650.5 (-473 bp)",
+    "improvementBasisPoints": -473,
+    "baselineScores": [
+      7763,
+      9538
+    ],
+    "candidateScores": [
+      6524,
+      9960
+    ],
+    "baselineRevisions": [
+      "75a8032cbff2a67f03c417f6b39d27b6beab163f"
+    ],
+    "candidateRevisions": [
+      "650cd19216e3979ce90ef35ff081e25950eafefa"
+    ],
+    "decidedAt": "2026-10-17T09:22:19Z"
+  },
+  "finalDecision": "reject",
+  "override": null,
+  "reason": "rule decision as evaluated",
+  "stableBefore": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "stableAfter": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "candidateRevision": "650cd19216e3979ce90ef35ff081e25950eafefa",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "007-nearby-chairs-single-query",
+      "deployedRevision": "650cd19216e3979ce90ef35ff081e25950eafefa",
+      "pass": true,
+      "score": 9960,
+      "errors": "map[25:13,26:1]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:22:19Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/007-nearby-chairs-single-query/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "007-nearby-chairs-single-query",
+      "deployedRevision": "650cd19216e3979ce90ef35ff081e25950eafefa",
+      "pass": true,
+      "score": 6524,
+      "errors": "map[25:18]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:21:09Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/007-nearby-chairs-single-query/bench-candidate.log"
+    }
+  ],
+  "recovery": "ok",
+  "timeline": [
+    "2026-10-17T09:19:59Z\tdeploy\tHEAD\t4s\tok",
+    "2026-10-17T09:21:09Z\tbench\tcandidate\t68s\tpass=true score=6524",
+    "2026-10-17T09:22:19Z\tbench\tcandidate-2\t68s\tpass=true score=9960",
+    "2026-10-17T09:22:24Z\tdeploy\t75a8032cbff2a67f03c417f6b39d27b6beab163f\t4s\tok",
+    "2026-10-17T09:22:24Z\trecover\t75a8032\t5s\tok"
+  ],
+  "closedAt": "2026-10-17T09:22:24Z"
+}

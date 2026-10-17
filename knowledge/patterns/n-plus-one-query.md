@@ -40,7 +40,14 @@ heavy-aggregate-query). Keep the JSON shape identical.
 - N+1 costs a network round trip per row once the DB is on another host;
   fix it before separating hosts.
 
+- 007-nearby-chairs-single-query (isucon14): the single-query rewrite was
+  rejected at n=2 (6524/9960 vs 7763/9538) while the run-to-run spread at
+  that stage was ±20%; the endpoint is not on the scoring path once
+  matching is fixed. With spread above the expected effect, two samples
+  decide nothing: measure the baseline spread first and size n to it, or
+  skip the experiment.
+
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
-
+| isucon14 | 007-nearby-chairs-single-query | 7763/9538 | 6524/9960 | -5% | 2+2 | 2 | reject | reject | map[25:13,26:1]; map[25:18] |
