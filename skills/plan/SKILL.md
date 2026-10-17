@@ -34,7 +34,8 @@ For each serious option, fill:
    observations. A faster query alone does not establish a score gain. Distinguish
    time doing work from time waiting for a lock, connection or another request.
    Use ranges or qualitative estimates; do not invent precise probabilities.
-3. **total minutes**: implementation, queue, deployment, fresh samples, recovery;
+3. **total minutes**: implementation, checks/tests, compilation/linking, queue,
+   deployment, fresh samples, recovery (including its rebuild);
    include a final stable/restart verification reserve.
 4. **dependencies**: prerequisites, conflicts, current base. An enabler with no
    measured gain is not automatically adopted; compare a coherent combination
@@ -63,3 +64,5 @@ When tests or coupling block a promising candidate, use prepare-tests/refactor
 and `team/docs/PHASES.md`. Include preparation in total time, name the dependent
 candidate and stop condition, and retain final verification time. Prefer existing
 tools under `team/docs/TOOLS.md` to custom instrumentation.
+For Rust, use measured build/recovery times under `team/docs/RUST_BUILD.md`;
+do not equate a warm local no-change build with the actual deployment path.

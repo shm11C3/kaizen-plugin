@@ -111,3 +111,5 @@ uses its application's cargo build --release --locked and correct binary path.
 Keep debug/race/instrumented builds out of adoption samples. Use native Go/Rust
 checks and the preparation/test procedure in `team/docs/PHASES.md`; do not assume
 the bundled ISUCON14 Go preset configures a different language automatically.
+For Rust, follow `team/docs/RUST_BUILD.md`: preserve target caches across sync,
+measure the real deploy/recovery build path, and budget that time before experiments.

@@ -14,7 +14,10 @@ RSYNC_PATH="sudo -u isucon rsync"
 
 # Build, restart, health. Run over SSH on every host in APP_HOSTS.
 BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/go && go build -o <binary> ."'
-# Rust example: set its real crate/binary/service paths and exclude target outputs.
+# Rust example: set its real crate/binary/service paths; preserve remote caches
+# across rsync --delete. See team/docs/RUST_BUILD.md for build/recovery time budgets.
+# LOCAL_SYNC_PATHS="rust sql"
+# SYNC_EXCLUDES="--exclude target/"
 # BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/rust && cargo build --release --locked"'
 RESTART_CMD='sudo systemctl daemon-reload && sudo systemctl restart <service>'
 SERVICE_NAME=<service>

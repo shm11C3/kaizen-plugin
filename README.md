@@ -13,6 +13,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 - [Go／Rustの既存ツール・観測モード](team/docs/TOOLS.md)
+- [Rustのビルド時間・キャッシュ・終盤の予算](team/docs/RUST_BUILD.md)
 - [初期テスト・整備フェーズ](team/docs/PHASES.md)、[prepare-tests](skills/prepare-tests/SKILL.md)・[refactor](skills/refactor/SKILL.md)
 - [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
 - [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
