@@ -125,7 +125,9 @@ def execute(project, revision, label, test_filter, host, ssh_config, environment
             if version.returncode:
                 result['exitCode'] = version.returncode
                 return result
-            build_env = dict(os.environ, CGO_ENABLED='0', GOOS='linux', GOARCH='amd64')
+            cache = project / '.kaizen/remote-go-build-cache'
+            cache.mkdir(parents=True, exist_ok=True)
+            build_env = dict(os.environ, CGO_ENABLED='0', GOOS='linux', GOARCH='amd64', GOCACHE=str(cache))
             build = call(['go', 'test', '-c', '-o', str(root / module / 'kaizen-test'), '.'], cwd=root / module, env=build_env)
             result['exitCode'] = build.returncode
             if build.returncode:
