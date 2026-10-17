@@ -122,6 +122,11 @@ grep -q "| test | 001-flush-log |" "$T/knowledge/patterns/fsync-on-commit.md" ||
 grep -q "001-flush-log" "$T/knowledge/problems/test.md" || fail "problem log row"
 "$S/knowledge.sh" ingest .kaizen/experiments/001-flush-log | grep -q "already ingested" || fail "ingest is idempotent"
 
+# Records are committed on main between experiments; the next promote must still fast-forward.
+printf '.kaizen/bench.lock\n.kaizen/state.env\n.kaizen/friction.jsonl\n' > .gitignore
+git add .gitignore .kaizen && git commit -qm "records: experiment 1"
+[ "$(git rev-parse main)" != "$(state STABLE_REV)" ] || fail "test setup: main should be ahead of stable"
+
 echo "== experiment 2: correctness failure, recovery, reject"
 "$S/experiment.sh" new break-it >/dev/null
 echo fail > go/score
@@ -208,6 +213,10 @@ hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop",
 "$S/bench.sh" candidate --result 'pass=true score=2600 errors=none' >/dev/null
 "$S/evaluate.sh" >/dev/null
 "$S/experiment.sh" record "stop check" >/dev/null
+[ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/004-stop-check/record.json"))["finalDecision"])')" = promote ] || fail "exp 4 should promote"
+[ "$(git rev-parse main)" = "$(state STABLE_REV)" ] || fail "promote fast-forwarded main past the records commit"
+git merge-base --is-ancestor "$(git rev-parse exp/001-flush-log)" main || fail "promoted main keeps the earlier history"
+git log --format=%s main | grep "records: experiment 1" >/dev/null || fail "promoted main keeps the records commit"   # no -q: pipefail + SIGPIPE
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop should be silent when clean"
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"SessionStart","cwd":sys.argv[1]}))' "$P")" | grep -q additionalContext || fail "SessionStart context"
 

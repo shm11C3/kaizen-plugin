@@ -168,7 +168,9 @@ count_matches() {
 
 git_rev() { git -C "$KAIZEN_PROJECT" rev-parse --verify "$1^{commit}" 2>/dev/null; }
 git_head() { git -C "$KAIZEN_PROJECT" rev-parse HEAD; }
-git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no)" ]; }
+# Records under .kaizen/ are written by the scripts between commits; only
+# tracked changes outside them make the tree dirty for deploy purposes.
+git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no -- . ":(exclude).kaizen")" ]; }
 
 # experiments_started_since <epoch>: how many experiments opened after a time.
 experiments_started_since() {

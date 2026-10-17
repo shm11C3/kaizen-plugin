@@ -41,9 +41,9 @@ ACCESS_LOG=/var/log/nginx/access.log
 MYSQL_CMD="sudo mysql"
 DB_NAME=isupipe
 # URLs carry numeric ids (/api/livestream/123/livecomment) and usernames
-# made of letters followed by digits (/api/user/kazuya580/icon); a segment
-# that ends in digits collapses to /:id, so /api/user/me stays as it is.
-PATH_ID_REGEX='/[a-z]*[0-9]+'
+# that always contain a digit (kazuya580, UuDuxt1oTg); any alphanumeric
+# segment with a digit collapses to /:id, so /api/user/me stays as it is.
+PATH_ID_REGEX='/[A-Za-z0-9]*[0-9][A-Za-z0-9]*'
 # The Go app runs every parameterized query as a server-side prepared
 # statement; performance_schema digests miss those on MySQL 8.0, the slow
 # log does not (see observe.sh).
