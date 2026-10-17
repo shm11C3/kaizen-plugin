@@ -103,7 +103,8 @@ candidate quality problems require the hold ledger. No routine human approval.
 For an unchanged-source retry, explain the newly identified cause, corrected
 conditions or discriminating measurement. Do not open fresh experiments merely
 to obtain a clean pair; carry unresolved warnings from the same source/conditions
-forward, even when later runs happen to be clean.
+forward, even when later runs happen to be clean. A cherry-pick changes commit
+identity; compare worker sources and application trees as well as integrated SHAs.
 
 For isolated parallel validation or a quality-held candidate, read
 `../../team/docs/PARALLEL_QUALITY.md`. Keep one shared task DB, register the official
