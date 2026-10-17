@@ -1,0 +1,28 @@
+{
+  "account": "123456789012",
+  "region": "ap-northeast-1",
+  "study": "practice-YYYYMMDD",
+  "excluded_instance_ids": ["i-fffffffffffffffff", "i-eeeeeeeeeeeeeeeee"],
+  "lanes": {
+    "lane-a": {
+      "app": {"instance_id": "i-aaaaaaaaaaaaaaaaa"},
+      "bench": {
+        "launch": {
+          "ImageId": "ami-REPLACE",
+          "InstanceType": "c5.xlarge",
+          "KeyName": "REPLACE-EXISTING-KEY-NAME",
+          "SubnetId": "subnet-REPLACE",
+          "SecurityGroupIds": ["sg-REPLACE"],
+          "BlockDeviceMappings": [{
+            "DeviceName": "/dev/sda1",
+            "Ebs": {"Encrypted": true, "DeleteOnTermination": true, "VolumeType": "gp3", "VolumeSize": 16}
+          }]
+        }
+      }
+    },
+    "lane-b": {
+      "app": {"instance_id": "i-bbbbbbbbbbbbbbbbb"},
+      "bench": {"instance_id": "i-ccccccccccccccccc"}
+    }
+  }
+}

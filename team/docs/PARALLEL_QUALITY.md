@@ -1,5 +1,53 @@
 # 並列検証と品質保留からの再計測
 
+## EC2レーンの準備と停止
+
+`scripts/team/ec2_lanes.py`はAWS CLIとPython標準ライブラリだけで、独立したapp＋benchの
+起動・再利用・状態取得・停止を行う。[設定例](../templates/ec2-lanes.example.json)を作業領域へ
+コピーし、expected account、region、一意なstudy、公式・共通ホストの除外ID、各レーンの
+既存IDまたはlaunchを記入する。秘密鍵は設定へ入れず、既存SSH設定から参照する。
+AMIのroot deviceに合わせ、全EBSマッピングを暗号化する。新規起動ではIMDSv2を必須にし、
+study/lane/roleタグと固定client tokenを付ける。同じstudy/config/stateをリトライで使い、
+新規起動の応答が失われてもstateを消さない。
+
+```bash
+python3 "$K/scripts/team/ec2_lanes.py" --config /path/ec2-lanes.json \
+  --state /path/ec2-lanes-state.json plan
+python3 "$K/scripts/team/ec2_lanes.py" --config /path/ec2-lanes.json \
+  --state /path/ec2-lanes-state.json --db /srv/isucon/state/team.sqlite3 \
+  --output /path/ec2-inventory.json ensure
+python3 "$K/scripts/team/ec2_lanes.py" --config /path/ec2-lanes.json \
+  --state /path/ec2-lanes-state.json status
+```
+
+準備と停止は全環境の占有を解放し、実験を閉じ、実行プロセス・portal予約・復旧待ちがない
+境界で行う。CLIは共通台帳と操作ロック、登録projectの状態を確認する。台帳に未登録の
+プロセスや外部実行の終了までは証明しない。初回準備にも当日利用する共通DBを指定する。
+`ensure`はEC2の起動要求までで、status check、SSH疎通、サービス、初期データ、名前解決、
+DB・モック・負荷生成の分離は別途確認する。AMIが不要なアプリやDBも自動起動する場合は
+設定したdeploy/recovery手順で整える。SSH IPはstop/startで変わるため出力と照合する。
+
+1. 起動して疎通・分離・復旧を確認し、レーンごとに別clone/config/knowledgeを用意する。
+2. 以下の共通台帳へ公式、各レーンの順で登録する。出力の`resource`を資源一覧へ使う。
+3. 各レーンを占有し、`target.py --environment lane-a`等でdeploy/benchを同時に進める。
+   同じ環境は既存ロックで直列化する。各レーンでbaselineを取り、公式で採用前に再測定する。
+4. 最終の復旧・記録・プロセス終了を確認し、全環境を解放して`stop`する。
+
+```bash
+python3 "$K/scripts/team/ec2_lanes.py" --config /path/ec2-lanes.json \
+  --state /path/ec2-lanes-state.json --db /srv/isucon/state/team.sqlite3 stop
+```
+
+停止対象はstateに今回の起動・作成を記録したインスタンスだけ。元からrunningの既存機は
+停止しない。新規機も停止までで、EBS料金は残る。証拠を回収して不要になった新規機の
+terminateは別途管理する。公式機の停止やSG/IAM/VPC変更はこのCLIの役割に含めない。
+
+CLI導入前に今回のstudy用として起動済みなら、初回ensureだけ`--import-startup /path/startup.json`
+で明示的に取り込める。JSONは`{"study":"...","account":"...","instances":{"i-...":
+{"original_state":"stopped","evidence":"起動前describeとstart API記録のパス"}}}`とし、新規作成なら
+`original_state: "absent"`を使う。申告は利用者が元のAPI記録と照合する。既存stateの
+running判定を後から書き換える用途には使えず、除外IDや設定外IDの取り込みは拒否する。
+
 ## 共通台帳、環境ごとの占有
 
 タスクは共通ホストの**１つのSQLite**で管理し、`competition`とsandboxごとに

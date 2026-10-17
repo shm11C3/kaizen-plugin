@@ -23,6 +23,12 @@ Rules that hold for any agent using this repository against a target:
 Codex: there is no hook adapter yet; follow the rules above by hand and run
 `tests/run.sh` after changing a script.
 
+Prepare or stop sandbox EC2 lanes with `scripts/team/ec2_lanes.py` and
+`team/docs/PARALLEL_QUALITY.md` only at an idle boundary. Keep its operation
+state and the shared team ledger; exclude official/control resource IDs.
+Provisioning does not replace environment registration, target.py reservations,
+deployment scripts, recovery drills or lane-specific baseline measurements.
+
 For a shared competition, start with `skills/team/SKILL.md` and follow
 `team/POLICY.md` and `team/docs/DISCORD.md`. Each member uses an independent
 session, reads current Discord decisions and coordinates through the shared ledger.
