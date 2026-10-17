@@ -17,3 +17,4 @@ Experiments in the order they were run.
 |---|---|---|---|---|
 | exp-001-secondary-indexes | missing-secondary-index | +293% | promote | median improved 29361 bp; worst candidate 2945 > best baseline 902 (kaizen-isucon14/bin, pre-plugin) |
 | 001-fsync-commit | fsync-on-commit | +6% | inconclusive | rule inconclusive: +5.9% median under ±15% noise; fsync setting alone does not move the score while matching bounds it |
+| 002-notification-interval | hot-polling-endpoint | +53% | promote | rule decision as evaluated |

@@ -42,6 +42,7 @@ see and lowers satisfaction: tune by measurement, do not maximise.
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
+| isucon14 | 002-notification-interval | 2519/2527/2900 | 3627/4119 | +53% | 3+2 | 2 | promote | promote | map[25:12]; map[25:19] |
 
 ## Observed
 

@@ -1,0 +1,95 @@
+{
+  "experimentId": "002-notification-interval",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "002-notification-interval",
+    "patternId": "hot-polling-endpoint",
+    "hypothesisId": "notification-retry-100ms",
+    "hypothesis": "GET /api/chair/notification (16,752) and GET /api/app/notification (7,860) are 73% of the 33,700 requests in a 60s run because the handlers return retry_after_ms=30; returning 100 cuts their count by about 70% with no other change, freeing the single host for coordinate updates and matching, which score.",
+    "observations": [
+      {
+        "summary": "observe-baseline: 16752 chair notifications + 7860 app notifications of ~33.7k requests; each poll runs the ride status query",
+        "artifact": ".kaizen/observe-baseline.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/chair_handlers.go",
+        "changeKind": "modify",
+        "reason": "RetryAfterMs 30 -> 100"
+      },
+      {
+        "path": "go/app_handlers.go",
+        "changeKind": "modify",
+        "reason": "RetryAfterMs 30 -> 100"
+      }
+    ],
+    "changeSummary": "retry_after_ms 30 -> 100 in both notification handlers (4 occurrences)",
+    "expectedEffect": "notification request count drops ~70%; score up if the saved CPU goes to coordinate/matching; a drop in satisfaction if the client sees state changes later",
+    "stableRevision": "0901d112df720fc8669aea4e465cf1cbbd574906",
+    "candidateRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+    "startedAt": "2026-10-17T09:04:43Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 5326 bp >= 300 bp and worst candidate 3627 > best baseline 2900",
+    "improvementBasisPoints": 5326,
+    "baselineScores": [
+      2519,
+      2527,
+      2900
+    ],
+    "candidateScores": [
+      3627,
+      4119
+    ],
+    "baselineRevisions": [
+      "0901d112df720fc8669aea4e465cf1cbbd574906"
+    ],
+    "candidateRevisions": [
+      "882a7bac000e27170e39bea65da7bbdb96975083"
+    ],
+    "decidedAt": "2026-10-17T09:07:08Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "rule decision as evaluated",
+  "stableBefore": "0901d112df720fc8669aea4e465cf1cbbd574906",
+  "stableAfter": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "candidateRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "002-notification-interval",
+      "deployedRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+      "pass": true,
+      "score": 3627,
+      "errors": "map[25:19]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:07:08Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/002-notification-interval/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "002-notification-interval",
+      "deployedRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+      "pass": true,
+      "score": 4119,
+      "errors": "map[25:12]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:05:57Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/002-notification-interval/bench-candidate.log"
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:04:48Z\tdeploy\tHEAD\t5s\tok",
+    "2026-10-17T09:05:57Z\tbench\tcandidate\t68s\tpass=true score=4119",
+    "2026-10-17T09:07:08Z\tbench\tcandidate-2\t68s\tpass=true score=3627"
+  ],
+  "closedAt": "2026-10-17T09:07:09Z"
+}
