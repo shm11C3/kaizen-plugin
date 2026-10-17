@@ -24,8 +24,14 @@ installation and the competition clone are separate directories.
 4. Work autonomously through discovery, task creation/claim, local implementation,
    validation, candidate submission, and the next useful task. Keep source work
    isolated in a branch or worktree. Use the plugin's `team/templates/`.
+   Read `$K/team/docs/STRATEGY.md`; choose work by score impact and evidence.
    Check `control.py queue` at work boundaries. If READY candidates accumulate,
-   analyze existing evidence or help unblock measurement before adding more code.
+   use investigation/comparison tasks to analyze existing evidence or unblock measurement.
+   Automatic task-claim skips implementation when READY reaches its --ready-limit
+   (default 2); --id is an intentional exception after checking the queue.
+   Use --hypothesis MECHANISM_KEY to avoid duplicate active tasks atomically.
+   A local investigation/comparison ends with task-complete and its evidence;
+   it does not need a deployment or the integration owner's reservation.
 
 ## Integration
 

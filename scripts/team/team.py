@@ -44,12 +44,14 @@ def connect(path):
             plugin_version TEXT NOT NULL, joined_at TEXT NOT NULL
         );
     """)
-    if 'human_question' not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
-        try:
-            db.execute('ALTER TABLE tasks ADD COLUMN human_question TEXT')
-        except sqlite3.OperationalError:
-            if 'human_question' not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
-                raise
+    for column, definition in (('human_question', 'TEXT'), ('hypothesis_key', 'TEXT'),
+                               ('work_kind', "TEXT NOT NULL DEFAULT 'implementation'")):
+        if column not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
+            try:
+                db.execute(f'ALTER TABLE tasks ADD COLUMN {column} {definition}')
+            except sqlite3.OperationalError:
+                if column not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
+                    raise
     return db
 
 
@@ -106,7 +108,16 @@ def dispatch(db, args):
                        (args.agent, args.provider, version, now()))
         counts = {r['status']: r['n'] for r in db.execute('SELECT status,COUNT(*) AS n FROM tasks GROUP BY status')}
         env = reservation(db)
+        backlog = counts.get('READY', 0) >= args.ready_limit
+        work = db.execute(
+            "SELECT * FROM tasks WHERE status='TODO' AND (?=0 OR work_kind!='implementation') ORDER BY priority DESC,id LIMIT 3",
+            (int(backlog),)).fetchall()
+        investigate = db.execute(
+            "SELECT * FROM tasks WHERE status='NEEDS_MEASUREMENT' ORDER BY priority DESC,id").fetchall()
         result = {'plugin_version': version, 'counts': counts,
+                  'ready_backlog': backlog,
+                  'suggested_tasks': [public_task(r) for r in work],
+                  'measurement_work': [public_task(r) for r in investigate],
                   'integration_owner': env['owner'] if env else None,
                   'advice': 'analyze submitted candidates or logs before more implementation' if counts.get('READY', 0) >= args.ready_limit else 'claim or discover the next useful task'}
         if command == 'join':
@@ -118,14 +129,25 @@ def dispatch(db, args):
     if command == 'task-list':
         return [public_task(r) for r in db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')]
     if command == 'task-create':
-        cur = db.execute('INSERT INTO tasks(title,evidence,priority,updated_at) VALUES (?,?,?,?)',
-                         (args.title, args.evidence, args.priority, now()))
+        if args.hypothesis:
+            existing = db.execute(
+                "SELECT * FROM tasks WHERE hypothesis_key=? AND status NOT IN ('ACCEPTED','REJECTED','DONE') LIMIT 1",
+                (args.hypothesis,)).fetchone()
+            if existing:
+                raise ValueError('active hypothesis already exists: ' + public_task(existing)['id'] + '; coordinate or add evidence there')
+        cur = db.execute('INSERT INTO tasks(title,evidence,priority,updated_at,hypothesis_key,work_kind) VALUES (?,?,?,?,?,?)',
+                         (args.title, args.evidence, args.priority, now(), args.hypothesis, args.kind))
         return public_task(db.execute('SELECT * FROM tasks WHERE id=?', (cur.lastrowid,)).fetchone())
     if command == 'task-claim':
+        if args.ready_limit < 1:
+            raise ValueError('ready-limit must be positive')
+        backlog = db.execute("SELECT COUNT(*) FROM tasks WHERE status='READY'").fetchone()[0] >= args.ready_limit
         row = task(db, args.id) if args.id else db.execute(
-            "SELECT * FROM tasks WHERE status='TODO' ORDER BY priority DESC,id LIMIT 1").fetchone()
+            "SELECT * FROM tasks WHERE status='TODO' AND (?=0 OR work_kind!='implementation') ORDER BY priority DESC,id LIMIT 1",
+            (int(backlog),)).fetchone()
         if row is None:
-            return {'task': None}
+            return {'task': None, 'ready_backlog': backlog,
+                    'advice': 'investigate submitted evidence or create a comparison task' if backlog else 'discover a useful task'}
         if row['status'] != 'TODO':
             raise ValueError('task is already owned or is not TODO')
         db.execute("UPDATE tasks SET status='CLAIMED',owner=?,updated_at=? WHERE id=?",
@@ -149,7 +171,12 @@ def dispatch(db, args):
         else:
             if row['owner'] != args.agent:
                 raise ValueError('task belongs to another session')
-            if command == 'task-ready':
+            if command == 'task-complete':
+                if row['status'] != 'CLAIMED' or row['work_kind'] == 'implementation':
+                    raise ValueError('only claimed investigation/comparison work may complete without integration')
+                db.execute("UPDATE tasks SET status='DONE',reason=?,updated_at=? WHERE id=?",
+                           (args.reason, now(), row['id']))
+            elif command == 'task-ready':
                 if row['status'] != 'CLAIMED':
                     raise ValueError('only CLAIMED tasks may be submitted')
                 if not all(re.fullmatch(r'[a-fA-F0-9]{40}', s) for s in (args.base, args.sha)):
@@ -210,10 +237,13 @@ def parser():
     create.add_argument('--title', required=True)
     create.add_argument('--evidence', required=True)
     create.add_argument('--priority', type=int, default=50, choices=range(101), metavar='0..100')
+    create.add_argument('--hypothesis', help='shared mechanism key; same active key is rejected atomically')
+    create.add_argument('--kind', choices=('implementation', 'investigation', 'comparison'), default='implementation')
     claim = commands.add_parser('task-claim')
     claim.add_argument('--agent', required=True)
     claim.add_argument('--id')
-    for name in ('task-ready', 'task-release', 'task-handoff', 'task-finish', 'task-resume'):
+    claim.add_argument('--ready-limit', type=int, default=2)
+    for name in ('task-ready', 'task-release', 'task-handoff', 'task-finish', 'task-resume', 'task-complete'):
         c = commands.add_parser(name)
         c.add_argument('--id', required=True)
         c.add_argument('--agent', required=True)

@@ -10,6 +10,7 @@ Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 
 ```bash
 $K/scripts/status.sh
+$K/scripts/strategy.sh review             # when strategy signals need investigation
 cat .kaizen/log.md                       # every closed experiment, one row each
 cat .kaizen/experiments/<id>/record.json # full evidence for one experiment
 ```
@@ -28,4 +29,5 @@ Next step by state:
 | open experiment, candidate deployed, no decision | experiment skill, step 3 |
 | open experiment, nothing deployed yet | experiment skill, step 1 |
 | no open experiment, no fresh observation | observe skill |
-| fresh observation | hypothesize skill |
+| strategy signal or disproved prediction | plan skill: investigate and revise order |
+| fresh observation | plan, then hypothesize skill |

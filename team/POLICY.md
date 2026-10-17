@@ -7,7 +7,8 @@ contains source and minimal bootstrap files, not these rules or management tools
 
 ## Mission and autonomy
 
-- Maximize verified improvement cycles within the competition time budget.
+- Maximize the final valid score within the competition time budget. Improvement
+  cycles and agent utilization are diagnostic metrics, not the objective.
 - Work autonomously: inspect shared observations, discover and register tasks,
   atomically claim work, implement, validate locally, submit candidates, then
   continue with the next useful task. Do not wait for a new human prompt after
@@ -38,6 +39,23 @@ contains source and minimal bootstrap files, not these rules or management tools
 - If blocked, preserve the task and evidence, notify humans when needed, and
   continue independent useful work. Do not repeat a rejected hypothesis without
   new evidence or a materially revised mechanism.
+
+## Experiment choice and strategy review
+
+- Follow `team/docs/STRATEGY.md`: current scoring impact, evidence, uncertainty,
+  all-in verification time, dependencies and disproof determine priority.
+- A corpus hit or cheap implementation does not establish scoring value. Keep
+  observation-derived options and structural alternatives in the plan.
+- Review unexpected outcomes, repeated mechanisms and parameter oscillations at
+  a stable boundary. AI investigates first; preserve human strategy and escalate
+  only concrete choices under the adoption policy below.
+- Use task kinds investigation/comparison/implementation and shared hypothesis
+  keys. Local evidence work can finish without occupying the target. On READY
+  backlog, automatic claims prefer evidence work; explicit task IDs remain an
+  intentional choice, not permission to bypass integration or measurement.
+- A structural candidate may contain inseparable prerequisite edits for one
+  causal hypothesis. Test a combined candidate explicitly; do not count an
+  unmeasured prerequisite as a verified improvement.
 
 ## Git and isolated implementation
 

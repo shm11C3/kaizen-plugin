@@ -27,7 +27,8 @@
 ```bash
 python3 "$K/scripts/team/control.py" task-list
 python3 "$K/scripts/team/control.py" task-create --title '履歴クエリの総時間を削減する' \
-  --evidence '/srv/isucon/artifacts/observe-001.txt:history-query' --priority 80
+  --evidence '/srv/isucon/artifacts/observe-001.txt:history-query' --priority 80 \
+  --hypothesis history-query-index --kind implementation
 python3 "$K/scripts/team/control.py" task-claim --agent a-codex-01
 ```
 
@@ -117,3 +118,20 @@ AIは安全な調査・実装・検証・比較を終え、`team/templates/HUMAN
 `#ops`（占有・障害）、`#discoveries`（観測）、`#tasks`（タスクごとのスレッド）、`#benchmarks`（SHA・条件・結果）、`#decisions`（人間判断）を使います。開始・有用な発見・候補提出・採否・障害を簡潔に通知します。実装の逐語的な実況は不要です。
 
 Bot・MCPは接続後に利用します。読む手段があることと、新着でAIが起動することは別です。現在の構成は各自が起動したセッションが区切りごとに状態を確認する運用です。未接続なら投稿用文章を人間へ渡し、通知済みと偽ってはいけません。
+
+## 計測待ちの作業と方針の再検討
+
+[戦略手順](STRATEGY.md)に従う。`queue`はREADY滞留、候補タスク、担当者が再開するNEEDS_MEASUREMENTを返す。自動`task-claim`はREADYが2件以上ならimplementationを選ばない（`--ready-limit`で指定可）。進める理由がある実装は明示`--id`で取得できる。タスクIDが違っても意味上の重複は自分で確認する。
+
+```bash
+python3 "$K/scripts/team/control.py" task-create --title '既存traceでlock待ちとCPUを比較' \
+  --evidence '/srv/isucon/artifacts/trace-001' --kind investigation \
+  --hypothesis distinguish-lock-from-cpu --priority 85
+python3 "$K/scripts/team/control.py" task-claim --agent a-codex-01
+python3 "$K/scripts/team/control.py" task-complete --id T-0002 --agent a-codex-01 \
+  --reason '比較結果: artifactへの参照、反証した説明、推奨する次の実験'
+```
+
+`task-complete`は担当者のCLAIMEDな調査・比較専用でDONEにする。実装の採用や共有環境の操作権限は与えない。`--hypothesis`の同一キーを持つ未完了タスクの作成は原子的に拒否する。別の比較作業は目的を表す別キーを付け、関連候補をevidenceへ記す。過去の完了済み仮説を再試行するときは、新しい根拠を明記する。
+
+統合担当は`control.py target --agent SESSION --token TOKEN strategy status`を作業の区切りで確認する。`strategy review`は検討テンプレートを出力する。現行の採点経路・待ち時間・予測が外れた原因・別機構の選択肢を揃えてplanを更新する。通知は採否や品質検証を免除しない。

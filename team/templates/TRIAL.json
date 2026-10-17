@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "v1",
+  "variant": "FILL: minimal or kaizen with release and knowledge snapshot",
+  "conditions": {
+    "problem": "FILL",
+    "initialRevision": "FILL: full SHA",
+    "environmentSpec": {"artifact": "FILL: common host/storage/data/config specification"},
+    "models": {"artifact": "FILL: actual per-session models and reasoning settings"},
+    "agentCount": 3,
+    "durationMinutes": 120,
+    "inferenceBudget": {"mode": "FILL", "limit": "FILL"},
+    "humanPolicy": "FILL: initial instruction, intervention policy and limit",
+    "externalHintsHash": "FILL: common input and hint policy hash",
+    "measurementHarnessRevision": "FILL: common deployment/measurement/recovery script SHA"
+  },
+  "startedAt": "FILL: ISO8601 with timezone",
+  "firstVerifiedPromotion": null,
+  "finalVerification": null,
+  "humanInterventions": null,
+  "failureRecoveryIntervals": null
+}

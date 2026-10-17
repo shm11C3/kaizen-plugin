@@ -17,6 +17,7 @@ fi
 echo "last run     $(state_get LAST_RUN) pass=$(state_get LAST_PASS) score=$(state_get LAST_SCORE)"
 python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" summary "$KAIZEN_DIR/bench-attempts.jsonl"
 [ ! -f "$KAIZEN_DIR/manual-bench.json" ] || echo "portal       RESERVED: finish or abandon after confirming the run ended"
+python3 "$KAIZEN_PLUGIN_ROOT/scripts/strategy.py" --project "$KAIZEN_PROJECT" status
 echo "run limits   total $MAX_BENCH_TOTAL; hourly $MAX_BENCH_PER_HOUR; recovery reserve $RECOVERY_BENCH_RESERVE per experiment"
 if [ -n "$stable" ] && ls "$KAIZEN_DIR/baseline/$stable"/*.json >/dev/null 2>&1; then
   python3 - "$KAIZEN_DIR/baseline/$stable" <<'EOF'

@@ -39,6 +39,35 @@ class CoordinationTests(unittest.TestCase):
         status = self.call('status')
         self.assertEqual(status['tasks'][0]['status'], 'CLAIMED')
 
+    def test_duplicate_hypothesis_creation_is_atomic(self):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: self.run_cli('task-create', '--title', 'Same cause',
+                                    '--evidence', 'same dump', '--hypothesis', 'rides-index'), range(2)))
+        self.assertEqual(sum(r.returncode == 0 for r in results), 1)
+        self.assertEqual(len(self.call('task-list')), 1)
+
+    def test_backlog_redirects_automatic_claims_and_research_can_complete(self):
+        for i in range(2):
+            task_id = self.create()
+            self.call('task-claim', '--id', task_id, '--agent', 'worker')
+            self.call('task-ready', '--id', task_id, '--agent', 'worker', '--base', '1'*40,
+                      '--sha', '2'*40, '--review', 'auto', '--reason', 'candidate')
+        implementation = self.create()
+        self.assertIsNone(self.call('task-claim', '--agent', 'new-worker')['task'])
+        research = self.call('task-create', '--title', 'Disprove lock explanation', '--evidence', 'existing trace',
+                             '--kind', 'comparison', '--hypothesis', 'lock-vs-cpu')['id']
+        queue = self.call('queue')
+        self.assertTrue(queue['ready_backlog'])
+        self.assertEqual(queue['suggested_tasks'][0]['id'], research)
+        self.assertEqual(self.call('task-claim', '--agent', 'new-worker')['id'], research)
+        self.assertNotEqual(self.run_cli('task-complete', '--id', research, '--agent', 'other', '--reason', 'done').returncode, 0)
+        self.assertEqual(self.call('task-complete', '--id', research, '--agent', 'new-worker',
+                                  '--reason', 'trace refutes CPU; evidence artifact retained')['status'], 'DONE')
+        # Explicit claims remain possible when the next implementation is justified.
+        self.call('task-claim', '--id', implementation, '--agent', 'worker')
+        self.assertNotEqual(self.run_cli('task-complete', '--id', implementation, '--agent', 'worker',
+                                        '--reason', 'cannot skip measurement').returncode, 0)
+
     def test_environment_is_persistent_and_handoff_invalidates_old_token(self):
         first = self.call('env-acquire', '--agent', 'a', '--purpose', 'experiment')
         self.assertNotEqual(self.run_cli('env-acquire', '--agent', 'b', '--purpose', 'other').returncode, 0)

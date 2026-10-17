@@ -19,7 +19,7 @@ def main():
     p.add_argument('--token', required=True)
     p.add_argument('--db', default='/srv/isucon/state/team.sqlite3')
     p.add_argument('--config', default='/srv/isucon/state/target.json')
-    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status'))
+    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy'))
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:

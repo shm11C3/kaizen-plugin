@@ -43,7 +43,7 @@ python3 "$K/scripts/team/control.py" queue
 
 `joined: true`が参加完了です。joinは空の一時ディレクトリで小さなモデル応答を検査し、ソースを送りません。認証・モデル・Git・SSM・共通ホストとのplugin版のどこで止まったかを返します。再ログインや設定の自動変更は行いません。`--offline`はファイル確認だけです。CLI版と既存cacheも含め、当日使う各人のPCで通常のjoinを通してください。
 
-0.3.0導入時はメンバーと共通ホストの版を揃えます。競技中の自動更新は行いません。共通ホスト管理者が占有なし・実行中なしを確認して固定releaseへ更新し、[復旧bundle](RECOVERY.md)を作り直します。
+0.4.0導入時はメンバーと共通ホストの版を揃えます。競技中の自動更新は行いません。共通ホスト管理者が占有なし・実行中なしを確認して固定releaseへ更新し、[復旧bundle](RECOVERY.md)を作り直します。
 
 `team/environments/competition/control-host.json`とAWS accountが異なれば止まります。別profileは各自の `AWS_PROFILE` で指定します。台帳と対象操作はSSM Run Commandなので、Session Manager pluginは不要です。対話shellにはSession Manager plugin、またはAWSコンソールを使います。
 

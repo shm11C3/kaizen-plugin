@@ -1,40 +1,60 @@
 ---
 name: plan
-description: "Decide the order of experiments from evidence before changing anything, and keep that order current. Use after setup (baseline + observation), after every promote, and whenever the remaining time or budget changes: ranks the matched patterns, adds whether each is on the benchmark's scoring path, and writes the order, reason and stop condition into .kaizen/plan.md."
+description: "Choose experiments by current scoring impact, evidence, uncertainty and total time. Use after setup, after each decision, when predictions fail or strategy signals fire. Maintains .kaizen/plan.md and reconsiders mechanisms before repeating small tweaks."
 ---
 
 # Plan
 
 Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
-`KAIZEN_PROJECT` exported (see setup).
+`KAIZEN_PROJECT` exported (see setup). Teams apply the reservation boundary
+in the team skill; workers read shared artifacts, the integrator owns the plan.
+Read `$K/team/docs/STRATEGY.md` for the decision and allocation procedure.
 
-Measure first, then plan, then change: two or three baseline samples, one
-observation dump, and the matched patterns are the inputs. Changing code
-before this is guessing; 006 and 007 on isucon14 were cheap DB fixes that
-could not move the score because the endpoints were not on the scoring
-path.
+Start from a comparable baseline and observations. The objective is the final
+valid score within the deadline. Experiment count and agent activity are costs
+and diagnostic metrics, not success measures.
 
 ```bash
-$K/scripts/knowledge.sh plan [<observe dump>]     # writes .kaizen/plan.md: candidates ranked, columns to fill
+$K/scripts/knowledge.sh plan [<observe dump>]
+$K/scripts/strategy.sh status
+$K/scripts/strategy.sh review       # prints a template; no deployment or approval gate
 ```
 
-The priority column is mechanical (evidence strength x past promote rate /
-typical minutes). It is a starting order, not the decision. Fill the rest:
+The generated order is a seed from signatures and historical outcomes. History
+is not a calibrated success probability and different problems have different
+scoring paths. Current evidence and human strategy determine the final order.
+Previous choices, manually added options and Notes survive regeneration; every
+retained choice must be revalidated against the current stable/bundle.
 
-1. **scoring path?** Read the manual's scoring section once and write,
-   per candidate, whether the endpoint or mechanism it speeds up is counted
-   (requests that score, satisfaction terms, tips) or only consumes
-   resources. Off-path items go last or out.
-2. **order** and **reason**: one line each, citing the dump's numbers
-   and, when it exists, the pattern's Measured table.
-3. **stop when**: the condition that ends the item (two samples inside the
-   noise band; a correctness failure; more than N minutes).
-4. Under **Notes**: the remaining time and what you will not attempt.
+For each serious option, fill:
 
-Then hypothesize from the top item. After every `experiment.sh record`:
-mark the item done in plan.md with its outcome; after a promote, observe
-again and run `knowledge.sh plan` again, because the bottleneck moved.
-The Stop hook refuses to end a turn while an experiment closed after the
-plan was last written.
+1. **scoring path**: direct score term and manual reference, indirect resource
+   relief with observed contention, or unknown. Unknown starts with investigation.
+2. **expected score impact** and **uncertainty**: explain the causal chain and
+   observations. A faster query alone does not establish a score gain. Distinguish
+   time doing work from time waiting for a lock, connection or another request.
+   Use ranges or qualitative estimates; do not invent precise probabilities.
+3. **total minutes**: implementation, queue, deployment, fresh samples, recovery;
+   include a final stable/restart verification reserve.
+4. **dependencies**: prerequisites, conflicts, current base. An enabler with no
+   measured gain is not automatically adopted; compare a coherent combination
+   as its own candidate when appropriate, with human judgment for material risk.
+5. **disproof**, **stop when**, **order**, **reason**: what outcome distinguishes
+   this explanation from another and what ends the experiment.
 
-The human may edit plan.md at any time; their order wins.
+Add an observation-derived hypothesis even if no corpus signature matches.
+Consider a structural alternative when bounded tweaks cannot explain the cost;
+roles remain dynamic, and a safe comparison can proceed before human adoption.
+Follow the highest justified order, not a fixed index/cache/config recipe.
+
+After every record, update outcomes, prediction errors and allocation in plan.md.
+After promotion, observe again: the limiting resource may have moved. If history
+flags repeated hypotheses, A→B→A parameter changes, or no rule-verified promotion
+for 3 experiments / 30 experiment-minutes, complete a brief strategy review at a
+stable boundary. These are advisory defaults, not proof that the strategy failed.
+Explain new evidence before retrying. Noise, missing samples and unexplained
+errors remain AI investigation; only concrete risk/tradeoff choices need humans.
+
+The existing Stop hook asks for an updated plan after a record. Do not add a new
+meeting, approval or extra model call for every task. Preserve the human's order,
+exclusions, deadline and stop instructions.

@@ -2,6 +2,12 @@
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
+## 現行の優先事項（0.4.0）
+
+[実験選択・方針再検討](team/docs/STRATEGY.md)と[同条件の比較手順](team/docs/COMPARISON.md)を追加した。現在の強みは運用上の失敗を検出・復旧する基盤で、競技力の優位性は未検証。次は最小構成対kaizenを、同じモデル・3セッション・時間・利用制約で比較する。コーパスの件数だけを比較開始条件にしない。
+
+以下の練習は異なる問題・条件の事例で、プラグインやplanの因果効果を示す比較ではない。下の「次の改善案」は当時の候補一覧。追加の管理機能は、比較で分かった損失と得点への効果を見て選ぶ。
+
 ## 測れたこと
 
 | 問題 | 実験 | promote | スコア（最初の baseline 中央値 → 最後の promote） | 最初の promote まで |
@@ -41,6 +47,6 @@ rsync の itemize（`<f`）、/etc の所有者、nginx ログの引用符、記
 5. **分散減らし**。ISUCON14 ではマッチングを決定的にしてから再計測する（plan.md に記載）。
 6. **hold-out 測定の実施条件**。各問題 10 件以上の計測行が揃ったら、13 を hold-out にして「ナレッジあり / なし」で最初の promote までの時間と固定時間後のスコアを比較する。それまでコーパスは費用。
 
-## 環境
+## 環境（記録時点のスナップショット。現在の稼働状態は別途確認）
 
 EC2 8 台（isu1〜3, isubench, isu13, isu13bench, isu12, isu12bench）が稼働中。stable: isu1=75a8032（isuride-practice）、isu13=ebb3824（isucon13-practice）、isu12=4be57e2（isucon12-practice）。

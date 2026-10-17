@@ -28,3 +28,9 @@ For a shared competition, start with `skills/team/SKILL.md` and follow
 templates belong to this plugin; the competition repository holds source and
 minimal bootstrap guidance only. Run
 `python3 -m unittest discover -s tests -p test_team.py -v` after changing team mechanics.
+
+Experiment selection follows `team/docs/STRATEGY.md` and the plan skill.
+Optimize the final valid score, not experiment count. Strategy notifications
+are advisory AI investigation triggers; they never waive correctness or add
+routine human approval. Preserve the human's strategy and stop instructions.
+Use `team/docs/COMPARISON.md` before claiming an advantage from the plugin.

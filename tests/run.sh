@@ -329,9 +329,22 @@ echo "== plan: ranked candidates, stop hook asks for an update"
 "$S/knowledge.sh" plan "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" | grep -q "candidates ranked" || fail "plan written"
 grep -q "| 1 | " .kaizen/plan.md || fail "plan has a ranked row"
 grep -q "elapsed" .kaizen/plan.md || fail "plan shows the time budget"
+python3 - <<'PYTEST'
+from pathlib import Path
+p=Path('.kaizen/plan.md'); text=p.read_text()
+text=text.replace(' | ? |', ' | direct: fixture manual scoring |', 1)
+text = text.replace('## Notes', '| 0 | new-structural-option | unknown | | independent observation | none | indirect CPU | unknown | 12 | high | none | no queue reduction | fixture strategy choice | 12 min |\n\n## Notes')
+p.write_text(text)
+PYTEST
 echo "- keep me" >> .kaizen/plan.md
 "$S/knowledge.sh" plan "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" >/dev/null
 grep -q "keep me" .kaizen/plan.md || fail "notes preserved on regenerate"
+grep -q "direct: fixture manual scoring" .kaizen/plan.md || fail "scoring choices preserved on regenerate"
+grep -q "new-structural-option" .kaizen/plan.md || fail "unmatched structural option preserved"
+grep -q "fixture strategy choice" .kaizen/plan.md || fail "structural reasoning preserved"
+"$S/strategy.sh" review > "$T/review.md"
+grep -q "AI investigation" "$T/review.md" || fail "strategy entry point"
+"$S/status.sh" >/dev/null
 touch -t 200001010000 .kaizen/plan.md
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")" | grep -q "plan.md" || fail "Stop asks for a plan update after a record"
 touch .kaizen/plan.md

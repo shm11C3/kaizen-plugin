@@ -8,7 +8,7 @@ description: "Turn an observation into one testable hypothesis and open an exper
 Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 `KAIZEN_PROJECT` exported (see setup).
 
-One experiment tests one mechanism. "Add indexes" is one hypothesis;
+One experiment tests one mechanism. "Index one measured access pattern" is one hypothesis;
 "add indexes and cache the user lookup" is two experiments, because a score
 change could not be attributed to either.
 
@@ -31,14 +31,16 @@ write, with a new `patternId`; do not bend the observation to fit a pattern.
 
 ## Pick
 
-From the observation file and the match output, choose the single largest cost whose fix you can
-name in one sentence, in this order of preference: missing index; query
-inside a loop (N+1); work repeated on every request that a cache or a
-precomputed column removes; a configuration limit (fsync on every commit,
-connection limits, worker counts); polling or matching intervals the manual
-allows to change. Check `.kaizen/log.md` so a rejected hypothesis is not
-retried unchanged, and `.kaizen/RULES.md` so the change stays inside the
-rules.
+Choose the highest justified item in the plan using the current scoring path,
+observed limiting resource, uncertainty and total verification time. There is no
+fixed preference for indexes, caches or configuration changes. A cheap local
+change may have little scoring impact, and expensive structural work needs a
+bounded comparison and recovery plan.
+
+Check `.kaizen/log.md` and `strategy.sh status` before repeating a mechanism.
+Record what new evidence or assumption makes a retry informative. If the main
+cost might be waiting rather than processing, distinguish the two before fixing
+SQL/CPU. Read `.kaizen/RULES.md`; the change must stay within the rules.
 
 ## Open
 
@@ -55,6 +57,11 @@ Fill `.kaizen/experiments/NNN-<slug>/manifest.json` completely:
 - `observations[0]`: `summary` with the numbers, `artifact` = the
   observe-*.txt path (relative to the repository).
 - `allowedChanges`: every file the change touches, with `changeKind` and why.
+- `strategy`: mechanism; scoringPath (direct/indirect/unknown) and scoringEvidence;
+  expectedImpact and uncertainty; estimatedMinutes including queue, samples and
+  recovery; disproof and dependsOn. For parameter experiments, put the actual
+  setting(s) in `parameters` and reuse hypothesisId so oscillation can be found.
+  These fields aid planning and review; empty historical fields are not evidence.
 - `changeSummary`, `expectedEffect`: which endpoint or query gets faster and
   the score direction. If you cannot say which, the hypothesis is not ready.
 

@@ -10,6 +10,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [teamスキル](skills/team/SKILL.md)と[共通規約](team/POLICY.md)
 - [運用ガイド](team/docs/OPERATIONS.md)と[当日の手順](team/docs/RUNBOOK.md)
 - [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
+- [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 
 チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
@@ -17,7 +18,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 ## 構成
 
 ```
-skills/      setup, observe, hypothesize, experiment, recover, status, knowledge（Claude が読む手順）
+skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team（Claude・Codex が読む手順）
 scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める
@@ -30,12 +31,20 @@ tests/       偽リモートに対するループ全体のテスト
 
 | 誰が | 何を |
 |---|---|
-| Claude | 観測を読む、仮説を書く、コードを変える、判定結果を読んで次を決める |
+| Claude / Codex | 観測を読む、仮説を書く、コードを変える、判定結果を読んで次を決める |
 | scripts/ | 配備と検証、ベンチの実行と記録、固定ルールでの判定、stable への復旧と再固定（記録を main にコミットした後の `stable.sh repin`）、予算と排他 |
 | hooks/ | scripts/ を通さないベンチ・配備・記録の書き換えを拒否、未記録のまま終わらせない |
 | 人間 | 設定、ルールの確認、いつでも停止、判定の上書き |
 
 採否は固定ルール `plugin-rule-v2`（`evaluate.sh`）が `decision.json` に書き、AIがそれを読んで `experiment.sh record` で確定します。通常改善は自動採用し、計測不足はAIが調査を続けます。具体的な価値・リスク判断を人間へ渡します。性能判定をpromoteへ上書きする場合は実際の `--human-decision` 参照が必要です。正しさ違反・品質未確認・比較不能な条件は参照だけで免除できません。
+
+## 実験の選択と停滞時の再検討（0.4.0）
+
+`plan`は現在の採点への影響・観測根拠・不確実性・計測と復旧までの総所要時間で実験順を決めます。過去の採用率は参考情報です。保存した判断や独自の案を残しつつ、基準版の変更後に見直します。
+
+`status.sh`と`experiment.sh record`は、改善採用に至らない実験の連続、同じ仮説の再試行、設定値の往復を履歴から通知します。`strategy.sh review`の検討項目を使ってAIが原因を調べ、planを更新します。採否判定や人間判断の範囲を変える通知ではありません。共有キューは仮説の重複作成を防ぎ、READY滞留時の自動取得を調査・比較タスクへ向けます。
+
+これらによる競技力の優位性は未検証です。[同条件の比較試験](team/docs/COMPARISON.md)で最終有効スコア・初回採用までの時間・人間の介入・失敗と復旧時間を確認します。
 
 ## 使い方
 
