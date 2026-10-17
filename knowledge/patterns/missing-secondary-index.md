@@ -41,9 +41,17 @@ indexes: it is one mechanism.
   the digest shows being hit.
 - Confirm with `EXPLAIN` or the next observe dump that `rows_examined`
   dropped; otherwise the column order is wrong.
+- When `/initialize` only TRUNCATEs (ISUCON13: `sql/init.sql`, the CREATE
+  TABLEs live in `initdb.d/` and never run again), put the `ALTER TABLE ...
+  ADD INDEX` behind an information_schema existence check in the script
+  initialize runs, so the second initialize does not fail on a duplicate
+  index name (isucon13/001: 13 indexes, initialize stayed ~15s).
+- The app's own queries may be invisible in the performance_schema digest
+  table (server-side prepared statements); use the slow-log digest source
+  before concluding there is no scan (isucon13 baseline dump looked clean).
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | exp-001-secondary-indexes | 681/902 | 2945/3286 | +293% | 2+2 | 6 | promote | promote | 6 indexes in sql/1-schema.sql; recorded by kaizen-isucon14/bin (pre-plugin) |
-
+| isucon13 | 001-add-secondary-indexes | 3601/3733/3867 | 6635/6815 | +80% | 3+2 | 3 | promote | promote | リクエストタイムアウト:GET:/api/tagx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx3; リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:GET:/api/livestream/:id/reportx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1 |
