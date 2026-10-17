@@ -22,3 +22,4 @@ Experiments in the order they were run.
 |---|---|---|---|---|
 | 001-add-secondary-indexes | missing-secondary-index | +80% | promote | 13 secondary indexes created from initialize; median 3733 -> 6725 (+80%), both candidate samples above every baseline sample |
 | 002-icon-etag-304 | static-assets-via-app | +20% | promote | icon hash cached in memory, 304 on If-None-Match: median 6725 -> 7931 (+18%); the 5077 baseline sample was taken under the slow log before the observed flag existed |
+| 003-tags-in-memory | small-table-repeated-read | +15% | promote | rule decision as evaluated (taken over from the subagent) |
