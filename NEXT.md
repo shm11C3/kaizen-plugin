@@ -15,6 +15,19 @@
 - ISUCON12 は AMI 初回起動の unattended-upgrades が mysql と docker CLI を差し替え、baseline と candidate の両方を汚染した。plugin に `BENCH_PRECHECK_CMD` と `stable.sh forget-baseline` を追加して対処したが、再計測は未実施。
 - hold-out 比較（13 を未知問題として「ナレッジあり / なし」）は、コーパスの計測行が 11 件では成立しないため未実施。13 の 3 実験は 14 で計測した順序（index → 静的/キャッシュ）をそのまま使って全て promote したが、これは比較ではなく一例。
 
+## 追記: ISUCON12 予選の再走行（計画先行・静かなホスト、2026-10-17 夜）
+
+| | ISUCON14 1 周目（計画なし） | ISUCON12 再走行（plan.md 先行） |
+|---|---|---|
+| 実験数 | 7 | 4 |
+| 最終判定で無駄になった実験 | 4/7（うち 2 件は採点経路外） | 0/4（ルール単独では 2 件 inconclusive を「前提条件」として override） |
+| 採点経路外の実験 | 2 | 0（全て採点比率 46% 以上の経路） |
+| 最初の promote まで | 13 分 | 7 分（ルール単独の promote は 24 分） |
+| スコア | 2527 → 8650（7 実験） | 2274 → 8230（4 実験、実稼働 47 分） |
+| 計画の改訂 | — | 4 回書き、順番が変わったのは 1 回 |
+
+計画が外したのは効果の大きさの予測（index と一括 INSERT は flock の待ち行列に隠れて +5〜10% にしか見えなかった）で、順番の判断（採点経路、lock → id 生成が大きい）は当たった。待ち時間と処理時間を区別できる観測（lock 待ち、リクエストあたり CPU）が次に必要。ホストは再起動後に docker daemon の更新で compose が壊れており、setup に「再起動後はサービスとイメージビルドを確認」を追加した。
+
 ## plugin が実機で学んだこと（retro/log.md、26 件）
 
 rsync の itemize（`<f`）、/etc の所有者、nginx ログの引用符、記録ファイルと git の衝突、cwd 依存、SIGPIPE、docker CLI の差し替え、prepared statement が performance_schema に出ない（slow log 経由の観測と「観測中のサンプルは判定に使わない」）、ベンチ出力と result.json の混線。どれも偽リモートのテストでは出ず、実機 1 周目で出た。
