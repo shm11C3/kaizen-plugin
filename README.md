@@ -1,6 +1,17 @@
 # kaizen
 
-ISUCON の改善ループを Claude Code のプラグインとして回すための道具です。2026 年の本番で使うことを前提に、競技ごとに変わる部分（ホスト、パス、ビルド、ベンチの起動方法）を設定ファイルに寄せ、ループの骨格（観測 → 仮説 → 変更 → 配備 → 計測 → 判定 → 記録 → 復旧）は変えずに使い回します。ISUCON14 は練習用のプリセットとして同梱しています。
+ISUCON の改善ループを Claude Code・Codex のプラグインとして回すための道具です。2026 年の本番で使うことを前提に、競技ごとに変わる部分（ホスト、パス、ビルド、ベンチの起動方法）を設定ファイルに寄せ、ループの骨格（観測 → 仮説 → 変更 → 配備 → 計測 → 判定 → 記録 → 復旧）は変えずに使い回します。ISUCON14 は練習用のプリセットとして同梱しています。
+
+## チームでの利用
+
+各メンバーは [競技用リポジトリ](https://github.com/shm11C3/isucon-competition) をcloneし、このプラグインをインストールします。運用規約・共通ホスト管理・調整用コマンド・テンプレートはプラグインが持ちます。
+
+- [参加・インストール手順](team/docs/ONBOARDING.md)
+- [teamスキル](skills/team/SKILL.md)と[共通規約](team/POLICY.md)
+- [運用ガイド](team/docs/OPERATIONS.md)と[当日の手順](team/docs/RUNBOOK.md)
+- [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
+
+チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
 
 ## 構成
 
@@ -33,7 +44,7 @@ tests/       偽リモートに対するループ全体のテスト
 claude --plugin-dir /path/to/kaizen-plugin
 ```
 
-Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/kaizen:experiment` `/kaizen:recover` `/kaizen:status` で呼べます。Codex では `skills/` と `scripts/` を直接参照してください（`AGENTS.md`）。
+Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/kaizen:experiment` `/kaizen:recover` `/kaizen:status` で呼べます。Codexも同じskillsをプラグインとして読み込みます。インストールは[参加手順](team/docs/ONBOARDING.md)を参照してください。現在のhook adapterはClaude用です。
 
 ### 本番（2026）
 

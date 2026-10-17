@@ -1,3 +1,6 @@
 .DS_Store
 .kaizen/bench.lock
 .kaizen/state.env
+.local/
+__pycache__/
+*.pyc
