@@ -1,0 +1,35 @@
+/usr/sbin/mysqld, Version: 8.0.35-0ubuntu0.22.04.1 ((Ubuntu)). started with:
+Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+# Time: 2026-10-17T09:10:00.000001Z
+# User@Host: isucon[isucon] @ localhost [127.0.0.1]  Id:    12
+# Query_time: 0.000500  Lock_time: 0.000001 Rows_sent: 1  Rows_examined: 1000
+use isupipe;
+SET timestamp=1760692200;
+SELECT * FROM users WHERE name = 'kazuya580';
+# Time: 2026-10-17T09:10:00.000002Z
+# User@Host: isucon[isucon] @ localhost [127.0.0.1]  Id:    13
+# Query_time: 0.000700  Lock_time: 0.000001 Rows_sent: 1  Rows_examined: 1000
+SET timestamp=1760692200;
+SELECT * FROM users WHERE name = "satomi0";
+# Time: 2026-10-17T09:10:00.000003Z
+# User@Host: isucon[isucon] @ localhost [127.0.0.1]  Id:    13
+# Query_time: 0.002000  Lock_time: 0.000001 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1760692200;
+INSERT INTO livestream_tags (livestream_id, tag_id) VALUES (7531, 12), (7531, 13);
+# Time: 2026-10-17T09:10:00.000004Z
+# User@Host: isucon[isucon] @ localhost [127.0.0.1]  Id:    14
+# Query_time: 0.010000  Lock_time: 0.000001 Rows_sent: 3  Rows_examined: 60
+SET timestamp=1760692200;
+SELECT * FROM livestream_tags WHERE tag_id IN (1, 2, 3) ORDER BY livestream_id DESC;
+# Time: 2026-10-17T09:10:00.000005Z
+# User@Host: isucon[isucon] @ localhost [127.0.0.1]  Id:    14
+# Query_time: 0.000100  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1760692200;
+COMMIT;
+# Time: 2026-10-17T09:10:00.000006Z
+# User@Host: isudns[isudns] @ localhost [127.0.0.1]  Id:    15
+# Query_time: 0.000300  Lock_time: 0.000000 Rows_sent: 1  Rows_examined: 2
+use isudns;
+SET timestamp=1760692200;
+SELECT content,ttl,prio,type,domain_id,disabled,name,auth FROM records WHERE disabled=0 and type='A' and name='kazuya580.u.isucon.local';

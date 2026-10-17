@@ -237,6 +237,15 @@ export KAIZEN_RETRO_LOG="$T/retro/log.md"; mkdir -p "$T/retro"
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent after resolve"
 grep -q "test: expected guards" "$KAIZEN_RETRO_LOG" || fail "retro log row"
 
+echo "== observe: slow-log digest aggregator"
+out=$(python3 "$PLUGIN/scripts/slowlog_digest.py" "$PLUGIN/tests/fixtures/mysql-slow.log")
+printf '%s\n' "$out" | grep -q $'^0.00\t2\t0.60\t2000\t2\tSELECT \* FROM users WHERE name = ?$' || fail "slow-log rows aggregated by normalized text"
+printf '%s\n' "$out" | grep -q 'VALUES (...) /\* , ... \*/' || fail "multi-row insert collapsed like a performance_schema digest"
+printf '%s\n' "$out" | grep -q 'tag_id IN (...)' || fail "IN list collapsed"
+printf '%s\n' "$out" | grep -qv 'SET timestamp' || fail "SET timestamp lines dropped"
+printf '# observation: t\n\n## MySQL statement digests by total time (slow log)\n%s\n\n## requests by method, path\n900 GET /api/user/:id/icon 200\n\n## secondary indexes present\nusers.PRIMARY(id)\n' "$out" > "$T/observe-slow.txt"
+"$S/knowledge.sh" match "$T/observe-slow.txt" | grep -q "observation: 5 digests, 1 request rows" || fail "matcher parses a slow-log dump"
+
 echo "== status"
 "$S/status.sh" >/dev/null
 echo "all tests passed"
