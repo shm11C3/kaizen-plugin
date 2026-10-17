@@ -56,7 +56,9 @@ BENCH_MODE=ssh
 # (~35s), 60s load, final check. The old result.json is removed first so a
 # benchmarker that fails to start cannot be mistaken for a sample.
 bench_command() {
-  echo "cd /home/isucon && sudo rm -f /tmp/result.json && sudo -i -u isucon ./bench run --enable-ssl --nameserver ${APP_PRIVATE_IP} --webapp ${APP_PRIVATE_IP} --result-path /tmp/result.json; echo '=== result.json'; cat /tmp/result.json"
+  # The benchmarker's log goes to a file first so its stderr cannot interleave
+  # with the result.json line (seen once: the JSON line had a log line glued on).
+  echo "cd /home/isucon && sudo rm -f /tmp/result.json /tmp/bench.log && sudo -i -u isucon ./bench run --enable-ssl --nameserver ${APP_PRIVATE_IP} --webapp ${APP_PRIVATE_IP} --result-path /tmp/result.json > /tmp/bench.log 2>&1; cat /tmp/bench.log; echo; echo '=== result.json'; cat /tmp/result.json; echo"
 }
 
 # parse_bench <log>: print "pass score errors" from the result.json the
