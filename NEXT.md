@@ -4,6 +4,11 @@
 
 ## 現行の優先事項（0.6.0とその後のmain更新）
 
+0.7.3では未解消の品質保留をtask IDを越えて継承し、提出sourceの変更内容が実測SHAに
+含まれることを検証する。公式promote前とtask採用時の両方で確認し、重なる編集は実際の
+統合SHAで再提出する。全93unit/E2Eと実候補のread-only replayで確認済み。
+閉じた履歴や任意の意味的書換えの検出は範囲外として記録を残す。実機の正常な採用・同期は検証継続中。
+
 0.7.2では公式の実promote記録に束縛したsandbox stable同期を追加。別環境のsampleを
 転用せずbaselineをretireし、同期後の新baselineを必須にする。FF制限、失敗時の旧stable
 復旧、復旧不能時のpendingと他操作拒否をfake remoteで検証する。実機は境界で更新後に確認する。
