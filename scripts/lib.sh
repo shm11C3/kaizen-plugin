@@ -139,11 +139,14 @@ overlay_root() {
 sync_overlay() {
   local src=$1 host=$2 dst
   dst="$(overlay_root "$host")/$OVERLAY_DIR"
+  # rsync itemizes a sent file as "<f..." and a locally copied one as ">f...";
+  # ownership is not preserved so /etc files belong to root, not to the
+  # operator's uid.
   if [ -n "${KAIZEN_FAKE_REMOTE:-}" ]; then
     mkdir -p "$dst"
-    rsync -ai "$src/" "$dst/" | awk '/^>f/ {print $2}'
+    rsync -ai --no-owner --no-group "$src/" "$dst/" | awk '/^[<>]f/ {print $2}'
   else
-    rsync -ai -e "$(ssh_command)" --rsync-path="sudo rsync" "$src/" "$host:$dst/" | awk '/^>f/ {print $2}'
+    rsync -ai --no-owner --no-group -e "$(ssh_command)" --rsync-path="sudo rsync" "$src/" "$host:$dst/" | awk '/^[<>]f/ {print $2}'
   fi
 }
 
