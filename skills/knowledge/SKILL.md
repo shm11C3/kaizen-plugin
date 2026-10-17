@@ -36,10 +36,19 @@ stats` shows the row landed. Then spend two minutes on the pattern file:
 
 Keep the pattern files short; evidence is in `records/`, not in prose.
 
-## Adding a pattern from the internet
+## Adding a pattern
 
-Official 解説 (isucon.net) and top-team write-ups name the planted
-bottlenecks. Create `knowledge/patterns/<id>.md` from the contract in
-`knowledge/README.md`, cite the URL under `sources:`, write the symptom and
-templates, leave **Measured** empty. An unmeasured pattern is a hypothesis;
-the matcher still reports it so it can be tried and measured.
+A pattern comes from something this loop observed or tried, or from a
+published 解説 / write-up you read. Either way, write it in your own words:
+the symptom as the dump shows it, the templates, the checklist. Never paste
+sentences, numbers, or scores from a source; put the link under `sources:`
+and nothing else. Leave **Measured** empty until the loop runs it. An
+unmeasured pattern is a hypothesis; the matcher still reports it so it can
+be tried and measured.
+
+## Not bound by the corpus
+
+The catalog is what has been seen before. When the dump's biggest cost
+matches no pattern, hypothesize from the dump and give the new mechanism
+its own `patternId`; ingest will create the file. A problem designed after
+the catalog existed is designed to escape it.

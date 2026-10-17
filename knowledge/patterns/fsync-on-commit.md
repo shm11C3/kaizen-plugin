@@ -49,7 +49,7 @@ the restart.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
+## Observed
 
 - ISUCON14 practice (2026-10-17 observation after one benchmark): COMMIT
   114s total, 12,897 calls, 8.85ms average on the initial implementation.

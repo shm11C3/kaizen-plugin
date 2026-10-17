@@ -6,8 +6,8 @@ cost: 10-20 min
 risk: mid
 signature: >=10% of requests target asset paths (js/css/images/icons)
 sources:
-  - https://isucon.net/archives/58001272.html (ISUCON13 解説: icon_hash、If-None-Match で 304)
-  - https://hackmd.io/@usatie/SyhUqFf39 (ISUCON13 write-up: nginx 配信でスコアが下がった例)
+  - https://isucon.net/archives/58001272.html
+  - https://hackmd.io/@usatie/SyhUqFf39
 ---
 ## Symptom
 
@@ -31,11 +31,9 @@ application from the asset path.
 
 ## Checklist
 
-- ISUCON13 解説: the hash must reflect an icon update within 2 seconds; the
-  sample's substring match on `If-None-Match` is wrong for lists/weak
-  validators.
-- A write-up reports a score drop after moving icons to nginx (writes got
-  slower); measure, do not assume.
+- The hash must reflect an update within the manual's freshness window;
+  parse `If-None-Match` properly (lists, weak validators), not by substring.
+- Moving uploads to disk can slow the write path; measure, do not assume.
 - The restart test: files written to disk must survive, and `/initialize`
   must restore the initial set.
 
@@ -43,6 +41,3 @@ application from the asset path.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- Not present in ISUCON14 (no user images); the signature stays quiet there.

@@ -1,20 +1,12 @@
 # isucon13 (ISUPipe)
 
-Official 解説: https://isucon.net/archives/58001272.html. Score = total tips,
-not request count, so request optimisations pay only where they reach the
-tip scenarios.
+References (read, not reproduced): https://isucon.net/archives/58001272.html
 
-| order | what | pattern | numbers from sources |
-|---|---|---|---|
-| 1 | indexes (livestream_tags, icons/themes/livestreams.user_id, livecomments.livestream_id, reactions(livestream_id, created_at), ...) | missing-secondary-index | ≈3,000 → ≈10,000 |
-| 2 | icon SHA-256 per request → `icon_hash` column, 304 on `If-None-Match` | static-assets-via-app | icon update must show within 2s |
-| 3 | `fill*Response` N+1 (5 functions) | n-plus-one-query | JOIN / preload / cache |
-| 4 | user and livestream statistics N+1 | heavy-aggregate-query | one query or a results table |
-| 5 | NG-word registration scanning past comments | (no pattern yet) | — |
-| 6 | PowerDNS water torture: TTL, cache, indexes, separate host, dnsdist | dns-water-torture | benchmarker rate-limits DNS |
-
-Host layouts from the 解説: heavy DNS → [DNS + DNS DB] / [nginx + app] /
-[app DB]; after DNS fixes → [nginx + DNS + DNS DB] / [app] / [app DB].
+Patterns worth checking on this problem, from reading the references:
+missing-secondary-index, static-assets-via-app (icons, conditional GET),
+n-plus-one-query, heavy-aggregate-query (statistics), dns-water-torture,
+db-busy-separate-host. The score counts tips, not requests: check the
+manual for what reaches the tip scenarios before optimising a path.
 
 Experiments in the order they were run.
 

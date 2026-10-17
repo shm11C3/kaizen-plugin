@@ -6,7 +6,7 @@ cost: 15 min
 risk: low
 signature: none (benchmark errors or code review: retries that call a status/verify API)
 sources:
-  - https://isucon.net/archives/58869617.html (ISUCON14 解説: 決済の Idempotency-Key、ブラフに近い要素)
+  - https://isucon.net/archives/58869617.html
 ---
 ## Symptom
 
@@ -28,14 +28,9 @@ same key; drop the verification call.
 
 - The key must be unique per logical payment (ride id), stable across
   retries.
-- ISUCON14 解説 calls this close to a decoy: measure before spending time
-  beyond the header.
+- Often a small win: measure before spending time beyond the header.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- ponyo877 (ISUCON14 感想戦) applied it as one of the three official
-  improvements before removing MySQL entirely.

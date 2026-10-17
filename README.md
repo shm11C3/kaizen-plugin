@@ -49,7 +49,7 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 
 ## ナレッジ（`knowledge/`）
 
-計測つきのパターン集です。`knowledge.sh match <observe dump>` が観測ダンプに機械的なシグネチャ（`knowledge/signatures.py`、1 パターン 1 関数）を当て、該当するパターンを根拠行つきで並べます。各 `knowledge/patterns/<id>.md` には仮説と変更のテンプレート、壊れやすい点のチェックリスト、そして **Measured** 表があり、`experiment.sh record` のたびに `knowledge.sh ingest` が実験結果（baseline → candidate、差分、サンプル数、所要分、判定、エラー種別）を追記します。公式解説や write-up は `sources:` として種を蒔くだけで、証拠として数えるのは Measured の行だけです。
+計測つきのパターン集です。`knowledge.sh match <observe dump>` が観測ダンプに機械的なシグネチャ（`knowledge/signatures.py`、1 パターン 1 関数）を当て、該当するパターンを根拠行つきで並べます。各 `knowledge/patterns/<id>.md` には仮説と変更のテンプレート、壊れやすい点のチェックリスト、そして **Measured** 表があり、`experiment.sh record` のたびに `knowledge.sh ingest` が実験結果（baseline → candidate、差分、サンプル数、所要分、判定、エラー種別）を追記します。公式解説や write-up は読んで「何を試すか」を決めるために使い、本文・数値・スコアはコーパスに含めません（`sources:` はリンクのみ）。証拠として数えるのは、このループが自分で計測した Measured の行だけです。また、コーパスは候補を示すだけで判断はしません。観測の最大コストがどのパターンにも当てはまらなければ、それが次の仮説です。
 
 `knowledge/problems/<problem>.md` は問題ごとに「公式解説が仕込んだボトルネックの順」と「実際に回した実験の順」を並べます。練習を重ねるほど、どのパターンを先にやると何分で何倍になるかが数字で残ります。
 

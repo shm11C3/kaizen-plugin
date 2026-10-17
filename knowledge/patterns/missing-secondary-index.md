@@ -6,10 +6,10 @@ cost: 5-15 min
 risk: low
 signature: a SELECT digest examines >=50x the rows it returns over >=20 calls, or a filtered table has only PRIMARY
 sources:
-  - https://isucon.net/archives/58869617.html (ISUCON14 解説: ほぼインデックスがなく、約4000点まで)
-  - https://isucon.net/archives/58001272.html (ISUCON13 解説: 約3,000点から約10,000点)
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: visit_history のカバリングインデックス)
-  - https://zenn.dev/layerx/articles/3bd55b77e047c4 (ISUCON14 LayerX: 599→3282)
+  - https://isucon.net/archives/58869617.html
+  - https://isucon.net/archives/58001272.html
+  - https://isucon.net/archives/56850281.html
+  - https://zenn.dev/layerx/articles/3bd55b77e047c4
 ---
 ## Symptom
 
@@ -34,11 +34,11 @@ indexes: it is one mechanism.
 
 ## Checklist
 
-- `/initialize` has a time limit (30s in ISUCON12 and ISUCON14); index builds
+- `/initialize` has a time limit in the manual (30s in ISUCON14); index builds
   on the initial data count against it. Check the initialize duration in the
   benchmark log.
-- Indexes the queries never use cost writes for nothing; ISUCON14 解説 notes
-  its own example includes some unused ones.
+- Indexes the queries never use cost writes for nothing; keep only the ones
+  the digest shows being hit.
 - Confirm with `EXPLAIN` or the next observe dump that `rows_examined`
   dropped; otherwise the column order is wrong.
 
@@ -47,11 +47,3 @@ indexes: it is one mechanism.
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | exp-001-secondary-indexes | 681/902 | 2945/3286 | +293% | 2+2 | 6 | promote | promote | 6 indexes in sql/1-schema.sql; recorded by kaizen-isucon14/bin (pre-plugin) |
 
-## Notes from write-ups
-
-- ISUCON13: initial ~3,000 → ~10,000 with the listed indexes (`livestream_tags`,
-  `icons.user_id`, `reactions(livestream_id, created_at)`, ...).
-- ISUCON12 予選: `visit_history` (3.2M rows, index on `tenant_id` only) needed
-  `(tenant_id, competition_id, player_id, created_at)`; shrinking the table
-  to one row per (tenant, competition, player) was the bigger win.
-- ISUCON14 LayerX: first change of the day, 599 → 3282.

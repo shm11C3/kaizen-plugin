@@ -6,9 +6,9 @@ cost: 15-30 min
 risk: mid
 signature: a cheap SELECT by `column = ?` is called >=500 times returning <=2 rows per call
 sources:
-  - https://isucon.net/archives/58001272.html (ISUCON13 解説: fill*Response 系の N+1)
-  - https://isucon.net/archives/58869617.html (ISUCON14 解説: nearby-chairs の 2N+1 を 1 クエリに)
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: 参照の N+1 と行ごとの INSERT)
+  - https://isucon.net/archives/58001272.html
+  - https://isucon.net/archives/58869617.html
+  - https://isucon.net/archives/56850281.html
 ---
 ## Symptom
 
@@ -37,16 +37,10 @@ heavy-aggregate-query). Keep the JSON shape identical.
   diffs the shape.
 - Rows missing from the batch query (deleted user, no location yet) must
   produce the same null/empty value the loop produced.
-- ISUCON12 解説: teams that moved to MySQL without fixing N+1 died on network
-  latency; N+1 matters more once the DB is on another host.
+- N+1 costs a network round trip per row once the DB is on another host;
+  fix it before separating hosts.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- ISUCON14 `GET /api/app/nearby-chairs`: 2N+1 queries → 1, with
-  `rides.evaluation IS NULL` to decide availability.
-- ISUCON13: five `fill*Response` functions; the 解説 lists JOIN, preload, or
-  cache as the three remedies.

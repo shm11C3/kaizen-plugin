@@ -6,14 +6,14 @@ cost: 10-30 min
 risk: mid
 signature: none from the digest (read the initialize duration in the benchmark log and the row counts in the dump)
 sources:
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: visit_history 320万→20万、player_score 370万→18万、initialize 30 秒)
-  - https://isucon.net/archives/58869617.html (ISUCON14 解説: initialize は DROP/CREATE 相当、インデックスの置き場所)
+  - https://isucon.net/archives/56850281.html
+  - https://isucon.net/archives/58869617.html
 ---
 ## Symptom
 
 Tables carry history rows the application never needs (only `MIN` or the
 last row per key is read); `/initialize` reloads them every run and must
-finish within the manual's limit (30s in ISUCON12 and ISUCON14).
+finish within the manual's limit (30s in ISUCON14).
 
 ## Hypothesis template
 
@@ -28,7 +28,7 @@ time and every query that touched the history.
 - Add indexes and derived tables into the same restore path so they exist
   after every run.
 - If restore is slow: physical copy of the data directory or `LOAD DATA`
-  instead of row-by-row INSERTs (ISUCON12 解説).
+  instead of row-by-row INSERTs.
 
 ## Checklist
 
@@ -41,7 +41,3 @@ time and every query that touched the history.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- ISUCON12: the player_score trim "was the turning point" for MySQL
-  migration; the visit_history trim reduced inserts during viewing as well.

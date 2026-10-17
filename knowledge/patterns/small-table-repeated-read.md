@@ -6,7 +6,7 @@ cost: 10 min
 risk: low
 signature: a SELECT on a settings/master/model/tag table is called >=300 times returning <=1 row each
 sources:
-  - https://isucon.net/archives/58001272.html (ISUCON13 解説: tags、themes への参照)
+  - https://isucon.net/archives/58001272.html
 ---
 ## Symptom
 
@@ -34,7 +34,3 @@ the map; the rare write paths update both the table and the map.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- Small by itself; usually bundled by teams with other cache work. Measure
-  it alone once to know its size.

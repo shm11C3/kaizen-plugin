@@ -6,7 +6,7 @@ cost: 60+ min
 risk: high
 signature: none (chosen when MySQL CPU is the bottleneck after every query fix)
 sources:
-  - https://zenn.dev/ponyo877/articles/1e29255b9d19bf (ISUCON14 感想戦: MySQL 剥がし、再起動試験未対応、envcheck で失格)
+  - https://zenn.dev/ponyo877/articles/1e29255b9d19bf
 ---
 ## Symptom
 
@@ -27,19 +27,15 @@ test checks; periodic or on-shutdown dump (`ExecStop`) and reload
 
 ## Checklist
 
-- The restart test: data must survive a reboot. ponyo877 never implemented
-  the dump/reload and the result stayed unofficial.
-- The environment check: leftover tooling (a profiler server in the same
-  VPC) disqualified the live run. Clean up before the final check.
-- Single-host state blocks multi-host app scaling unless the state owner is
-  one process (gRPC matcher on its own host in the write-up).
+- The restart test: data must survive a reboot; without dump/reload the
+  score is not official.
+- The environment check: leftover tooling (profilers, extra servers in the
+  VPC) can disqualify the run. Clean up before the final check.
+- Single-host state blocks multi-host app scaling unless one process owns
+  the state and the others call it.
 - Not a contest-day default; a late bet with a hard revert plan.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- Order in the write-up: official fixes → MySQL removal (bottleneck moved to
-  nginx) → nginx L7 distribution → runtime tuning (PGO, GOGC, JSON parsing).

@@ -6,7 +6,7 @@ cost: 30-60 min
 risk: mid
 signature: none from the app dump (needs the DNS server's query log or MySQL digests on the PowerDNS schema)
 sources:
-  - https://isucon.net/archives/58001272.html (ISUCON13 解説: DNS 水責め、TTL、PowerDNS キャッシュ、dnsdist)
+  - https://isucon.net/archives/58001272.html
 ---
 ## Symptom
 
@@ -24,13 +24,13 @@ another host removes DNS load from the application database.
 
 In order: TTL; PowerDNS cache settings; indexes on the PowerDNS schema;
 separate host; dnsdist filter delaying or dropping NXDOMAIN; a wildcard
-record (`*.u.isucon.dev`) to skip per-user inserts, with the HTTP side
-effects the 解説 warns about.
+record to skip per-user inserts, accepting that torture queries then
+resolve and turn into HTTP traffic.
 
 ## Checklist
 
-- The benchmarker rate-limits DNS; the sponsor award counted successful
-  resolutions, so dropping answers has a cost.
+- Check the manual for how DNS answers are scored before dropping or
+  delaying them.
 - Wildcard makes torture queries succeed and increases scraping-like HTTP
   traffic; handle that too.
 
@@ -38,7 +38,3 @@ effects the 解説 warns about.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- Kept for the "new infrastructure component" case: a future contest may
-  plant a component outside the app the same way.

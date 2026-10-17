@@ -20,7 +20,9 @@ $K/scripts/knowledge.sh match <observe-*.txt>     # patterns the evidence suppor
 
 Read the matching pattern files (`$K/knowledge/patterns/<id>.md`): the
 Measured table says what the pattern paid before and how often it failed,
-the Checklist what to verify. The matcher proposes; the dump decides.
+the Checklist what to verify. The matcher proposes; the dump decides. If
+the largest cost in the dump matches nothing, that is the hypothesis to
+write, with a new `patternId`; do not bend the observation to fit a pattern.
 
 ## Pick
 

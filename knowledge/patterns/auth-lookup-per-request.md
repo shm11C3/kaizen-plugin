@@ -6,8 +6,8 @@ cost: 10-20 min
 risk: low
 signature: a SELECT on access_token/session is called for >=15% of requests
 sources:
-  - https://zenn.dev/layerx/articles/3bd55b77e047c4 (ISUCON14 LayerX: アクセストークンのオンメモリキャッシュ)
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: 参加者 API のキャッシュ)
+  - https://zenn.dev/layerx/articles/3bd55b77e047c4
+  - https://isucon.net/archives/56850281.html
 ---
 ## Symptom
 
@@ -38,7 +38,7 @@ struct; fill on miss; insert on registration; clear in `/initialize`.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
+## Observed
 
 - ISUCON14 practice observation: 2,100 token lookups for ~11,900 requests on
   the initial implementation (chair/app notification polls dominate).

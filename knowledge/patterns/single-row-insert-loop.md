@@ -6,8 +6,8 @@ cost: 15-30 min
 risk: mid
 signature: an INSERT digest without a VALUES list is executed >=1000 times
 sources:
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: 行ごとの INSERT をバルク化、CSV は最後の行だけ)
-  - https://isucon.net/archives/58869617.html (ISUCON14 解説: POST /api/chair/coordinate の非同期化とバルクインサート)
+  - https://isucon.net/archives/56850281.html
+  - https://isucon.net/archives/58869617.html
 ---
 ## Symptom
 
@@ -27,8 +27,8 @@ round trips and flushes, and the client's next action starts sooner.
 - Bulk: collect rows, `INSERT INTO t (...) VALUES (...),(...)` on a timer or
   size threshold; respond before the flush when the manual allows a grace
   (ISUCON14: 3 seconds for location visibility).
-- Dedupe: when only the last row per key matters (ISUCON12 player_score),
-  keep the last row per key and insert once.
+- Dedupe: when only the last row per key matters, keep the last row per
+  key and insert once.
 
 ## Checklist
 
@@ -43,7 +43,3 @@ round trips and flushes, and the client's next action starts sooner.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- ISUCON12: `player_score` CSV had many rows per player; keeping the last row
-  shrank 3.7M rows to 180k and was "the turning point" for MySQL migration.

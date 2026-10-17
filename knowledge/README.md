@@ -12,9 +12,18 @@ rather than folklore, three questions the hypothesize step needs:
    in each pattern file is appended automatically by `scripts/knowledge.sh
    ingest` from every closed experiment's `record.json`.
 
-Internet write-ups and the official 解説 seed the pattern files (see each
-file's `sources:`); only the Measured tables count as evidence. A pattern
-with no measured row is a hypothesis about the pattern, not knowledge.
+## Policy
+
+- **No quotations.** Official 解説 and write-ups are read to decide what to
+  try; the corpus never carries their text, their numbers, or their
+  results. `sources:` holds links only. What the authors wrote stays theirs.
+- **Own measurements only.** Every number in a pattern file comes from an
+  experiment this loop ran (Measured rows, `## Observed` notes from our own
+  dumps). A pattern with no measured row is a hypothesis, not knowledge.
+- **The corpus proposes; it does not decide.** The matcher reports what the
+  evidence resembles. A dump that matches nothing is still a dump with a
+  bottleneck in it, and a problem may plant something no pattern names.
+  Hypothesize from the observation first, then check the corpus.
 
 ## Layout
 

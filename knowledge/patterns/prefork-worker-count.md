@@ -6,17 +6,17 @@ cost: 5 min
 risk: low
 signature: none from the digest (initial score far below the Go/Node/Rust implementations of the same problem; language is Ruby/Perl/Python/PHP)
 sources:
-  - https://isucon.net/archives/56850281.html (ISUCON12 予選 解説: Go/Node/Rust 約2500、Ruby/Perl/Python/PHP 約1500、puma worker 32)
+  - https://isucon.net/archives/56850281.html
 ---
 ## Symptom
 
 The benchmarker's concurrency exceeds the worker count; prefork languages
-start at roughly 60% of the score of the threaded/async implementations.
+start well below the threaded/async implementations of the same app.
 
 ## Hypothesis template
 
-Raising workers to 30-50 (memory permitting) lets the runtime accept the
-benchmark's concurrency; initial score approaches the async languages'.
+Raising workers (memory permitting) lets the runtime accept the
+benchmark's concurrency; find the count by measurement.
 
 ## Change template
 
@@ -32,7 +32,3 @@ php-fpm pm.max_children) via the overlay; restart the service.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- Only applies when the team competes in a prefork language; the Go
-  practice runs never trigger it.

@@ -6,7 +6,7 @@ cost: 30-60 min
 risk: mid
 signature: none from the dump (host CPU: nginx near 100% on the bench-facing host while app hosts idle)
 sources:
-  - https://zenn.dev/ponyo877/articles/1e29255b9d19bf (ISUCON14 感想戦: L4 を 1 台、L7 を 3 台、weight 調整で全台 80-90%)
+  - https://zenn.dev/ponyo877/articles/1e29255b9d19bf
 ---
 ## Symptom
 
@@ -35,8 +35,3 @@ app on every host; weights tuned until CPU is level.
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 
-## Notes from write-ups
-
-- ponyo877 reached 864,990 (unofficial, no restart test) with this layout
-  after removing MySQL; the author initially believed nginx could not be
-  distributed.
