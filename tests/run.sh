@@ -237,6 +237,24 @@ export KAIZEN_RETRO_LOG="$T/retro/log.md"; mkdir -p "$T/retro"
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent after resolve"
 grep -q "test: expected guards" "$KAIZEN_RETRO_LOG" || fail "retro log row"
 
+echo "== observe: reset clears the extra source, dump appends the extra command"
+cat >> .kaizen/config.sh <<'EOF2'
+MYSQL_CMD=true
+DB_NAME=test
+ACCESS_LOG=access.log
+OBSERVE_RESET_CMD='echo cleared > reset.marker'
+OBSERVE_EXTRA_CMD='echo extra-evidence-line'
+PATH_ID_REGEX='/[0-9a-f]{8,}'
+EOF2
+printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0" 200 1 "-" "b"\n' > "$KAIZEN_FAKE_REMOTE/isu1/access.log"
+"$S/observe.sh" reset >/dev/null
+[ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/reset.marker")" = cleared ] || fail "OBSERVE_RESET_CMD ran on the nginx host"
+[ ! -s "$KAIZEN_FAKE_REMOTE/isu1/access.log" ] || fail "access log truncated on reset"
+printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0" 200 1 "-" "b"\n' > "$KAIZEN_FAKE_REMOTE/isu1/access.log"
+dump=$("$S/observe.sh" dump test)
+grep -q "extra-evidence-line" "$dump" || fail "OBSERVE_EXTRA_CMD output appended to the dump"
+grep -q '/api/x/:id' "$dump" || fail "ids normalized in the request section"
+
 echo "== status"
 "$S/status.sh" >/dev/null
 echo "all tests passed"

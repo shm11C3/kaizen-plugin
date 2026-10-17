@@ -5,20 +5,25 @@
 # aggregates (on NGINX_HOST). A dump is the evidence a hypothesis cites
 # (observe-<name>.txt in the open experiment, or under .kaizen/ when none is
 # open); reset before the benchmark whose load the dump should describe.
-# Extra evidence (pprof, alp with a route pattern, slow log) goes through
-# OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output is appended.
+# Extra evidence (pprof, alp with a route pattern, slow log, an app log)
+# goes through OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output
+# is appended; OBSERVE_RESET_CMD, run on the same host by reset, clears that
+# source so the extra section covers exactly one benchmark.
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 load_config
 : "${ACCESS_LOG:=/var/log/nginx/access.log}" "${MYSQL_CMD:=sudo mysql}" "${PATH_ID_REGEX:=/[0-9A-Za-z]{20,}}"
-: "${DB_HOST:=$APP_HOST}" "${NGINX_HOST:=${APP_HOSTS%% *}}" "${OBSERVE_EXTRA_CMD:=}"
+: "${DB_HOST:=$APP_HOST}" "${NGINX_HOST:=${APP_HOSTS%% *}}" "${OBSERVE_EXTRA_CMD:=}" "${OBSERVE_RESET_CMD:=}"
 [ -n "${DB_NAME:-}" ] || die "config.sh does not set DB_NAME"
 
 case "${1:-}" in
   reset)
     remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest'"
     remote "$NGINX_HOST" "sudo truncate -s0 $ACCESS_LOG"
-    echo "observation counters reset (db: $DB_HOST, nginx: $NGINX_HOST)"
+    if [ -n "$OBSERVE_RESET_CMD" ]; then
+      remote "$NGINX_HOST" "$OBSERVE_RESET_CMD" || die "OBSERVE_RESET_CMD failed on $NGINX_HOST: $OBSERVE_RESET_CMD"
+    fi
+    echo "observation counters reset (db: $DB_HOST, nginx: $NGINX_HOST${OBSERVE_RESET_CMD:+, extra source})"
     ;;
   dump)
     name=${2:?observe.sh dump <name>}
