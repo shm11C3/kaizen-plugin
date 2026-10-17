@@ -171,7 +171,9 @@ count_matches() {
 
 git_rev() { git -C "$KAIZEN_PROJECT" rev-parse --verify "$1^{commit}" 2>/dev/null; }
 git_head() { git -C "$KAIZEN_PROJECT" rev-parse HEAD; }
-git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no)" ]; }
+# The loop's own records under .kaizen/ change during an experiment and may be
+# tracked; only application files count as a dirty tree.
+git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no -- . ':(exclude).kaizen')" ]; }
 
 # experiments_started_since <epoch>: how many experiments opened after a time.
 experiments_started_since() {
