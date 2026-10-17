@@ -129,5 +129,44 @@ with open(pfile, "a") as f:
 print(f"ingested {exp_id} -> {path.relative_to(root.parent)} ({pattern}), {copied.relative_to(root.parent)}")
 EOF
     ;;
-  *) die "usage: knowledge.sh match <dump> | ingest [<experiment-dir>] | stats" ;;
+  report)
+    # Per problem: the outcome metrics the validation compares (time to first
+    # promote, score at the end versus the first baseline). Human
+    # interventions are counted by hand.
+    python3 - "$KNOWLEDGE" <<'EOF'
+import glob, json, os, statistics, sys
+from datetime import datetime
+root = sys.argv[1]
+T = lambda s: datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+for pdir in sorted(glob.glob(f"{root}/records/*/")):
+    problem = os.path.basename(pdir.rstrip("/"))
+    recs = [json.load(open(f)) for f in glob.glob(pdir + "*.json")]
+    recs = sorted((r for r in recs if "manifest" in r and "ruleDecision" in r), key=lambda r: r["manifest"].get("startedAt") or "")
+    if not recs:
+        continue
+    first_base = final = first_promote = t0 = None
+    minutes = 0
+    for r in recs:
+        m, rd = r["manifest"], r["ruleDecision"]
+        if m.get("startedAt"):
+            start = T(m["startedAt"]); t0 = t0 or start
+            minutes += (T(r["closedAt"]) - start).total_seconds() / 60
+        if first_base is None and rd.get("baselineScores"):
+            first_base = statistics.median(rd["baselineScores"])
+        if rd.get("candidateScores") and r["finalDecision"] == "promote":
+            final = statistics.median(rd["candidateScores"])
+            if first_promote is None and t0:
+                first_promote = round((T(r["closedAt"]) - t0).total_seconds() / 60)
+    counts = {d: sum(1 for r in recs if r["finalDecision"] == d) for d in ("promote", "reject", "inconclusive")}
+    print(f"{problem}: {len(recs)} experiments ({counts['promote']} promote, {counts['reject']} reject, "
+          f"{counts['inconclusive']} inconclusive), {round(minutes)} min in experiments, first promote at "
+          f"{first_promote if first_promote is not None else '-'} min, first baseline median {first_base} -> "
+          f"last promoted median {final if final is not None else '-'}")
+    for r in recs:
+        rd = r["ruleDecision"]
+        print(f"  {r['experimentId']:36} {r['manifest'].get('patternId') or '-':28} "
+              f"{rd.get('baselineScores')} -> {rd.get('candidateScores')} {r['finalDecision']}")
+EOF
+    ;;
+  *) die "usage: knowledge.sh match <dump> | ingest [<experiment-dir>] | stats | report" ;;
 esac
