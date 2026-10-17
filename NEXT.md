@@ -14,14 +14,33 @@ JSONのtest duration・hash・pass等のmetadataは正しい。秘匿を既定�
 明示分類する方法を検討し、短いsecretの漏えい防止と非秘密の数値保持を回帰検証する。
 文字数だけで短い値を秘匿対象外にする対応は行わない。今回の固定版・実測coreは変更しない。
 
-## 今回の3時間実機試行で確認したこと（継続中）
+**未修正: guardの読取・派生出力の誤検知**。`hooks/guard.py`の`PROTECTED_FILE`と
+`WRITE_INDICATOR`の組合せが、Pythonのread-onlyな`>`比較も書込と誤検知し、
+今回のFINAL派生集計を2回拒否した。既存のsummarize exportと派生artifact作成を分けて
+原本を変更せず完了した。読取・派生出力と保護対象への実書込を区別し、実書込の拒否を
+維持する回帰テストを加えて修正する。今回のcode・runtime pinは変更しない。
 
-2026-10-18 04:53 JST時点。runtimeは`0.7.5@f3ef308`に固定しており、この文書更新で変更しない。
+**未修正: 更新前セッションのhook cache寿命と再開手順**。旧root/infraは不在の
+`~/.codex/plugins/cache/kaizen-plugin/kaizen/0.2.0/hooks/guard.py`をPreToolUseが参照し、
+終了時のexecを実行前に拒否した。Pythonの`>`比較の誤検知とは別件。
+設定無効化・cache捏造・コマンドの迂回は行わず、正常なhook設定でSTSが成功した新規
+セッションへ所有権を移譲し、固定6台の復旧・停止を完了した。cache消失の原因や
+全provider経路は未検証。旧cacheの保持期間と更新済みnativeセッションへの再開手順を
+確認・実装する。認証待ちの間もSubAgentが許可済みのSSH準備を継続した。
+
+## 今回の3時間予算の実機試行で確認したこと
+
+実測runtimeは`0.7.5@f3ef308`に固定しており、この文書更新で変更しない。
 対象はISUCON14 Goの練習環境で、`competition`も実際の公式競技サーバーではない。
-[詳細な暫定報告](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/TRIAL-RESULTS.md)は
-集計時刻を持つsnapshotであり、最終値とは区別する。実source採用は313e・0656・4177・589fa3の4回、
+[最終実測報告](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/FINAL-RESULTS.md)は
+集計時刻を持つsnapshotであり、採用時と終了時の値を区別する。実source採用は313e・0656・4177・589fa3の4回、
 アプリ改善タスク7件がACCEPTED。589fa3の採用確認はnormal 4045/4688・警告なし、前stable4177比+23.31%。
-589fa3への両lane同期・新baselineは実行中で、最終restart・統合確認pair・score・終了処理は未確定。
+最終sourceは`589fa316fa1a4fb8b2cb3989a795ad93426567ad`。両lane同期・新baselineと、
+アプリ／matcherのservice再起動・DB復旧後の統合確認を完了した。事前に固定したnormal 2本は
+4007/3263・警告なし、中央値3635。これは原状復旧前の最終実測で、OS全体の再起動は未実施。
+[最終実測の証跡](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/FINAL_MEASUREMENT.json)を参照する。
+予定予算は02:40〜05:40 JST。最終ベンチは05:06:32、6台の復旧・独立照合・停止の
+実機終了確認は05:23:33（開始から2時間43分33秒）。予定終了まで計測を続けたとは扱わない。
 
 - 実EC2の独立した単独app＋専用benchを3組使い、最大3環境の同時計測を確認した。
   stable-syncは実採用0656の記録から両laneをa09→0656へ同期し、target操作は約16秒ずつ。
@@ -33,8 +52,11 @@ JSONのtest duration・hash・pass等のmetadataは正しい。秘匿を既定�
   実promote直前の資源fingerprintも計測済みcandidateと照合した。
 - 開始から初期3環境の準備完了まで9分17秒、初実採用まで94分43秒。
   PSSPは3/24で中断しserial対照は実行していないため、並列化による時間短縮の因果効果は未証明。
-- `ec2_lanes.py`の新規create APIはfake検証のみ。実機ensure/statusは確認済みだが、
-  実stopと原状復旧の完了はこれから確認する。Discord接続、別PC3台でのClaude/Codex native install、
+- `ec2_lanes.py`の新規create APIはfake検証のみ。実機ensure/statusと管理対象4台のstop APIを確認した。
+  各自の開始前snapshotへの復旧・独立照合は全6台PASS。integration2台は固定IDで別stopし、
+  AWS上で全6台stopped・対象外の本番controlはrunningを確認。本番repoも開始時SHAのままclean。
+  [終了監査](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/CLEANUP-EVIDENCE.json)を参照。
+  terminate/EBS削除・復旧後API/bench/deployは行っていない。Discord接続、別PC3台でのClaude/Codex native install、
   Rust版の競技build/test/runtime比較、本来の複数app構成も未検証のまま。
 
 **台帳の未解消課題: tooling作業の完了表現**。T7のplugin toolingは実装・release済みだが、
@@ -74,12 +96,14 @@ fake remoteで再現して修正した。probe失敗もmain/STABLE_REV更新前�
 0. **EC2並列レーンの終了・復旧まで確認する（0.7.0）**。app＋benchのplan/ensure/status/stopと
    起動前状態・client tokenの保存を追加した。誤account、資源重複・公式資源、応答喪失後の
    二重作成防止、停止対象の限定はfake AWSで確認済み。実機の最大3並列計測と
-   品質保留→修正→公式再測定・実採用は確認済み。実stopは未実施、新規create APIはfakeのみ。
+   品質保留→修正→公式再測定・実採用、全6台snapshot復旧・独立verify・停止を確認済み。
+   sandbox4台の実stop APIは確認済み、新規create APIはfakeのみ。
    準備を含む時間短縮の因果効果は未証明。
 
 1. **品質保留の修復を続ける**。基準版でも出る警告と候補の退行を区別し、
    実DBの再現・修正・公式採用proofで3件を解消した。新T12のCODE32を調査し、
    同じ内容の再試行には未解明の警告を引き継ぐ。
+   未実装: T12は明示recoverをDB snapshotより先に実行して失敗状態を失ったため、時間・秘匿・復旧優先の境界を決め、復旧前に限定した診断状態を保存できる仕組みを検討する。
 2. **Go実アプリで確認したLintをRust・並列資源の検証へ広げる**。Go競技アプリのwarm fmt/vetは
    例0.078/0.321秒。rootの合成sourceではworkspace cache coldのvet 4.128秒、local test 1.311秒を確認した。
    実MySQL確認は別の8.815秒で、local testと区別する。Rust実アプリと並列local資源競合の因果測定は未検証。
