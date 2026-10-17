@@ -1,0 +1,105 @@
+{
+  "experimentId": "006-owner-chairs-filter-first",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "006-owner-chairs-filter-first",
+    "patternId": "heavy-aggregate-query",
+    "hypothesisId": "owner-chairs-filter-first",
+    "hypothesis": "GET /api/owner/chairs computes the travelled distance of every chair with a window function over the whole chair_locations table and only then filters by owner; restricting the inner scan to the owner's chairs cuts the rows the query touches by the number of owners (~10x) at no behaviour change.",
+    "observations": [
+      {
+        "summary": "observe-candidate (exp 005): the owner chairs aggregate is among the slowest statements by avg_ms (window over all chair_locations); owners poll this endpoint during the run",
+        "artifact": ".kaizen/experiments/005-nearest-chair-matching-notified/observe-candidate.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/owner_handlers.go",
+        "changeKind": "modify",
+        "reason": "WHERE chair_id IN (owner's chairs) inside the innermost subquery"
+      }
+    ],
+    "changeSummary": "ownerGetChairs: filter chair_locations to the owner's chairs before the LAG window",
+    "expectedEffect": "owner/chairs latency drops ~10x; small score gain unless the endpoint is on a scoring path",
+    "stableRevision": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+    "candidateRevision": "223417a9d4fed9afb5beb5d82b614d4f9a341fde",
+    "startedAt": "2026-10-17T09:15:47Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "inconclusive",
+    "reason": "improvement 184 bp below 300 bp; re-measure before deciding",
+    "improvementBasisPoints": 184,
+    "baselineScores": [
+      7763,
+      9538
+    ],
+    "candidateScores": [
+      7433,
+      8810,
+      9137
+    ],
+    "baselineRevisions": [
+      "75a8032cbff2a67f03c417f6b39d27b6beab163f"
+    ],
+    "candidateRevisions": [
+      "223417a9d4fed9afb5beb5d82b614d4f9a341fde"
+    ],
+    "decidedAt": "2026-10-17T09:19:20Z"
+  },
+  "finalDecision": "inconclusive",
+  "override": null,
+  "reason": "rule decision as evaluated",
+  "stableBefore": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "stableAfter": "75a8032cbff2a67f03c417f6b39d27b6beab163f",
+  "candidateRevision": "223417a9d4fed9afb5beb5d82b614d4f9a341fde",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "006-owner-chairs-filter-first",
+      "deployedRevision": "223417a9d4fed9afb5beb5d82b614d4f9a341fde",
+      "pass": true,
+      "score": 8810,
+      "errors": "map[]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:18:11Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/006-owner-chairs-filter-first/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "006-owner-chairs-filter-first",
+      "deployedRevision": "223417a9d4fed9afb5beb5d82b614d4f9a341fde",
+      "pass": true,
+      "score": 7433,
+      "errors": "map[26:3]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:19:20Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/006-owner-chairs-filter-first/bench-candidate-3.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "006-owner-chairs-filter-first",
+      "deployedRevision": "223417a9d4fed9afb5beb5d82b614d4f9a341fde",
+      "pass": true,
+      "score": 9137,
+      "errors": "map[]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T09:17:01Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/006-owner-chairs-filter-first/bench-candidate.log"
+    }
+  ],
+  "recovery": "ok",
+  "timeline": [
+    "2026-10-17T09:15:52Z\tdeploy\tHEAD\t5s\tok",
+    "2026-10-17T09:17:01Z\tbench\tcandidate\t68s\tpass=true score=9137",
+    "2026-10-17T09:18:11Z\tbench\tcandidate-2\t68s\tpass=true score=8810",
+    "2026-10-17T09:19:20Z\tbench\tcandidate-3\t68s\tpass=true score=7433",
+    "2026-10-17T09:19:25Z\tdeploy\t75a8032cbff2a67f03c417f6b39d27b6beab163f\t5s\tok",
+    "2026-10-17T09:19:25Z\trecover\t75a8032\t5s\tok"
+  ],
+  "closedAt": "2026-10-17T09:19:25Z"
+}

@@ -41,7 +41,13 @@ competition finish) makes the read O(1).
 - The first read after initialize must not see a stale value from the
   previous benchmark run.
 
+- 006-owner-chairs-filter-first (isucon14): filtering the distance scan
+  to the owner's chairs made the endpoint cheap but moved the score only
+  +1.8% (inconclusive): owner endpoints are not on the scoring path in
+  that problem. Check which endpoints the benchmark scores before
+  spending an experiment on a read-side aggregate.
+
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
-
+| isucon14 | 006-owner-chairs-filter-first | 7763/9538 | 7433/8810/9137 | +2% | 2+3 | 4 | inconclusive | inconclusive | map[26:3] |
