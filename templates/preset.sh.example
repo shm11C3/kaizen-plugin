@@ -38,7 +38,9 @@ DB_NAME=<database>
 PATH_ID_REGEX='/[0-9A-Za-z]{20,}'    # how ids look in URLs, for grouping
 # OBSERVE_EXTRA_CMD='sudo alp ltsv --file /var/log/nginx/access.log --sort sum -r --limit 30'
 
-# Request denominator for error rates when the benchmarker gives no total.
+# Cumulative request counter: one nonnegative integer. SSH: before/after the
+# run; manual: reserve/result. Set NGINX_HOST to its actual host. Changes to
+# this command, host or parse_bench_requests require fresh capture/baselines.
 REQUEST_COUNT_CMD='sudo wc -l < /var/log/nginx/access.log'
 # EVALUATION_RULE=v3  # sequential rule; opt in only after the comparison in DESIGN_REVIEW.md
 

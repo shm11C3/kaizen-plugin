@@ -45,6 +45,17 @@ while [ $# -gt 0 ]; do
     *) die "unknown argument $1" ;;
   esac
 done
+case "$requests" in *[!0-9]*) die "requests must be a nonnegative integer" ;; esac
+[ "$reserve_only" = 0 ] || [ -z "$requests" ] || die "provide --requests with --result, not --reserve"
+before=""; after=""
+request_method=unavailable
+if [ "$BENCH_MODE" = ssh ] && declare -f parse_bench_requests >/dev/null; then
+  request_method=bench-parser
+elif [ -n "$REQUEST_COUNT_CMD" ]; then
+  request_method=counter-delta
+fi
+[ -z "$requests" ] || request_method=explicit
+request_source_json=$(request_source "$request_method")
 if [ "$BENCH_MODE" = manual ] && [ -z "$manual_result$abandon" ] && [ "$reserve_only" = 0 ]; then
   die "BENCH_MODE=manual: bench.sh $label --reserve before starting the portal benchmark; then record --result"
 fi
@@ -117,14 +128,17 @@ case "$label" in baseline*) candidate_run=0; verify_bundle ;; esac
 attempt=""
 if [ "$BENCH_MODE" = manual ] && [ -n "$manual_result" ]; then
   [ -f "$pending" ] || die "reserve the portal run before starting it (bench.sh $label --reserve)"
-  read -r out_dir base attempt < <(python3 - "$pending" "$label" "$deployed" "$EXP" <<'PY'
+  read -r out_dir base attempt before < <(python3 - "$pending" "$label" "$deployed" "$EXP" "$(config_digest)" <<'PY'
 import json,sys
 p=json.load(open(sys.argv[1]))
-assert (p['label'],p['revision'],p['experiment'])==tuple(sys.argv[2:]),'portal result differs from its reservation'
-print(p['outDir'],p['base'],p['attempt'])
+assert (p['label'],p['revision'],p['experiment'])==tuple(sys.argv[2:5]),'portal result differs from its reservation'
+assert p.get('configHash')==sys.argv[5],'portal reservation measurement conditions differ'
+before=p.get('requestCountBefore')
+print(p['outDir'],p['base'],p['attempt'],before if before is not None else '-')
 PY
   )
   [ -n "$attempt" ] || die "portal reservation mismatch"
+  [ "$before" != - ] || before=""
 else
   no_manual_bench
   reservation=$(python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" reserve "$KAIZEN_DIR/bench-attempts.jsonl" \
@@ -132,10 +146,13 @@ else
   attempt=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$reservation")
 fi
 if [ "$reserve_only" = 1 ]; then
-  python3 - "$pending" "$label" "$deployed" "$EXP" "$out_dir" "$base" "$attempt" <<'PY'
+  [ "$request_method" != counter-delta ] || before=$(request_count)
+  python3 - "$pending" "$label" "$deployed" "$EXP" "$out_dir" "$base" "$attempt" "$before" "$request_source_json" "$(config_digest)" <<'PY'
 import json,sys
-p,label,rev,exp,d,base,attempt=sys.argv[1:]
-json.dump(dict(label=label,revision=rev,experiment=exp,outDir=d,base=base,attempt=attempt),open(p,'w'),indent=2)
+p,label,rev,exp,d,base,attempt,before,source,config=sys.argv[1:]
+json.dump(dict(label=label,revision=rev,experiment=exp,outDir=d,base=base,attempt=attempt,
+              requestCountBefore=int(before) if before else None,requestSource=json.loads(source),
+              configHash=config),open(p,'w'),indent=2)
 PY
   echo "portal run $label reserved and counted; retain the environment reservation until result/abandon"
   exit 0
@@ -149,15 +166,16 @@ if [ "$BENCH_MODE" = manual ]; then
   score=$(printf '%s' "$manual_result" | sed -n 's/.*score=\([0-9]*\).*/\1/p')
   errors=$(printf '%s' "$manual_result" | sed -n 's/.*errors=\(.*\)$/\1/p' | tr ' ' ',')
   [ -n "$pass" ] && [ -n "$score" ] || die "--result must contain pass=<true|false> and score=<n>"
+  if [ "$request_method" = counter-delta ]; then
+    after=$(request_count)
+    requests=$(request_delta "$before" "$after")
+  fi
 else
   log "bench $label on $(short "$deployed") via $BENCH_HOST; log $logfile"
   # Request denominator for error rates: the access-log line count before and
   # after the run (REQUEST_COUNT_CMD on NGINX_HOST), unless the preset parses
   # a total from the benchmarker's output.
-  before=""
-  if [ -n "$REQUEST_COUNT_CMD" ] && ! declare -f parse_bench_requests >/dev/null; then
-    before=$(remote "$NGINX_HOST" "$REQUEST_COUNT_CMD" 2>/dev/null | tr -dc '0-9' || true)
-  fi
+  [ "$request_method" != counter-delta ] || before=$(request_count)
   start=$(epoch)
   remote "$BENCH_HOST" "$(bench_command)" > "$logfile" 2>&1 || true
   secs=$(( $(epoch) - start ))
@@ -167,11 +185,11 @@ else
     die "no result line in $logfile; an infrastructure failure, not a verdict (nothing recorded as a sample)"
   fi
   read -r pass score errors <<<"$result"
-  if declare -f parse_bench_requests >/dev/null; then
+  if [ "$request_method" = bench-parser ]; then
     requests=$(parse_bench_requests "$logfile")
-  elif [ -n "$before" ]; then
-    after=$(remote "$NGINX_HOST" "$REQUEST_COUNT_CMD" 2>/dev/null | tr -dc '0-9' || true)
-    if [ -n "$after" ] && [ "$after" -ge "$before" ]; then requests=$((after - before)); fi
+  elif [ "$request_method" = counter-delta ]; then
+    after=$(request_count)
+    requests=$(request_delta "$before" "$after")
   fi
 fi
 case "$pass" in true|false) ;; *) die "result pass must be true or false" ;; esac
@@ -187,14 +205,19 @@ observed=$(state_get OBSERVE_SLOWLOG)
 
 bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$KAIZEN_DIR/stable-bundle.json")
 fingerprints=$(resource_fingerprints)
-python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-unknown}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" "$observed" "$requests" "$bundle" "$fingerprints" "$attempt" "$KAIZEN_DIR/observation-active.json" "$(plugin_revision)" <<'EOF'
+python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-unknown}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" "$observed" "$requests" "$bundle" "$fingerprints" "$attempt" "$KAIZEN_DIR/observation-active.json" "$(plugin_revision)" "$request_source_json" "$before" "$after" <<'EOF'
 import json, sys
 from pathlib import Path
-out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode, observed, requests, bundle, fingerprints, attempt, observation, plugin = sys.argv[1:]
+out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode, observed, requests, bundle, fingerprints, attempt, observation, plugin, source, before, after = sys.argv[1:]
+source=json.loads(source)
+source['status']='available' if requests else 'unavailable'
+if source['method']=='counter-delta':
+    source.update(before=int(before) if before else None,after=int(after) if after else None)
+    if before and after and int(after)<int(before): source['status']='counter-reset'
 json.dump({"label": label, "experiment": exp or None, "deployedRevision": rev,
            "pass": passed == "true", "score": int(score), "errors": errors,
            "durationSec": int(secs), "finishedAt": finished, "mode": mode, "log": logfile,
-           "observed": observed == "1", "requests": int(requests) if requests else None,
+           "observed": observed == "1", "requests": int(requests) if requests else None,"requestSource":source,
            "observationSession": json.loads(Path(observation).read_text()) if Path(observation).exists() else None,
            "stableBundleId": bundle, "resourceFingerprints": dict(l.split('\t',1) for l in fingerprints.splitlines() if l),
            "physicalAttemptId": attempt, "pluginRevision": plugin},

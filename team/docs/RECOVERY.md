@@ -4,6 +4,12 @@
 
 bundle の `configHash` は計測条件（ホスト、配備・復旧・ベンチのコマンド）の解決済みの値から計算する。予算・閾値・観測設定・plugin の版は含めない。plugin を競技中に更新しても bundle は保たれ、どの plugin 版で計測したかは bundle と各サンプルの `pluginRevision` に残る。
 
+分母の取得方法も計測条件。`REQUEST_COUNT_CMD`・`NGINX_HOST`・`parse_bench_requests`を変えたら
+安定状態でcaptureし直し、新しいbaselineを取る。0.6.2ではこれらをhashに追加したため、既存bundleも
+再captureが必要。実験・ポータル予約・復旧待ちのない安定状態で更新する。予約中は条件を変えない。
+各sampleの`requestSource.id`も比較し、自動取得／明示入力の混在や新旧の来歴欠落を再計測へ戻す。
+旧記録同士の再生は引き続き可能だが、新しい来歴つきsampleとの混在はしない。
+
 ## 初期設定
 
 当日マニュアルと対象環境に合う次の設定を、統合用cloneのconfig.shへ書く。

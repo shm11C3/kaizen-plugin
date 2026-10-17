@@ -211,8 +211,39 @@ config_digest() {
   printf '%s\n' "$APP_HOSTS" "$RESOURCE_HOSTS" "$BENCH_HOST" "$BENCH_MODE" "$REMOTE_APP_DIR" \
     "$LOCAL_SYNC_PATHS" "$SYNC_EXCLUDES" "$RSYNC_PATH" "$OVERLAY_DIR" "$OVERLAY_SERVICES" "$RESOURCE_PATHS" \
     "$BUILD_CMD" "$RESTART_CMD" "$HEALTH_CMD" "$RESOURCE_FINGERPRINT_CMD" "$RECOVERY_CMD" "$SSH_CONFIG" \
-    "$bench" "$(declare -f parse_bench 2>/dev/null || true)" |
+    "$bench" "$(declare -f parse_bench 2>/dev/null || true)" \
+    "$NGINX_HOST" "$REQUEST_COUNT_CMD" "$(declare -f parse_bench_requests 2>/dev/null || true)" |
     python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" config
+}
+
+# A source ID identifies the denominator's method, not its changing counter value.
+# Keep command/parser hashes in samples rather than copying command contents.
+request_source() {
+  python3 - "$1" "$NGINX_HOST" "$REQUEST_COUNT_CMD" "$(declare -f parse_bench_requests 2>/dev/null || true)" <<'PY'
+import hashlib,json,sys
+method,host,command,parser=sys.argv[1:]
+source={'method':method}
+digest=lambda text: hashlib.sha256(text.encode()).hexdigest()
+if method=='counter-delta': source.update(host=host,commandHash=digest(command))
+if method=='bench-parser': source['parserHash']=digest(parser)
+source['id']=digest(json.dumps(source,sort_keys=True))
+print(json.dumps(source))
+PY
+}
+
+# Unavailable, noisy or failed counters remain unknown; never join unrelated digits.
+request_count() {
+  local value
+  value=$(remote "$NGINX_HOST" "$REQUEST_COUNT_CMD" 2>/dev/null) || return 0
+  printf '%s' "$value" | python3 -c 'import re,sys; s=sys.stdin.read().strip(); print(int(s)) if re.fullmatch(r"[0-9]+",s) else None'
+}
+
+request_delta() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+a,b=sys.argv[1:]
+if a.isdecimal() and b.isdecimal() and int(b)>=int(a): print(int(b)-int(a))
+PY
 }
 
 resource_fingerprints() {

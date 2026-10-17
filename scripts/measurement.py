@@ -124,6 +124,7 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
     baseline = [s for s in baseline if fresh(s)]
     b = sorted(s['score'] for s in baseline)
     c = sorted(s['score'] for s in candidate)
+    request_sources = [(s.get('requestSource') or {}).get('id') for s in baseline + candidate]
     bp = None
     q = {'status': 'unknown', 'reason': 'missing comparable samples'}
     blocked = True
@@ -135,6 +136,8 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
         decision, reason, action = 'inconclusive', 'candidate revisions differ; measure one fixed candidate', 'remeasure'
     elif any(s.get('stableBundleId') != bundle for s in baseline + candidate):
         decision, reason, action = 'inconclusive', 'stable bundle/measurement conditions differ; take fresh samples', 'remeasure'
+    elif any(request_sources) and (not all(request_sources) or len(set(request_sources)) != 1):
+        decision, reason, action = 'inconclusive', 'request denominator sources differ or are missing; take fresh comparable samples', 'remeasure'
     elif len({json.dumps(s.get('resourceFingerprints'), sort_keys=True) for s in candidate}) != 1:
         decision, reason, action = 'inconclusive', 'candidate resources changed between samples', 'remeasure'
     elif rule == 'v3':

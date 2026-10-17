@@ -52,6 +52,19 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(result['decision'], 'inconclusive')
         self.assertEqual(result['nextAction'], 'remeasure')
 
+    def test_denominator_provenance_must_match_when_samples_record_it(self):
+        b = [sample(n,'stable',requestSource={'id':'counter-A'}) for n in (900,1000)]
+        for rule in ('v2','v3'):
+            for source in ({'id':'counter-B'}, None):
+                with self.subTest(rule=rule,source=source):
+                    c = [sample(n,'candidate',requestSource=source) for n in (2900,3000)]
+                    result = m.assess(b,c,'stable','bundle',rule=rule)
+                    self.assertEqual(result['decision'],'inconclusive')
+                    self.assertEqual(result['nextAction'],'remeasure')
+                    self.assertIn('denominator sources differ',result['reason'])
+            c = [sample(n,'candidate',requestSource={'id':'counter-A'}) for n in (2900,3000)]
+            self.assertEqual(m.assess(b,c,'stable','bundle',rule=rule)['decision'],'promote')
+
     def test_correctness_missing_samples_mixed_revision_and_stale_conditions(self):
         b = [sample(900, 'stable'), sample(1000, 'stable')]
         c = [sample(2000, 'candidate')]

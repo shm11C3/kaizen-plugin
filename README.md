@@ -97,12 +97,22 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | `RECOVERY_BENCH_RESERVE` | 1 | 実験内で最後のstable計測用に残す枠 |
 | `MIN_SAMPLES` | 2 | baseline/candidateそれぞれの最低サンプル数（v2） |
 | `EVALUATION_RULE` | v2 | v2: 両側 2 本以上、エラー率はリクエスト分母で比較。v3: 逐次判定（1 本で幅を超えれば promote、全 baseline を下回れば reject、幅内なら追加）。v3 は実測比較が済むまで opt-in |
-| `REQUEST_COUNT_CMD` | なし | エラー率の分母。ベンチ前後のアクセスログ行数の差（プリセットは nginx のログ）。プリセットが `parse_bench_requests` を持つ場合はそちら |
+| `REQUEST_COUNT_CMD` | なし | 単一の非負整数を返す累積カウンター。SSHは実行前後、manualは予約時／結果登録時の差を分母にする。SSHの `parse_bench_requests` はこちらより優先 |
+| `NGINX_HOST` | 最初のapp host | カウンターを読むSSHホスト。実際のログ／カウンターがあるホストに合わせる |
 | `BASELINE_MAX_AGE_MINUTES` | 60 | 古いbaselineを判定から外す期限 |
 | `MAX_EXP_MINUTES` | 30 | 1 実験の制限時間 |
 | `MAX_EXP_PER_HOUR` | 6 | 1 時間に開ける実験数 |
 
 stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘルスチェック・復旧・ベンチのコマンド、資源の指紋）だけで決まります。予算や閾値、観測の設定、plugin 自体の更新では bundle は無効になりません。本番中に plugin を直す前提なので、どの plugin 版で測ったかは bundle と各サンプルの `pluginRevision` に記録します。
+
+分母の取得コマンド・ホスト・解析関数も比較条件です。変更したら安定状態で`stable.sh capture`し直し、
+新しいbaselineを取得します。manualの`--reserve`はカウンターと条件を保存し、`--result`で差分を記録します。
+予約中の条件変更は結果登録を拒否し、予約を保持します。元に戻して登録するか、実行終了を確認してabandonします。
+`--requests N`による明示入力は別の取得方法として記録し、自動取得との混在はv2／v3とも再計測へ戻します。
+サンプルの`requestSource`に方法・ID・ホスト・カウンター前後値・状態が残ります。取得失敗・不正出力・
+カウンター減少は分母不明です。ログ差分には予約から結果登録までの全通信が入るため、対象と計数範囲を揃え、
+ローテーションや別通信が比較を汚さないことを確認します。
+0.6.2への更新時は条件hashへ分母設定を追加したため、旧bundleも安定状態で再captureし、新baselineを取ります。
 
 promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、v2 では比較可能なrequest分母がない・新種がある・率が増える候補を調査へ戻します。v3 では分母がなくても既知の種類は件数で比べ、急増（最悪 baseline の 2 倍かつ +5 件超）と新種だけを調査へ戻します。エラー要約は `map[k:v]`、`種別:METHOD:/path xN`、`key=value` の各形式を読みます。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
 

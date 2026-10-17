@@ -104,3 +104,12 @@ pluginの品質判定はunknown。同じ警告が初期版でも出たため、�
 
 一次資料: [go vet](https://pkg.go.dev/cmd/vet)、
 [Clippyの実行](https://doc.rust-lang.org/clippy/usage.html)・[指摘の分類](https://doc.rust-lang.org/clippy/lints.html)。
+
+## 0.6.2: manual分母取得と条件不一致（2026-10-18）
+
+manualの予約時／結果登録時のカウンター差分、取得コマンド・ホスト・解析関数の条件hash、
+sampleの取得元IDを追加した。方法変更時の予約・登録拒否、自動取得／明示入力の比較不適合、
+読取失敗・不正出力・カウンター減少を偽リモートで確認した。
+[検証記録](knowledge/lessons/20261018-manual-request-counts.md)を参照。
+DESIGN_REVIEWの断定表現も修正した。旧bundleは安定状態で再captureし、新baselineを取る。
+実サーバーの権限・ログ条件・ポータル運用、およびv3の本番適性は未検証。
