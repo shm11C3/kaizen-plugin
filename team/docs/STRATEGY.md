@@ -48,7 +48,7 @@ Go／Rustの採用も[言語選択の比較軸](RUST_BUILD.md)で判断する。
 
 `status.sh`と`experiment.sh record`は履歴に基づくstrategy通知を出す。手動確認は`strategy.sh status`、検討テンプレートは`strategy.sh review`。チームでは統合担当が`control.py target ... strategy status` / `strategy review`を使う。
 
-既定の通知条件は、固定ルールでの改善採用がない実験が3件続く、またはその実験内の経過時間が累計30分に達すること。直近に閉じた実験が同じstable・同じhypothesisIdの再試行だった場合、同じ仮説の`strategy.parameters`がA→B→Aと往復した場合も通知する。時間は閉じた実験のstartedAt〜closedAtで、休止時間や工程別の損失を正確に表す指標ではない。LOOP_STARTED_ATより前の履歴は対象外。古い記録にパラメータがなければ往復は検知できない。JSON破損などの履歴不足はwarningで示す。
+既定の通知条件は、固定ルールの品質・性能比較に合格しない通常計測が3件続く、またはその実験内の経過時間が累計30分に達すること。比較の合格と実際の採用は別に集計する。通常候補sampleがあり、品質pass・固定ルールpromote・候補SHA一致を満たす比較は、最終判断inconclusive/rejectでも比較上の改善として扱うが、採用件数には加えない。これにより、sandboxで採用しない運用や人間判断待ちを性能停滞と混同しない。未計測とobserved-onlyは通常比較の連続・時間集計へ入れず、measurement_countsへ区別して残す。品質failed/unknownやsampleのpass=falseは合格にしない。観測用sampleの失敗・警告もquality_issuesへ残し、直近ならquality_evidenceで調査を促す。台帳の品質保留を解消する通知ではない。samplesがない旧記録はunknownとして保守的に数え、旧来の固定ルール採用だけは従来どおり連続を区切る。理由の文章から中止・sandbox等を推測しない。直近に閉じた実験が同じstable・同じhypothesisIdの再試行だった場合、同じ仮説の`strategy.parameters`がA→B→Aと往復した場合も通知する。時間は閉じた実験のstartedAt〜closedAtで、休止時間や工程別の損失を正確に表す指標ではない。LOOP_STARTED_ATより前の履歴は対象外。古い記録にパラメータがなければ往復は検知できない。JSON破損などの履歴不足はwarningで示す。
 
 これは停滞の原因を確定する判定でも、採用を止める追加ゲートでもない。閾値は`strategy.sh --window 4 --minutes 40 status`のように手動確認時に変えられる。通常のstatus/recordは既定値を使う。
 

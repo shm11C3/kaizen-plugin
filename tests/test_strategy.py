@@ -16,7 +16,7 @@ class StrategyTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
 
-    def record(self, i, decision='inconclusive', rule=None, hypothesis='', stable='base', value=None):
+    def record(self, i, decision='inconclusive', rule=None, hypothesis='', stable='base', value=None, samples=None, quality=None):
         path = self.root / '.kaizen/experiments' / str(i)
         path.mkdir(parents=True, exist_ok=True)
         record = dict(experimentId=str(i), stableBefore=stable, finalDecision=decision,
@@ -24,7 +24,57 @@ class StrategyTests(unittest.TestCase):
                       manifest=dict(startedAt=f'2026-10-17T00:{i*5:02d}:00Z', hypothesisId=hypothesis,
                                     strategy=dict(parameters={} if value is None else {'connections': value})),
                       closedAt=f'2026-10-17T00:{i*5+4:02d}:00Z')
+        if samples is not None:
+            record['samples'] = samples
+            record['candidateRevision'] = 'candidate'
+        if quality is not None:
+            record['ruleDecision']['quality'] = {'status': quality}
+            record['ruleDecision']['qualityBlockPromotion'] = quality != 'pass'
         (path / 'record.json').write_text(json.dumps(record))
+
+    @staticmethod
+    def sample(observed=False, passed=True, errors='none'):
+        return dict(label='candidate-profile' if observed else 'candidate',
+                    observed=observed, errors=errors,
+                    deployedRevision='candidate') | {'pass': passed}
+
+    def test_unmeasured_observed_and_qualified_unadopted_are_not_failed_optimizations(self):
+        self.record(0, samples=[], quality='unknown')
+        self.record(1, samples=[self.sample(observed=True)], quality='unknown')
+        self.record(2, rule='promote', samples=[self.sample(), self.sample()], quality='pass')
+        result = strategy.analyze(self.root)
+        self.assertFalse(result['review_needed'])
+        self.assertEqual(result['closed_experiments'], 3)
+        self.assertEqual(result['rule_verified_promotions'], 0)
+        self.assertEqual(result['qualified_comparisons'], 1)
+        self.assertEqual(result['qualified_unadopted'], 1)
+        self.assertEqual(result['measurement_counts'], dict(normal=1, observed_only=1, unmeasured=1, unknown=0))
+
+    def test_quality_or_failed_samples_cannot_be_hidden_by_a_promote_label(self):
+        for i in range(3):
+            self.record(i, rule='promote', samples=[self.sample(passed=False)], quality='pass')
+        result = strategy.analyze(self.root)
+        self.assertEqual(result['qualified_comparisons'], 0)
+        self.assertEqual(result['quality_issues'], 3)
+        self.assertIn('no_verified_gain', [s['kind'] for s in result['signals']])
+
+    def test_observed_failure_remains_visible_without_becoming_a_performance_comparison(self):
+        self.record(0, samples=[self.sample(observed=True, passed=False)], quality='unknown')
+        result = strategy.analyze(self.root)
+        self.assertEqual(result['measurement_counts']['observed_only'], 1)
+        self.assertEqual(result['quality_issues'], 1)
+        self.assertIn('quality_evidence', [s['kind'] for s in result['signals']])
+        self.assertNotIn('no_verified_gain', [s['kind'] for s in result['signals']])
+
+    def test_observed_warning_is_not_erased_by_diagnostic_disposition(self):
+        self.record(0, samples=[self.sample(observed=True, errors='map[26:1]')], quality='unknown')
+        self.assertEqual(strategy.analyze(self.root)['quality_issues'], 1)
+
+    def test_a_qualified_unadopted_comparison_resets_non_gain_history(self):
+        for i in range(3):
+            self.record(i, 'reject')
+        self.record(3, rule='promote', samples=[self.sample(), self.sample()], quality='pass')
+        self.assertFalse(strategy.analyze(self.root)['review_needed'])
 
     def test_three_failed_experiments_trigger_review_and_verified_gain_resets_it(self):
         for i in range(3):

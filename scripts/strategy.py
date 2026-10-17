@@ -18,6 +18,37 @@ def timestamp(value):
     return time
 
 
+def evidence(record):
+    """Separate measurement evidence from the independent adoption disposition.
+
+    Missing legacy samples stay unknown; a reason string never excuses a trial.
+    """
+    decision = record['ruleDecision']
+    quality = decision.get('quality') or {}
+    samples = record.get('samples')
+    candidates = None if samples is None else [s for s in samples if not s.get('label', '').startswith('baseline')]
+    normal = [] if candidates is None else [s for s in candidates if not s.get('observed')]
+    measurement = ('unknown' if candidates is None else 'normal' if normal else
+                   'observed_only' if candidates else 'unmeasured')
+    failed = any(s.get('pass') is False for s in candidates or [])
+    observed_warning = any(s.get('observed') and s.get('errorCounts', s.get('errors'))
+                           not in (None, '', 'none', 'map[]', '{}', {}) for s in candidates or [])
+    issue = failed or observed_warning or quality.get('status') == 'failed' or (
+        measurement == 'normal' and quality.get('status') == 'unknown')
+    qualified = (measurement == 'normal' and decision.get('decision') == 'promote'
+                 and quality.get('status') == 'pass' and not decision.get('qualityBlockPromotion', False)
+                 and not issue and all(s.get('pass') is True for s in normal)
+                 and bool(record.get('candidateRevision'))
+                 and all(s.get('deployedRevision') == record['candidateRevision'] for s in normal))
+    # Older records have no samples/quality schema. Preserve their existing
+    # fixed-rule promotion reset, but never upgrade unadopted unknown evidence.
+    legacy_gain = (measurement == 'unknown' and 'quality' not in decision
+                   and decision.get('decision') == 'promote' and record.get('finalDecision') == 'promote'
+                   and not decision.get('qualityBlockPromotion', False))
+    return dict(measurement=measurement, qualified=qualified,
+                gain=qualified or legacy_gain, quality_issue=issue)
+
+
 def analyze(project, window=3, minutes=30):
     root = Path(project) / '.kaizen'
     records, warnings = [], []
@@ -36,7 +67,12 @@ def analyze(project, window=3, minutes=30):
                 raise ValueError('ruleDecision is missing')
             if record['manifest'].get('hypothesisId') and not isinstance(record['manifest']['hypothesisId'], str):
                 raise ValueError('hypothesisId must be a string')
+            if 'samples' in record and (not isinstance(record['samples'], list) or any(
+                    not isinstance(sample, dict) or not isinstance(sample.get('label', ''), str)
+                    for sample in record['samples'])):
+                raise ValueError('samples must be an array of labeled objects')
             record['manifest']['strategy'] = metadata
+            record['_evidence'] = evidence(record)
             start = timestamp(record['manifest']['startedAt'])
             end = timestamp(record['closedAt'])
             if end < start:
@@ -52,16 +88,19 @@ def analyze(project, window=3, minutes=30):
     signals = []
     since_gain = []
     for record in records:
-        # A discretionary promotion is not evidence that the fixed score rule passed.
-        if record.get('finalDecision') == 'promote' and record.get('ruleDecision', {}).get('decision') == 'promote':
+        outcome = record['_evidence']
+        if outcome['gain']:
             since_gain = []
-        else:
+        elif outcome['measurement'] in ('normal', 'unknown'):
             since_gain.append(record)
     spent = sum((r['_end'] - r['_start']).total_seconds() / 60 for r in since_gain)
     if len(since_gain) >= window or (since_gain and spent >= minutes):
         signals.append(dict(kind='no_verified_gain', experiments=[r['experimentId'] for r in since_gain],
                             experiment_minutes=round(spent, 1),
                             action='Separate noise/quality/recovery problems from a wrong bottleneck; compare another mechanism before another small tweak.'))
+    if records and records[-1]['_evidence']['quality_issue']:
+        signals.append(dict(kind='quality_evidence', experiments=[records[-1]['experimentId']],
+                            action='Investigate the reported failure, warning or unknown quality; diagnostic/non-adopted disposition does not resolve it.'))
     groups = defaultdict(list)
     for record in records:
         manifest = record['manifest']
@@ -86,7 +125,12 @@ def analyze(project, window=3, minutes=30):
                 signals.append(dict(kind='parameter_oscillation', hypothesis=key, parameter=name,
                                     trials=values[-3:], action='Explain the limiting resource and a bounded comparison before changing this parameter again.'))
     return dict(schemaVersion='v1', closed_experiments=len(records),
-                rule_verified_promotions=sum(r.get('finalDecision') == 'promote' and r.get('ruleDecision', {}).get('decision') == 'promote' for r in records),
+                measurement_counts={kind: sum(r['_evidence']['measurement'] == kind for r in records)
+                                    for kind in ('normal', 'observed_only', 'unmeasured', 'unknown')},
+                qualified_comparisons=sum(r['_evidence']['qualified'] for r in records),
+                qualified_unadopted=sum(r['_evidence']['qualified'] and r.get('finalDecision') != 'promote' for r in records),
+                quality_issues=sum(r['_evidence']['quality_issue'] for r in records),
+                rule_verified_promotions=sum(r.get('finalDecision') == 'promote' and r['_evidence']['gain'] for r in records),
                 review_needed=bool(signals), signals=signals, warnings=warnings,
                 advice='Reconsider the plan at a stable boundary; continue AI investigation. Escalate only a concrete risk/tradeoff choice.' if signals else 'Use current evidence and scoring impact to choose the next experiment.')
 
