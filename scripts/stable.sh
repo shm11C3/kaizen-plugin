@@ -24,6 +24,29 @@ load_config
 cmd=${1:-}
 shift || true
 case "$cmd" in
+  initialize)
+    ref=${1:-$STABLE_BRANCH}
+    [ "$#" -le 1 ] || die "usage: stable.sh initialize [<ref>]"
+    [ -z "$EXP" ] || die "initialization cannot replace an open experiment"
+    no_manual_bench
+    [ ! -f "$KAIZEN_DIR/stable-bundle.json" ] && [ -z "$(state_get DEPLOYED_REV)" ] \
+      || die "target is already initialized; use recover.sh or an explicit reconfiguration"
+    [ ! -d "$LOCK_DIR" ] || die "a target operation is running"
+    rev=$(git_rev "$ref") || die "unknown initial revision $ref"
+    git_dirty && die "commit the initial source before initialization"
+    mkdir "$KAIZEN_DIR/initialize.lock" 2>/dev/null || die "initialization is already running; inspect before retrying"
+    trap 'rmdir "$KAIZEN_DIR/initialize.lock" 2>/dev/null || true' EXIT
+    initialize_started=$(epoch)
+    state_set STABLE_REV "$rev"
+    "$KAIZEN_PLUGIN_ROOT/scripts/deploy.sh" "$rev"
+    if [ -n "$RECOVERY_CMD" ]; then
+      for host in $RESOURCE_HOSTS; do remote "$host" "$RECOVERY_CMD"; done
+    fi
+    "$KAIZEN_PLUGIN_ROOT/scripts/stable.sh" capture
+    "$KAIZEN_PLUGIN_ROOT/scripts/recover.sh"
+    record_step initialize "$rev" "$(( $(epoch) - initialize_started ))" ok
+    echo "initial stable deployed, resources initialized, and recovery verified; take fresh baseline samples"
+    ;;
   capture)
     [ -z "$EXP" ] || die "capture stable resources before opening an experiment"
     acquire_bench_lock

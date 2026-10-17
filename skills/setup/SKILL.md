@@ -66,11 +66,16 @@ the manual before touching timers.
 
 ```bash
 cd <project>
-printf 'STABLE_REV=%s\n' "$(git rev-parse main)" > .kaizen/state.env
-$K/scripts/deploy.sh main            # pushes, builds, restarts, verifies every host
-$K/scripts/stable.sh capture        # code/config/resource identity; initialize resources first
-$K/scripts/recover.sh                # the drill: stable must be restorable before any candidate
+$K/scripts/stable.sh initialize main
 ```
+
+Run this once on an uninitialized target while holding the setup reservation.
+It pins the committed revision, deploys it, runs the configured RECOVERY_CMD to
+initialize resources, captures their identity, and proves recovery. It refuses an
+already deployed target and never resets an existing experiment or baseline.
+Retain the original server snapshot before initialization. After a partial
+failure, inspect the recorded state and complete deployment/capture/recovery
+through the existing scripts; do not clear the state to rerun initialization.
 
 If deploy fails, fix config.sh (paths, commands, SSH) until `verify.sh main`
 reports every host matching; do not start experiments on a target you cannot
