@@ -40,6 +40,14 @@ class CheckEvidenceTests(unittest.TestCase):
         self.assertNotEqual(r.returncode,0); self.assertEqual(d['exitCode'],0)
         self.assertTrue(d['sourceChanged']); self.assertFalse(d['passed'])
 
+    def test_head_change_during_successful_command_invalidates_evidence(self):
+        r, d = self.check('import subprocess; subprocess.run(["git","-c","commit.gpgsign=false","commit","--allow-empty","-qm","concurrent HEAD change"],check=True)')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(d['exitCode'], 0)
+        self.assertNotEqual(d['sourceBefore']['revision'], d['sourceAfter']['revision'])
+        self.assertTrue(d['sourceChanged'])
+        self.assertFalse(d['passed'])
+
 
 if __name__ == '__main__':
     unittest.main()

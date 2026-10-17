@@ -140,3 +140,8 @@ Go and Rust use native checks and existing observation tools. Read
 profiling or removing a concrete structural blocker. Tests and analysis run
 in independent clones in parallel; target collection still uses the reservation.
 Use prepare-tests/refactor skills and record cost and downstream payoff.
+
+One mutable workflow owns each worktree. Parallel comparisons use another
+worktree, including within a single session. Wait for pending tests/builds before
+switching HEAD or committing their source, and publish immutable commits for
+other members instead of editing their clones.

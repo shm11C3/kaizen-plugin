@@ -40,3 +40,8 @@ For DB/external-state tests, disable inappropriate result caching (Go: -count=1)
 and inspect native skips/no-test output. A wrapper process pass alone does not
 establish that integration assertions actually ran. Keep known baseline tool
 diagnostics separate; repair them explicitly rather than silently disabling checks.
+
+Keep the test's worktree stable until the command has actually exited. Run a
+parallel patch/composition comparison in a different worktree; owning two tasks
+does not make branch switching during an active test safe. A detected source/HEAD
+change invalidates the check, even when the native command exits0.

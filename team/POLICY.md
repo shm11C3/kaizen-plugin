@@ -83,8 +83,11 @@ contains source and minimal bootstrap files, not these rules or management tools
 
 ## Git and isolated implementation
 
-- Each person uses their own clone. Separate concurrent sessions in one clone
-  with worktrees. Preserve unrelated work.
+- Each person uses their own clone. Separate concurrent mutable workflows with
+  worktrees, even when one session owns both tasks. Serialize branch switches,
+  cherry-picks, commits and source-changing checks within a worktree; a pending
+  test/build must finish before changing its source or HEAD. Preserve unrelated
+  work and never mutate another member's clone to perform a comparison.
 - Branch from the current `origin/main`, e.g.
   `<github-login>/T-0001-query-index`. Workers never update `main` directly.
   Plugin tooling uses `<github-login>/tooling/<task-or-topic>`. Integration
