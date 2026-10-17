@@ -30,7 +30,8 @@ reject with the error kinds in the reason. Do not patch and retry inside the
 same experiment unless the manifest still describes the change; otherwise
 record and open a new one.
 
-Take a second sample (`candidate-2`) when the first is within
+Take as many candidate samples as the plan header says the baseline spread
+needs (two, three or four). Take a second sample (`candidate-2`) when the first is within
 `MIN_IMPROVEMENT_BP` of the baseline median or the baseline samples spread
 more than that. `MAX_BENCH_PER_EXP` caps it.
 

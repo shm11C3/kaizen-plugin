@@ -41,6 +41,21 @@ services that must not change, what `/initialize` must restore, whether
 external services or AI APIs may be called from the servers, and the time
 limit of the initialize endpoint. The hypothesize skill reads this file.
 
+## 2b. Quiet hosts
+
+A fresh AMI runs unattended-upgrades on first boot (ISUCON12 practice: it
+replaced mysql-server and the docker CLI and ate half a core for 25
+minutes, invalidating every sample). Before the first baseline, on every
+host:
+
+```bash
+ssh <host> 'sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer unattended-upgrades; sudo systemctl disable --now apt-daily.timer apt-daily-upgrade.timer; while pgrep -x unattended-upgr >/dev/null || pgrep -x dpkg >/dev/null; do sleep 5; done; uptime'
+```
+
+Keep `BENCH_PRECHECK_CMD` in the preset so a sample is refused while any
+package job runs. On contest day the servers are the organisers'; read
+the manual before touching timers.
+
 ## 3. Pin stable and prove recovery
 
 ```bash
