@@ -2,9 +2,11 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
 spec = importlib.util.spec_from_file_location('strategy', ROOT / 'scripts/strategy.py')
 strategy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(strategy)
@@ -69,6 +71,22 @@ class StrategyTests(unittest.TestCase):
     def test_observed_warning_is_not_erased_by_diagnostic_disposition(self):
         self.record(0, samples=[self.sample(observed=True, errors='map[26:1]')], quality='unknown')
         self.assertEqual(strategy.analyze(self.root)['quality_issues'], 1)
+
+    def test_observed_zero_counts_are_clean_but_unparsed_errors_remain_unknown(self):
+        sample = self.sample(observed=True)
+        sample['errorCounts'] = {'25': 0}
+        self.record(0, samples=[sample], quality='unknown')
+        self.assertEqual(strategy.analyze(self.root)['quality_issues'], 0)
+        sample['errorCounts'] = 'unparsed summary'
+        self.record(0, samples=[sample], quality='unknown')
+        self.assertEqual(strategy.analyze(self.root)['quality_issues'], 1)
+
+    def test_normal_samples_with_missing_quality_remain_an_issue(self):
+        self.record(0, rule='promote', samples=[self.sample()])
+        result = strategy.analyze(self.root)
+        self.assertEqual(result['qualified_comparisons'], 0)
+        self.assertEqual(result['quality_issues'], 1)
+        self.assertIn('quality_evidence', [s['kind'] for s in result['signals']])
 
     def test_a_qualified_unadopted_comparison_resets_non_gain_history(self):
         for i in range(3):

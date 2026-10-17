@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 import sys
 
+from measurement import error_counts
+
 
 def timestamp(value):
     time = datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -31,10 +33,11 @@ def evidence(record):
     measurement = ('unknown' if candidates is None else 'normal' if normal else
                    'observed_only' if candidates else 'unmeasured')
     failed = any(s.get('pass') is False for s in candidates or [])
-    observed_warning = any(s.get('observed') and s.get('errorCounts', s.get('errors'))
-                           not in (None, '', 'none', 'map[]', '{}', {}) for s in candidates or [])
+    observed_errors = [error_counts(s.get('errorCounts', s.get('errors')))
+                       for s in candidates or [] if s.get('observed')]
+    observed_warning = any(counts is None or bool(counts) for counts in observed_errors)
     issue = failed or observed_warning or quality.get('status') == 'failed' or (
-        measurement == 'normal' and quality.get('status') == 'unknown')
+        measurement == 'normal' and quality.get('status') not in ('pass', 'failed'))
     qualified = (measurement == 'normal' and decision.get('decision') == 'promote'
                  and quality.get('status') == 'pass' and not decision.get('qualityBlockPromotion', False)
                  and not issue and all(s.get('pass') is True for s in normal)
