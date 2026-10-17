@@ -16,11 +16,12 @@ JSONのtest duration・hash・pass等のmetadataは正しい。秘匿を既定�
 
 ## 今回の3時間実機試行で確認したこと（継続中）
 
-2026-10-18 04:51 JST時点。runtimeは`0.7.5@f3ef308`に固定しており、この文書更新で変更しない。
+2026-10-18 04:53 JST時点。runtimeは`0.7.5@f3ef308`に固定しており、この文書更新で変更しない。
 対象はISUCON14 Goの練習環境で、`competition`も実際の公式競技サーバーではない。
 [詳細な暫定報告](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/TRIAL-RESULTS.md)は
-集計時刻を持つsnapshotであり、最終値とは区別する。実source採用は現時点で313e・0656・4177の3回。
-追加のマッチング改善は検証中で、最終stable・score・終了処理は未確定。
+集計時刻を持つsnapshotであり、最終値とは区別する。実source採用は313e・0656・4177・589fa3の4回、
+アプリ改善タスク7件がACCEPTED。589fa3の採用確認はnormal 4045/4688・警告なし、前stable4177比+23.31%。
+589fa3への両lane同期・新baselineは実行中で、最終restart・統合確認pair・score・終了処理は未確定。
 
 - 実EC2の独立した単独app＋専用benchを3組使い、最大3環境の同時計測を確認した。
   stable-syncは実採用0656の記録から両laneをa09→0656へ同期し、target操作は約16秒ずつ。
@@ -79,8 +80,9 @@ fake remoteで再現して修正した。probe失敗もmain/STABLE_REV更新前�
 1. **品質保留の修復を続ける**。基準版でも出る警告と候補の退行を区別し、
    実DBの再現・修正・公式採用proofで3件を解消した。新T12のCODE32を調査し、
    同じ内容の再試行には未解明の警告を引き継ぐ。
-2. **導入したLintを競技アプリでも確認する**。Goのgofmt／vet、Rustのfmt／Clippyを
-   候補提出手順とcheck記録へ接続済み。小さなfixtureでの検出と時間は計測済み。実アプリと並列時の費用を次に確認する。
+2. **Go実アプリで確認したLintをRust・並列資源の検証へ広げる**。Go競技アプリのwarm fmt/vetは
+   例0.078/0.321秒。rootの合成sourceではworkspace cache coldのvet 4.128秒、local test 1.311秒を確認した。
+   実MySQL確認は別の8.815秒で、local testと区別する。Rust実アプリと並列local資源競合の因果測定は未検証。
 3. **Go／Rustを改善サイクル全体で比較する**。ビルド・テスト・修正・復旧時間と、実行性能、
    コンパイル時の安全性を比較する。[判断基準とキャッシュ保持](team/docs/RUST_BUILD.md)は反映済み、言語間の実測は未実施。
 
