@@ -111,5 +111,9 @@ uses its application's cargo build --release --locked and correct binary path.
 Keep debug/race/instrumented builds out of adoption samples. Use native Go/Rust
 checks and the preparation/test procedure in `team/docs/PHASES.md`; do not assume
 the bundled ISUCON14 Go preset configures a different language automatically.
-For Rust, follow `team/docs/RUST_BUILD.md`: preserve target caches across sync,
+Choose Go/Rust using the tradeoff in `team/docs/RUST_BUILD.md`: measured build/test
+and repair cycle time, runtime score, compile-time safety and setup/implementation
+cost. AI prepares evidence and a recommendation; material tradeoffs follow the
+existing human decision policy. Do not require a lengthy language trial on contest day.
+For Rust, preserve target caches across sync,
 measure the real deploy/recovery build path, and budget that time before experiments.
