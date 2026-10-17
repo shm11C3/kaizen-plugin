@@ -179,6 +179,9 @@ EOF
 expect_fail "$S/bench.sh" baseline-3                   # needs --result
 "$S/bench.sh" baseline-3 --result 'pass=true score=2100 errors=none' --seconds 65 >/dev/null
 python3 -c 'import json,glob; s=[json.load(open(p)) for p in glob.glob(".kaizen/baseline/*/bench-*baseline-3.json")]; assert s and s[0]["score"]==2100 and s[0]["mode"]=="manual"' || fail "manual sample"
+"$S/bench.sh" baseline --result 'pass=true score=2050 errors=none' >/dev/null   # a label used before the promotion is fine again
+[ "$(ls .kaizen/baseline/"$(state STABLE_REV)"/bench-*-baseline.json | wc -l | tr -d ' ')" = 1 ] || fail "stable baseline sample filed under the new stable"
+[ ! -e .kaizen/bench-baseline.json ] || fail "no top-level sample file outside an experiment"
 
 echo "== hook guard"
 G="$PLUGIN/hooks/guard.py"

@@ -45,6 +45,7 @@ PY
 die() { friction_log die "$*"; echo "kaizen: $*" >&2; exit 2; }
 log() { echo "kaizen: $*" >&2; }
 friction_err() { # <command> <status>
+  [ "$2" != 141 ] || return 0   # SIGPIPE from a caller's `| head` is not the script's failure
   friction_log err "command failed with status $2" "$1"
 }
 set -E

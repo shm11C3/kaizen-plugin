@@ -68,11 +68,20 @@ if [ -n "$EXP" ]; then
     [ "$age" -lt "$MAX_EXP_MINUTES" ] || die "budget: $EXP has been open $age min (MAX_EXP_MINUTES=$MAX_EXP_MINUTES); evaluate and record it"
   fi
 fi
-[ ! -e "$EXP_DIR/bench-$label.json" ] || die "$EXP_DIR/bench-$label.json exists; use a new label"
+# Samples of the stable revision taken outside an experiment go straight to
+# .kaizen/baseline/<stable>/ with a timestamp, so the same label works again
+# after every promotion; inside an experiment the label is the file name.
+if [ -n "$EXP" ]; then
+  out_dir=$EXP_DIR; base="bench-$label"
+else
+  out_dir="$KAIZEN_DIR/baseline/$stable"; base="bench-$(stamp)-$label"
+  mkdir -p "$out_dir"
+fi
+[ ! -e "$out_dir/$base.json" ] || die "$out_dir/$base.json exists; use a new label"
 
 acquire_bench_lock
-logfile="$EXP_DIR/bench-$label.log"
-out="$EXP_DIR/bench-$label.json"
+logfile="$out_dir/$base.log"
+out="$out_dir/$base.json"
 if [ "$BENCH_MODE" = manual ]; then
   printf 'manual result recorded %s\n%s\n' "$(now)" "$manual_result" > "$logfile"
   secs=$manual_secs
@@ -108,8 +117,10 @@ state_set LAST_PASS "$passed"
 state_set LAST_SCORE "$score"
 
 case "$label" in baseline*)
-  mkdir -p "$KAIZEN_DIR/baseline/$stable"
-  cp "$out" "$KAIZEN_DIR/baseline/$stable/bench-$(stamp)-$label.json"
+  if [ -n "$EXP" ]; then
+    mkdir -p "$KAIZEN_DIR/baseline/$stable"
+    cp "$out" "$KAIZEN_DIR/baseline/$stable/bench-$(stamp)-$label.json"
+  fi
   ;;
 esac
 
