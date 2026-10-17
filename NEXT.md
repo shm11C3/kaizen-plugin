@@ -4,6 +4,12 @@
 
 ## 現行の優先事項（0.6.0とその後のmain更新）
 
+0.7.5では通常比較・観測専用・未計測・旧形式不明を分け、比較合格と実際の採用を
+別集計する。意図的な未採用だけでno_verified_gainを出さず、失敗・警告・品質不明は
+保持する。全102unit/E2Eと追加修正後13focused tests、実台帳のread-only再集計で確認した。
+待機も競技時計を消費し、これらの件数だけでは採用率の分母や因果効果を定義しない。
+実測中の配布版は境界まで据え置く。
+
 0.7.4ではpromote直前の実資源を、同candidate SHAの非観測sampleのfingerprintと照合する。
 human待ちrecoverでschemaが戻り、コード再deployだけで異なる資源を採用できる問題を
 fake remoteで再現して修正した。probe失敗もmain/STABLE_REV更新前に拒否し、

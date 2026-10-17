@@ -1,6 +1,6 @@
 {
   "name": "kaizen",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "ISUCON improvement loop for Claude Code: observe, hypothesize, change, deploy, bench, decide, record. Hooks keep benchmarks baselined, serial, and recorded.",
   "author": {
     "name": "shm11C3"
