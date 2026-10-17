@@ -58,6 +58,7 @@ HEALTH_CMD='true'
 bench_command() { echo "bash $PLUGIN/tests/fake-bench.sh"; }
 MAX_BENCH_PER_EXP=3
 PROBLEM=test
+RETRO_BLOCK_AFTER=1000
 EOF
 
 S="$PLUGIN/scripts"
@@ -219,6 +220,22 @@ printf '%s' "$out" | grep -q "1 measured, 1 promoted" || fail "measured summary 
 "$S/knowledge.sh" stats | grep -q "^fsync-on-commit" || fail "stats lists patterns"
 [ -f "$T/knowledge/patterns/unclassified.md" ] || fail "stub pattern for an experiment without patternId"
 python3 "$PLUGIN/knowledge/match.py" "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r[0]["stage"]=="early", r[0]'
+
+echo "== retro: friction capture, resolve, stop block"
+[ -f .kaizen/friction.jsonl ] || fail "friction.jsonl written by refused calls"
+"$S/retro.sh" list | grep -q "bench.sh die" || fail "retro list groups die entries"
+"$S/retro.sh" note "skill step 2 unclear" >/dev/null
+"$S/retro.sh" list | grep -q "skill step 2 unclear" || fail "retro note"
+n=$("$S/retro.sh" count | sed -n 's/friction: \([0-9]*\) .*/\1/p'); [ "$n" -gt 0 ] || fail "retro count"
+echo "RETRO_BLOCK_AFTER=1" >> .kaizen/config.sh
+hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")" | grep -q "friction" || fail "Stop blocks on unresolved friction"
+ids=$(python3 -c 'import json,sys; print(" ".join(str(i) for i,l in enumerate(open(sys.argv[1]),1) if l.strip() and not json.loads(l).get("resolved")))' .kaizen/friction.jsonl)
+export KAIZEN_RETRO_LOG="$T/retro/log.md"; mkdir -p "$T/retro"
+# shellcheck disable=SC2086
+"$S/retro.sh" resolve $ids --fix "test: expected guards" >/dev/null
+[ "$("$S/retro.sh" count | sed -n 's/friction: \([0-9]*\) .*/\1/p')" = 0 ] || fail "all resolved"
+[ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent after resolve"
+grep -q "test: expected guards" "$KAIZEN_RETRO_LOG" || fail "retro log row"
 
 echo "== status"
 "$S/status.sh" >/dev/null

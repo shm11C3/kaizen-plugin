@@ -142,6 +142,7 @@ EOF
     state_set CURRENT_EXPERIMENT ""
     "$KAIZEN_PLUGIN_ROOT/scripts/knowledge.sh" ingest "$EXP_DIR" || log "knowledge ingest failed; run knowledge.sh ingest $EXP_DIR later"
     echo "$EXP closed: rule=$rule final=$final; stable is $(short "$(state_get STABLE_REV)"), deployed $(short "$(state_get DEPLOYED_REV)")"
+    "$KAIZEN_PLUGIN_ROOT/scripts/retro.sh" count
     ;;
 
   *) die "usage: experiment.sh new <slug> | record [--override <decision>] <reason> | current" ;;

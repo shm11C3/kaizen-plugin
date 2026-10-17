@@ -42,6 +42,10 @@ EOF
     fi
     [ -f "$dir/record.json" ] || die "$dir has no record.json (experiment.sh record first)"
     : "${PROBLEM:=unknown}"
+    # Several loops (one per problem) share this corpus: serialize the append.
+    for _ in $(seq 1 60); do mkdir "$KNOWLEDGE/.ingest.lock" 2>/dev/null && break; sleep 1; done
+    [ -d "$KNOWLEDGE/.ingest.lock" ] || die "could not take $KNOWLEDGE/.ingest.lock"
+    trap 'rmdir "$KNOWLEDGE/.ingest.lock" 2>/dev/null || true' EXIT
     python3 - "$KNOWLEDGE" "$dir" "$PROBLEM" <<'EOF'
 import json, re, shutil, sys
 from pathlib import Path

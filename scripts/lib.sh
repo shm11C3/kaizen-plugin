@@ -29,8 +29,26 @@ KAIZEN_DIR="$KAIZEN_PROJECT/.kaizen"
 STATE_FILE="$KAIZEN_DIR/state.env"
 LOCK_DIR="$KAIZEN_DIR/bench.lock"
 
-die() { echo "kaizen: $*" >&2; exit 2; }
+# Friction: every refusal (die) and every unexpected command failure (ERR
+# trap) is appended to .kaizen/friction.jsonl so the retro step can turn
+# what broke on real hosts into plugin fixes without anyone taking notes.
+friction_log() { # <kind> <message> [<command>]
+  [ -d "${KAIZEN_DIR:-}" ] || return 0
+  python3 - "$KAIZEN_DIR/friction.jsonl" "$1" "$(basename "${BASH_SOURCE[$((${#BASH_SOURCE[@]} - 1))]:-$0}")" "${EXP:-}" "$2" "${3:-}" "$(now)" <<'PY' 2>/dev/null || true
+import json, sys
+path, kind, script, exp, message, command, ts = sys.argv[1:]
+with open(path, "a") as f:
+    f.write(json.dumps({"ts": ts, "kind": kind, "script": script, "experiment": exp or None,
+                        "message": message, "command": command or None, "resolved": False}, ensure_ascii=False) + "\n")
+PY
+}
+die() { friction_log die "$*"; echo "kaizen: $*" >&2; exit 2; }
 log() { echo "kaizen: $*" >&2; }
+friction_err() { # <command> <status>
+  friction_log err "command failed with status $2" "$1"
+}
+set -E
+trap 'friction_err "$BASH_COMMAND" $?' ERR
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 stamp() { date -u +%Y%m%dT%H%M%SZ; }
 epoch() { date +%s; }

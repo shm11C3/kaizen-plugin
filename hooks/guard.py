@@ -105,6 +105,22 @@ def pre_tool_use(event: dict, project: Path | None) -> None:
         return
 
 
+def unresolved_friction(project: Path) -> int:
+    try:
+        return sum(1 for line in (project / ".kaizen" / "friction.jsonl").read_text().splitlines()
+                   if line.strip() and not json.loads(line).get("resolved"))
+    except (OSError, json.JSONDecodeError):
+        return 0
+
+
+def retro_block_after(project: Path) -> int:
+    try:
+        found = re.findall(r"^RETRO_BLOCK_AFTER=(\d+)", (project / ".kaizen" / "config.sh").read_text(), re.M)
+        return int(found[-1]) if found else 5
+    except OSError:
+        return 5
+
+
 def stop(event: dict, project: Path | None) -> None:
     if project is None or event.get("stop_hook_active"):
         return
@@ -124,6 +140,10 @@ def stop(event: dict, project: Path | None) -> None:
         if list(exp_dir.glob("bench-*.json")) and not (exp_dir / "record.json").is_file():
             reasons.append(f"experiment {exp} has samples but no recorded decision: scripts/evaluate.sh then "
                            "scripts/experiment.sh record <reason>")
+    friction = unresolved_friction(project)
+    if not reasons and friction >= retro_block_after(project):
+        reasons.append(f"{friction} unresolved friction entries: run the retro skill "
+                       "(scripts/retro.sh list) and resolve them before stopping")
     if reasons:
         print(json.dumps({"decision": "block", "reason": "kaizen: " + "; ".join(reasons)}, ensure_ascii=False))
 
@@ -135,7 +155,8 @@ def session_start(project: Path | None) -> None:
     summary = (
         f"kaizen loop state in {project}: stable={state.get('STABLE_REV', '')[:7] or 'unset'} "
         f"deployed={state.get('DEPLOYED_REV', '')[:7] or 'none'} healthy={state.get('DEPLOYED_HEALTHY', '?')} "
-        f"experiment={state.get('CURRENT_EXPERIMENT') or 'none'} revert_pending={state.get('REVERT_PENDING', '0')}. "
+        f"experiment={state.get('CURRENT_EXPERIMENT') or 'none'} revert_pending={state.get('REVERT_PENDING', '0')} "
+        f"friction_unresolved={unresolved_friction(project)}. "
         "Use the kaizen skills (setup, observe, hypothesize, experiment, recover, status); "
         "benchmarks and deploys go through scripts/ only."
     )
