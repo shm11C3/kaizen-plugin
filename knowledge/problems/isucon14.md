@@ -19,3 +19,4 @@ Experiments in the order they were run.
 | 001-fsync-commit | fsync-on-commit | +6% | inconclusive | rule inconclusive: +5.9% median under ±15% noise; fsync setting alone does not move the score while matching bounds it |
 | 002-notification-interval | hot-polling-endpoint | +53% | promote | rule decision as evaluated |
 | 003-matching-interval | random-order-matching | -5% | reject | rule decision as evaluated |
+| 004-nearest-chair-matching | random-order-matching | - | reject | correctness failure CODE=15: a chair was assigned a new ride before it was notified of the previous ride's completion; 'free' must mean all six statuses were sent to the chair, not evaluation IS NULL |

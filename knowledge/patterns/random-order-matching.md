@@ -46,7 +46,15 @@ In order of cost:
   random chairs per call and most are busy, so more calls mostly add DB
   load. Fix the picker before the interval.
 
+- 004-nearest-chair-matching (isucon14): a chair counts as free only once
+  it has been *notified* of its last ride's completion (every status row
+  has `chair_sent_at`), not when the ride has an evaluation. Using
+  `rides.evaluation IS NULL` assigned a new ride too early and the
+  benchmark failed with error 15 after 12 seconds. Keep the original
+  "all six statuses sent" condition when rewriting the free-chair query.
+
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | 003-matching-interval | 3627/4119 | 3441/3934 | -5% | 2+2 | 2 | reject | reject | map[25:13]; map[25:15] |
+| isucon14 | 004-nearest-chair-matching | 3627/4119 | - | - | 2+0 | 1 | reject | reject | map[15:1] |

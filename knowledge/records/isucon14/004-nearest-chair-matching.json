@@ -1,0 +1,75 @@
+{
+  "experimentId": "004-nearest-chair-matching",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "004-nearest-chair-matching",
+    "patternId": "random-order-matching",
+    "hypothesisId": "nearest-free-chair-greedy",
+    "hypothesis": "The matcher assigns one ride per call to a random active chair, retrying up to ten random picks that are mostly busy; assigning every waiting ride per call to the nearest free chair (latest location, Manhattan distance, chairs without an unevaluated ride) completes rides sooner and with shorter pickups, which is what the score rewards.",
+    "observations": [
+      {
+        "summary": "observe-candidate (exp 003): ORDER BY RAND() picker ran 718+ times per minute scanning 375k rows; 003 showed more calls alone do not help; rides still queue (chair_id IS NULL query every tick)",
+        "artifact": ".kaizen/experiments/003-matching-interval/observe-candidate.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/internal_handlers.go",
+        "changeKind": "modify",
+        "reason": "replace random single assignment with greedy nearest-free-chair over all waiting rides"
+      }
+    ],
+    "changeSummary": "internalGetMatching: fetch all waiting rides and all free active chairs with latest location in two queries; greedy nearest assignment; one UPDATE per matched ride",
+    "expectedEffect": "rides matched within one tick and with nearer chairs; score up through completions and satisfaction; the free-chair query must stay cheap (uses idx on chair_locations(chair_id, created_at) and rides(chair_id,...))",
+    "stableRevision": "882a7bac000e27170e39bea65da7bbdb96975083",
+    "candidateRevision": "21093bdfb3365258bc812d866065453074907ebd",
+    "startedAt": "2026-10-17T09:11:21Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "reject",
+    "reason": "a candidate sample failed correctness (pass=false)",
+    "improvementBasisPoints": null,
+    "baselineScores": [
+      3627,
+      4119
+    ],
+    "candidateScores": null,
+    "baselineRevisions": [
+      "882a7bac000e27170e39bea65da7bbdb96975083"
+    ],
+    "candidateRevisions": [
+      "21093bdfb3365258bc812d866065453074907ebd"
+    ],
+    "decidedAt": "2026-10-17T09:12:27Z"
+  },
+  "finalDecision": "reject",
+  "override": null,
+  "reason": "correctness failure CODE=15: a chair was assigned a new ride before it was notified of the previous ride's completion; 'free' must mean all six statuses were sent to the chair, not evaluation IS NULL",
+  "stableBefore": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "stableAfter": "882a7bac000e27170e39bea65da7bbdb96975083",
+  "candidateRevision": "21093bdfb3365258bc812d866065453074907ebd",
+  "samples": [
+    {
+      "label": "candidate",
+      "experiment": "004-nearest-chair-matching",
+      "deployedRevision": "21093bdfb3365258bc812d866065453074907ebd",
+      "pass": false,
+      "score": 692,
+      "errors": "map[15:1]",
+      "durationSec": 12,
+      "finishedAt": "2026-10-17T09:11:43Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/004-nearest-chair-matching/bench-candidate.log"
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:11:30Z\tdeploy\tHEAD\t5s\tok",
+    "2026-10-17T09:11:43Z\tbench\tcandidate\t12s\tpass=false score=692",
+    "2026-10-17T09:12:26Z\tdeploy\t882a7bac000e27170e39bea65da7bbdb96975083\t4s\tok",
+    "2026-10-17T09:12:27Z\trecover\t882a7ba\t5s\tok"
+  ],
+  "closedAt": "2026-10-17T09:12:27Z"
+}
