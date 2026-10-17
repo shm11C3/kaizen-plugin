@@ -6,6 +6,10 @@
 set -euo pipefail
 
 PLUGIN=$(cd "$(dirname "$0")/.." && pwd)
+# A session that exported KAIZEN_PROJECT for the real target must not leak it
+# into the tests: every script would then act on that project with the fake
+# remote (seen 2026-10-17: friction rows and a failed "deploy" in the live repo).
+unset KAIZEN_PROJECT KAIZEN_PLUGIN_ROOT
 T=$(mktemp -d "${TMPDIR:-/tmp}/kaizen-test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 export KAIZEN_FAKE_REMOTE="$T/remote"
@@ -270,6 +274,8 @@ python3 "$PLUGIN/knowledge/match.py" "$PLUGIN/tests/fixtures/observe-isucon14-in
 out=$("$S/knowledge.sh" match "$PLUGIN/tests/fixtures/observe-isucon12-initial.txt")
 printf '%s' "$out" | grep -q "prepared statements" || fail "matcher says when the MySQL digest is blind to the app"
 printf '%s' "$out" | grep -q "endpoint latency rows" || fail "matcher parses the extra section's latency table"
+printf '%s' "$out" | grep -q "\] id-generation-table " || fail "matcher names the generator table from the index list"
+printf '%s' "$out" | grep -q "\] single-row-insert-loop " || fail "matcher names a slow POST endpoint as a per-row write loop"
 printf '%s' "$out" | grep -q "GET /api/player/competition/:id/ranking 200: 472 calls" || fail "endpoint rows reported"
 
 echo "== retro: friction capture, resolve, stop block"

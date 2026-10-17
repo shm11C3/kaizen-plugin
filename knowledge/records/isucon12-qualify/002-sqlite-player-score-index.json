@@ -1,0 +1,116 @@
+{
+  "experimentId": "002-sqlite-player-score-index",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "002-sqlite-player-score-index",
+    "patternId": "missing-secondary-index",
+    "hypothesisId": "idx-player-score-sqlite",
+    "hypothesis": "player_score in every tenant SQLite file has only PRIMARY KEY(id). GET ranking (1596 req over 3 runs, avg 1628 ms, 81 more answered 500 after 9.7 s) and GET player (1176 req, avg 2000 ms, one query per competition = 20 scans) filter by (tenant_id, competition_id[, player_id]) and sort by row_num, so each request scans the whole table (tenant 1: 1.67M rows) while holding the tenant flock. Composite indexes (tenant_id, competition_id, player_id, row_num) and (tenant_id, competition_id, row_num) turn the scans into range reads; rankings answer under 1 s, player workers stop leaving.",
+    "observations": [
+      {
+        "summary": "observe-baseline (3 runs aggregated): ranking 1596x avg 1628ms max 15439ms plus 81x 500 avg 9694ms; player 1176x avg 2000ms max 19196ms; bench log: 54 PlayerScenarioWorkers but 56 completed Player scenarios; Player+PlayerValidate = 1104 of 2378 points; no secondary index on player_score in sql/tenant/10_schema.sql; MySQL digests show only initialize statements (prepared statements undigested, 32k executes).",
+        "artifact": ".kaizen/observe-baseline.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "sql/tenant/10_schema.sql",
+        "changeKind": "modify",
+        "reason": "CREATE INDEX lines so tenants created by createTenantDB get the indexes"
+      },
+      {
+        "path": "sql/init.sh",
+        "changeKind": "modify",
+        "reason": "after copying initial_data, apply the schema's CREATE INDEX lines to every tenant_db/*.db so /initialize restores indexed files"
+      }
+    ],
+    "changeSummary": "Two composite indexes on player_score in every tenant SQLite DB: (tenant_id, competition_id, player_id, row_num) for player/billing/DELETE and (tenant_id, competition_id, row_num) for ranking; created in /initialize after the copy and in the schema for new tenants.",
+    "expectedEffect": "GET /api/player/competition/:id/ranking and GET /api/player/player/:id drop from seconds to tens of ms on the big tenant, no more 500s from the 10 s timeout, more player workers stay; score up well beyond the +5% band (plan item 1). Risk: /initialize grows by the index build (baseline 4.3 s, limit 30 s).",
+    "stableRevision": "de4926c1d82a62f47d12df96d40c17187e00694e",
+    "candidateRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+    "startedAt": "2026-10-17T10:09:21Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "inconclusive",
+    "reason": "median improved 505 bp but worst candidate 2269 does not clear best baseline 2378; noise not separated",
+    "improvementBasisPoints": 505,
+    "baselineScores": [
+      2130,
+      2274,
+      2378
+    ],
+    "candidateScores": [
+      2269,
+      2389,
+      2708
+    ],
+    "baselineRevisions": [
+      "de4926c1d82a62f47d12df96d40c17187e00694e"
+    ],
+    "candidateRevisions": [
+      "684159b622caeec283311bdb4e2ffbf6a4eed5a8"
+    ],
+    "observedSamplesIgnored": 0,
+    "decidedAt": "2026-10-17T10:14:27Z"
+  },
+  "finalDecision": "promote",
+  "override": {
+    "decision": "promote",
+    "reason": "rule: inconclusive (median +505 bp, worst candidate 2269 < best baseline 2378). Override to promote: plan items 4 (dedupe+batch upload), 5 (reader lock removal) and 6 (ranking JOIN) need these indexes, and the candidate's per-endpoint log shows the index itself was not the lever: ranking avg 1628->1565 ms, player 2000->1590 ms although player now does 20 indexed lookups; the latency is queueing behind the per-tenant flock (plan item 5 moves up). initialize 4.3 s -> 14.9 s (index build on 100 files; limit 30 s). All three candidate samples >= the baseline median."
+  },
+  "reason": "rule: inconclusive (median +505 bp, worst candidate 2269 < best baseline 2378). Override to promote: plan items 4 (dedupe+batch upload), 5 (reader lock removal) and 6 (ranking JOIN) need these indexes, and the candidate's per-endpoint log shows the index itself was not the lever: ranking avg 1628->1565 ms, player 2000->1590 ms although player now does 20 indexed lookups; the latency is queueing behind the per-tenant flock (plan item 5 moves up). initialize 4.3 s -> 14.9 s (index build on 100 files; limit 30 s). All three candidate samples >= the baseline median.",
+  "stableBefore": "de4926c1d82a62f47d12df96d40c17187e00694e",
+  "stableAfter": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+  "candidateRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "002-sqlite-player-score-index",
+      "deployedRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+      "pass": true,
+      "score": 2708,
+      "errors": "none",
+      "durationSec": 90,
+      "finishedAt": "2026-10-17T10:12:51Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/002-sqlite-player-score-index/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "002-sqlite-player-score-index",
+      "deployedRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+      "pass": true,
+      "score": 2389,
+      "errors": "none",
+      "durationSec": 94,
+      "finishedAt": "2026-10-17T10:14:27Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/002-sqlite-player-score-index/bench-candidate-3.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "002-sqlite-player-score-index",
+      "deployedRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+      "pass": true,
+      "score": 2269,
+      "errors": "none",
+      "durationSec": 88,
+      "finishedAt": "2026-10-17T10:11:19Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/002-sqlite-player-score-index/bench-candidate.log",
+      "observed": false
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T10:09:50Z\tdeploy\tHEAD\t6s\tok",
+    "2026-10-17T10:11:19Z\tbench\tcandidate\t88s\tpass=true score=2269",
+    "2026-10-17T10:12:51Z\tbench\tcandidate-2\t90s\tpass=true score=2708",
+    "2026-10-17T10:14:27Z\tbench\tcandidate-3\t94s\tpass=true score=2389"
+  ],
+  "closedAt": "2026-10-17T10:16:05Z"
+}

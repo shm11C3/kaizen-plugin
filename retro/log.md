@@ -28,3 +28,8 @@ What real targets taught the plugin, one row per resolved friction group.
 | 2026-10-17T09:20:15Z | - | bench.sh | /Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/bench-baseline.json exis | a78685b bench.sh files out-of-experiment samples under baseline/<stable>/ with a timestamp |
 | 2026-10-17T09:20:15Z | - | status.sh | command failed with status 141 | a78685b friction_err ignores status 141 |
 | 2026-10-17T09:23:54Z | - | retro.sh | a baseline sample taken under the slow log (long_query_time=0) scored 5077 vs 66 | 39506b0 samples taken while OBSERVE_SLOWLOG=1 carry observed:true and evaluate.sh ignores them (the 5077 sample predates the flag and stays in the files) |
+| 2026-10-17T10:16:57Z | isucon12-qualify | bench.sh | isu12 is not ready for a sample (BENCH_PRECHECK_CMD failed: ! pgrep -f "/usr/bin | 4457e03 |
+| 2026-10-17T10:16:57Z | isucon12-qualify | bench.sh | isu12 is not ready for a sample (BENCH_PRECHECK_CMD failed: ! pgrep -f "/usr/bin | 4457e03 |
+| 2026-10-17T10:16:57Z | isucon12-qualify | deploy.sh | command failed with status 17 | project fix: go/Dockerfile builds from archive.debian.org with Debian's mysql client (bullseye left deb.debian.org, Oracle apt key changed); isucon12-practice de4926c |
+| 2026-10-17T10:26:55Z | isucon12-qualify | bench.sh | isu12 runs unknown but state says 684159b; deploy again | 4b306e7 |
+| 2026-10-17T10:26:55Z | isucon12-qualify | deploy.sh | command failed with status 1 | 4b306e7 |

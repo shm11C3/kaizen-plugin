@@ -1,0 +1,109 @@
+{
+  "experimentId": "005-inprocess-id-generation",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "005-inprocess-id-generation",
+    "patternId": "id-generation-table",
+    "hypothesisId": "inprocess-hex-ids",
+    "hypothesis": "POST score (51 req/run, avg 3115 ms) and POST players/add (8 req, avg 4563 ms) are the top two app costs after 004; each CSV row and each player does REPLACE INTO id_generator on MySQL (autocommit, one row lock shared by every concurrent writer) before anything is written, and the upload holds the tenant writer lock meanwhile. Dispensing ids from an in-process counter (hex, seeded from the clock so it never collides with the initial data's ids or with ids from before a restart) removes N MySQL round trips per request.",
+    "observations": [
+      {
+        "summary": "observe-after-004 (one run): score upload 51x avg 3115ms max 15298ms; players/add 8x avg 4563ms; ranking 1687x avg 24ms; player 1163x avg 5ms; MySQL digest blind (prepared statements); dispenseID in go/isuports.go.",
+        "artifact": ".kaizen/observe-after-004.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/isuports.go",
+        "changeKind": "modify",
+        "reason": "dispenseID returns fmt.Sprintf(\"%x\", atomic counter seeded from UnixMicro); sync/atomic import"
+      }
+    ],
+    "changeSummary": "dispenseID no longer touches MySQL: a process-wide atomic counter seeded from the microsecond clock, formatted as hex like the old ids. id_generator stays in the schema and initialize untouched.",
+    "expectedEffect": "Upload and players/add drop from seconds to the SQLite write cost (tens to hundreds of ms); organizer scenarios iterate more; score up beyond the +4% band (plan item 4). Risk: id format accepted by the benchmarker (hex, longer than before: 13 digits).",
+    "stableRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+    "candidateRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+    "startedAt": "2026-10-17T12:12:43Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 7860 bp >= 300 bp and worst candidate 8226 > best baseline 4778",
+    "improvementBasisPoints": 7860,
+    "baselineScores": [
+      4430,
+      4608,
+      4608,
+      4778
+    ],
+    "candidateScores": [
+      8226,
+      8230,
+      8493
+    ],
+    "baselineRevisions": [
+      "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3"
+    ],
+    "candidateRevisions": [
+      "2c02e45b773ef7859bd864c758a59376fcd26871"
+    ],
+    "observedSamplesIgnored": 0,
+    "decidedAt": "2026-10-17T12:19:21Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "rule promote: median 4608 -> 8230 (+7860 bp), worst candidate 8226 > best baseline 4778. The per-row MySQL id dispense was the remaining cost of the writers (upload, players/add). Stopping here: wall-time limit (12:25 UTC) reached.",
+  "stableBefore": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+  "stableAfter": "2c02e45b773ef7859bd864c758a59376fcd26871",
+  "candidateRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "005-inprocess-id-generation",
+      "deployedRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+      "pass": true,
+      "score": 8493,
+      "errors": "none",
+      "durationSec": 89,
+      "finishedAt": "2026-10-17T12:17:57Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/005-inprocess-id-generation/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "005-inprocess-id-generation",
+      "deployedRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+      "pass": true,
+      "score": 8230,
+      "errors": "none",
+      "durationSec": 83,
+      "finishedAt": "2026-10-17T12:19:21Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/005-inprocess-id-generation/bench-candidate-3.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "005-inprocess-id-generation",
+      "deployedRevision": "2c02e45b773ef7859bd864c758a59376fcd26871",
+      "pass": true,
+      "score": 8226,
+      "errors": "none",
+      "durationSec": 82,
+      "finishedAt": "2026-10-17T12:16:27Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/005-inprocess-id-generation/bench-candidate.log",
+      "observed": false
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T12:15:04Z\tdeploy\tHEAD\t6s\tok",
+    "2026-10-17T12:16:27Z\tbench\tcandidate\t82s\tpass=true score=8226",
+    "2026-10-17T12:17:57Z\tbench\tcandidate-2\t89s\tpass=true score=8493",
+    "2026-10-17T12:19:21Z\tbench\tcandidate-3\t83s\tpass=true score=8230"
+  ],
+  "closedAt": "2026-10-17T12:19:37Z"
+}

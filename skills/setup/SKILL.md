@@ -53,7 +53,13 @@ ssh <host> 'sudo systemctl stop apt-daily.timer apt-daily-upgrade.timer unattend
 ```
 
 Keep `BENCH_PRECHECK_CMD` in the preset so a sample is refused while any
-package job runs. On contest day the servers are the organisers'; read
+package job runs. A host that unattended-upgrades already touched keeps
+the new packages across a stop/start: after the reboot check that the
+application service is up (`systemctl is-active <service>`) before
+`deploy.sh`; on isu12 the upgraded docker daemon refused the old compose
+plugin until the unit got `DOCKER_API_VERSION` (shipped as an `etc/`
+overlay), and the image could not rebuild until its apt sources pointed at
+archive.debian.org. On contest day the servers are the organisers'; read
 the manual before touching timers.
 
 ## 3. Pin stable and prove recovery

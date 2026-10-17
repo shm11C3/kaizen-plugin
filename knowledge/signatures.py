@@ -119,6 +119,26 @@ def single_row_insert_loop(obs) -> Rule:
         if q.startswith("INSERT") and d["calls"] >= 1000 and "..." not in d["query"]:
             evidence.append(f"{d['query'][:90]}: {d['calls']} single-row inserts, {d['total_s']}s")
             strength = max(strength, 0.4)
+    # The digest is blind to SQLite and to prepared statements; a slow bulk
+    # write endpoint in the per-endpoint table is the same symptom seen from
+    # the app (isucon12 CSV upload: 3.3 s avg, one INSERT per row).
+    for e in obs["endpoints"]:
+        if e["method"] == "POST" and e["status"] == "200" and e["avg_ms"] >= 1000 and e["count"] >= 20:
+            evidence.append(f"{e['method']} {e['path']}: {e['count']} calls avg {e['avg_ms']:.0f} ms (a write endpoint this slow is usually a per-row loop)")
+            strength = max(strength, 0.3)
+    return evidence, strength
+
+
+def id_generation_table(obs) -> Rule:
+    evidence, strength = [], 0.0
+    for entry in obs["indexes"]:
+        if re.match(r"^(\w*id_generator|\w*sequence\w*|\w*_generator)\.", entry, re.I):
+            evidence.append(f"{entry}: ids come from a generator table (one REPLACE/UPDATE on MySQL per id, serialized on its row lock)")
+            strength = max(strength, 0.4)
+    for d in obs["digests"]:
+        if re.search(r"(REPLACE|UPDATE|INSERT)\s+(INTO\s+)?`?\w*(generator|sequence)", d["query"], re.I) and d["calls"] >= 100:
+            evidence.append(f"{d['query'][:90]}: {d['calls']} calls, {d['total_s']}s")
+            strength = max(strength, 0.6)
     return evidence, strength
 
 
@@ -171,6 +191,7 @@ RULES = {
     "hot-polling-endpoint": hot_polling_endpoint,
     "heavy-aggregate-query": heavy_aggregate_query,
     "single-row-insert-loop": single_row_insert_loop,
+    "id-generation-table": id_generation_table,
     "auth-lookup-per-request": auth_lookup_per_request,
     "small-table-repeated-read": small_table_repeated_read,
     "db-busy-separate-host": db_busy_separate_host,

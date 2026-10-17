@@ -1,0 +1,112 @@
+{
+  "experimentId": "003-upload-batch-dedupe",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "003-upload-batch-dedupe",
+    "patternId": "single-row-insert-loop",
+    "hypothesisId": "upload-tx-batch-dedupe",
+    "hypothesis": "POST /api/organizer/competition/:id/score (46 req/run, avg 3677 ms, max 16.9 s) deletes the competition's rows and then inserts one row per CSV line with autocommit (one fsync each), all while holding the tenant flock; duplicates per player are kept, so a tenant-1 competition holds ~80k rows and every ranking read (527/run, avg 2049 ms) walks them all under the same lock. Writing DELETE + multi-row INSERTs in one transaction and keeping only the last CSV row per player removes the per-row fsyncs, shortens the lock hold, and leaves one row per player for ranking/player/billing to read.",
+    "observations": [
+      {
+        "summary": "observe-after-002 (one run on the indexed stable): score upload 46x avg 3677ms max 16857ms; ranking 527x avg 2049ms; player 462x avg 1327ms with only indexed PK lookups (queueing); bench ScenarioScoreMap: organizer scenarios 1205/2378 are paced by uploads; competitionScoreHandler inserts row by row with NamedExecContext on the *sqlx.DB (autocommit).",
+        "artifact": ".kaizen/observe-after-002.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/isuports.go",
+        "changeKind": "modify",
+        "reason": "competitionScoreHandler: dedupe rows per player (last wins), one transaction, chunked multi-row INSERT; response rows = CSV line count as before"
+      }
+    ],
+    "changeSummary": "competitionScoreHandler keeps the last row per player_id while reading the CSV, then runs DELETE and chunked multi-row INSERTs (500 rows) in one SQLite transaction; the lock is still taken for the whole handler; the rows field still reports the CSV line count.",
+    "expectedEffect": "Upload latency drops from seconds to well under a second (one fsync instead of N); ranking reads one row per player instead of every uploaded row, so ranking/player latency on the big tenant drops too; organizer scenarios iterate faster and fewer player workers leave; score up beyond the +9% band (plan item 2). Risk: ranking tie order must stay by row_num of the retained row (same row the old code picked).",
+    "stableRevision": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+    "candidateRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+    "startedAt": "2026-10-17T10:19:19Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "inconclusive",
+    "reason": "median improved 1020 bp but worst candidate 2504 does not clear best baseline 2708; noise not separated",
+    "improvementBasisPoints": 1020,
+    "baselineScores": [
+      2269,
+      2389,
+      2404,
+      2708
+    ],
+    "candidateScores": [
+      2504,
+      2641,
+      2678
+    ],
+    "baselineRevisions": [
+      "684159b622caeec283311bdb4e2ffbf6a4eed5a8"
+    ],
+    "candidateRevisions": [
+      "a0ef6f748b259f66ba19946c753922a10a7453be"
+    ],
+    "observedSamplesIgnored": 0,
+    "decidedAt": "2026-10-17T10:24:29Z"
+  },
+  "finalDecision": "promote",
+  "override": {
+    "decision": "promote",
+    "reason": "rule: inconclusive (median +1020 bp: 2504/2641/2678 vs 2269/2389/2404/2708; the 2708 baseline sample is the outlier the worst candidate must clear). Override to promote: plan item 3 (drop the reader flock) is only correct once the upload writes DELETE+INSERT atomically, which this change does; all candidates beat the baseline median by >= 450 bp. Mechanism note from the candidate's app log: upload 3677 -> 3050 ms avg, ranking 2049 -> 1462 ms, player 1327 -> 1672 ms: the per-row fsync was not the cost; the upload's time is waiting for the tenant flock and dispensing ids on MySQL per row while holding it. Prediction 'well under a second' was wrong."
+  },
+  "reason": "rule: inconclusive (median +1020 bp: 2504/2641/2678 vs 2269/2389/2404/2708; the 2708 baseline sample is the outlier the worst candidate must clear). Override to promote: plan item 3 (drop the reader flock) is only correct once the upload writes DELETE+INSERT atomically, which this change does; all candidates beat the baseline median by >= 450 bp. Mechanism note from the candidate's app log: upload 3677 -> 3050 ms avg, ranking 2049 -> 1462 ms, player 1327 -> 1672 ms: the per-row fsync was not the cost; the upload's time is waiting for the tenant flock and dispensing ids on MySQL per row while holding it. Prediction 'well under a second' was wrong.",
+  "stableBefore": "684159b622caeec283311bdb4e2ffbf6a4eed5a8",
+  "stableAfter": "a0ef6f748b259f66ba19946c753922a10a7453be",
+  "candidateRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "003-upload-batch-dedupe",
+      "deployedRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+      "pass": true,
+      "score": 2504,
+      "errors": "none",
+      "durationSec": 87,
+      "finishedAt": "2026-10-17T10:23:00Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/003-upload-batch-dedupe/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "003-upload-batch-dedupe",
+      "deployedRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+      "pass": true,
+      "score": 2678,
+      "errors": "none",
+      "durationSec": 88,
+      "finishedAt": "2026-10-17T10:24:29Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/003-upload-batch-dedupe/bench-candidate-3.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "003-upload-batch-dedupe",
+      "deployedRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+      "pass": true,
+      "score": 2641,
+      "errors": "none",
+      "durationSec": 87,
+      "finishedAt": "2026-10-17T10:21:32Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/003-upload-batch-dedupe/bench-candidate.log",
+      "observed": false
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T10:20:04Z\tdeploy\tHEAD\t6s\tok",
+    "2026-10-17T10:21:32Z\tbench\tcandidate\t87s\tpass=true score=2641",
+    "2026-10-17T10:23:00Z\tbench\tcandidate-2\t87s\tpass=true score=2504",
+    "2026-10-17T10:24:29Z\tbench\tcandidate-3\t88s\tpass=true score=2678"
+  ],
+  "closedAt": "2026-10-17T10:25:40Z"
+}

@@ -4,7 +4,7 @@ name: Many single-row INSERTs that could be one batch
 stage: mid
 cost: 15-30 min
 risk: mid
-signature: an INSERT digest without a VALUES list is executed >=1000 times
+signature: an INSERT digest without a VALUES list is executed >=1000 times, or a POST endpoint averages >=1 s over >=20 calls in the per-endpoint table
 sources:
   - https://isucon.net/archives/56850281.html
   - https://isucon.net/archives/58869617.html
@@ -42,4 +42,4 @@ round trips and flushes, and the client's next action starts sooner.
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
-
+| isucon12-qualify | 003-upload-batch-dedupe | 2269/2389/2404/2708 | 2504/2641/2678 | +10% | 4+3 | 4 | inconclusive | promote | rule: inconclusive (median +1020 bp: 2504/2641/2678 vs 2269/2389/2404/2708; the 2708 baseline sample is the outlier the worst candidate must clear). Override to promote: plan item 3 (drop the reader flock) is only correct once the upload writes DELETE+INSERT atomically, which this change does; all candidates beat the baseline median by >= 450 bp. Mechanism note from the candidate's app log: upload 3677 -> 3050 ms avg, ranking 2049 -> 1462 ms, player 1327 -> 1672 ms: the per-row fsync was not the cost; the upload's time is waiting for the tenant flock and dispensing ids on MySQL per row while holding it. Prediction 'well under a second' was wrong. |
