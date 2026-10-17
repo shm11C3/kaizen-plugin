@@ -75,15 +75,6 @@ python3 "$K/scripts/team/target.py" --agent b-claude-01 --token TOKEN experiment
 
 採用は計測したcandidateをmainへfast-forwardし、originへpushします。mainへのpushは統合担当だけが行います。更新競合なら止めて実状態を確認します。force-pushはしません。小さな実験要約を `records/` へ保存し、kaizenの手順で記録コミット後のstableを再固定します。却下・保留ならstableを復旧します。
 
-環境が採用済み版または復旧したstableに一致し、対象操作が終わってから解放します。
-
-```bash
-python3 "$K/scripts/team/control.py" env-release --agent b-claude-01 --token TOKEN \
-  --reason 'stableと全ホストの一致、実行中ベンチなしを確認'
-```
-
-`env-release`は実行中のラッパーがあれば拒否します。実際のサーバー状態とポータルベンチ終了の確認は統合担当の責任です。
-
 タスクの採否も台帳へ反映します。`task-finish`の採否更新は環境占有者に限定され、人間判断対象の採用には実際の判断への参照が必要です。参照文字列の存在だけで承認の真偽を検証できる仕組みではありません。
 
 ```bash
@@ -93,6 +84,15 @@ python3 "$K/scripts/team/control.py" task-finish --id T-0001 --agent b-claude-01
 ```
 
 採否の台帳更新は占有を解放する前に行います。
+
+環境が採用済み版または復旧したstableに一致し、対象操作が終わってから解放します。
+
+```bash
+python3 "$K/scripts/team/control.py" env-release --agent b-claude-01 --token TOKEN \
+  --reason 'stableと全ホストの一致、実行中ベンチなしを確認'
+```
+
+`env-release`は実行中のラッパーがあれば拒否します。実際のサーバー状態とポータルベンチ終了の確認は統合担当の責任です。
 
 ## 自動採用と人間判断
 

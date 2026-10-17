@@ -21,7 +21,7 @@
 | Repository | `shm11C3/isucon-competition` / Private |
 | Repository deploy key ID | `166751939` / write |
 | Plugin deploy key ID | `166751941` / read-only |
-| Plugin revision | `187200363e980f208b64040537e6357384604da3` |
+| 初期構築時のPlugin revision | `187200363e980f208b64040537e6357384604da3` |
 
 ## 検証
 
@@ -37,6 +37,8 @@
 競技用リポジトリは最小の起動案内だけを持ち、ソースは未投入。競技対象サーバー・ベンチ・デプロイpreset・Discord連携は未設定。通常の対象操作は無効。競技開始時に [RUNBOOK](../docs/RUNBOOK.md) で初期化する。
 
 初期構築時には当日用リポジトリへ管理コードを置いていたが、利用者の方針に合わせてプラグイン側へ移動。共通ホストの管理コードは `/srv/isucon/kaizen-plugin/scripts/team`、台帳と対象有効化設定は `/srv/isucon/state` に配置する。EC2・SSH鍵・台帳を作り直さず、競技用cloneから管理コードへの依存を除く。
+
+移行時の実装SHAは `7cb84b824d6d32246a4fcb56e3116ccc686cb9ad`（plugin 0.2.0）。SSM Command `e281c93b-00ce-4674-9438-87db8c28090b` でEC2内の6項目が成功。台帳を `/srv/isucon/state/team-before-plugin-move.sqlite3` にバックアップし、同じ占有をプラグイン側クライアントから確認。対象有効化設定はfalse、両SSH秘密鍵はisucon所有・権限600を維持。
 
 チームメンバーのGitHub・AWSアクセス追加、Discord接続、予算アラートの金額と通知先、終了時刻とfreeze時刻は、実際の参加者・競技情報に合わせて設定する。
 
