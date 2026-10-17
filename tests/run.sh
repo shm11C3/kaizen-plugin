@@ -111,6 +111,8 @@ git switch -q -c tmp-code && echo 3000 > go/score && git commit -qam "code chang
 expect_fail "$S/stable.sh" repin tmp-code              # deployable tree differs: a candidate, not a repin
 git switch -q main && git branch -q -D tmp-code
 
+echo "a record changed" >> .kaizen/RULES.md             # tracked records never count as a dirty tree
+
 echo "== experiment 1: promoted, with overlay change"
 expect_fail "$S/deploy.sh" HEAD~0 --dirty             # bad usage
 "$S/experiment.sh" new flush-log >/dev/null

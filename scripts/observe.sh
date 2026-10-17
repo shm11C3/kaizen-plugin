@@ -18,7 +18,7 @@ load_config
 
 case "${1:-}" in
   reset)
-    remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest'"
+    remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest; TRUNCATE performance_schema.events_statements_summary_global_by_event_name'"
     remote "$NGINX_HOST" "sudo truncate -s0 $ACCESS_LOG"
     if [ -n "$OBSERVE_RESET_CMD" ]; then
       remote "$NGINX_HOST" "$OBSERVE_RESET_CMD" || die "OBSERVE_RESET_CMD failed on $NGINX_HOST: $OBSERVE_RESET_CMD"
@@ -34,6 +34,9 @@ case "${1:-}" in
       echo
       echo "## MySQL statement digests by total time (performance_schema on $DB_HOST, since last reset)"
       remote "$DB_HOST" "$MYSQL_CMD -e \"SELECT ROUND(SUM_TIMER_WAIT/1e12,2) total_s, COUNT_STAR calls, ROUND(AVG_TIMER_WAIT/1e9,2) avg_ms, SUM_ROWS_EXAMINED rows_examined, SUM_ROWS_SENT rows_sent, LEFT(DIGEST_TEXT,150) query FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME='$DB_NAME' ORDER BY SUM_TIMER_WAIT DESC LIMIT 25\""
+      echo
+      echo "## MySQL statement time by event name (global, since last reset; prepared statements show here as statement/com/Execute even when the digest table has no text for them)"
+      remote "$DB_HOST" "$MYSQL_CMD -e \"SELECT EVENT_NAME, COUNT_STAR calls, ROUND(SUM_TIMER_WAIT/1e12,2) total_s, ROUND(AVG_TIMER_WAIT/1e9,2) avg_ms FROM performance_schema.events_statements_summary_global_by_event_name WHERE COUNT_STAR > 0 ORDER BY SUM_TIMER_WAIT DESC LIMIT 8\"" || echo "(not available)"
       echo
       echo "## requests by method, path (ids normalized), status ($NGINX_HOST:$ACCESS_LOG)"
       remote "$NGINX_HOST" "sudo awk '{p=\$7; sub(/\\?.*/,\"\",p); gsub(/${PATH_ID_REGEX//\//\\/}/,\"/:id\",p); k=\$6\" \"p\" \"\$9; c[k]++} END{for(k in c) print c[k], k}' $ACCESS_LOG | sort -rn | head -25"
