@@ -12,3 +12,4 @@ What real targets taught the plugin, one row per resolved friction group.
 | 2026-10-17T09:19:03Z | - | retro.sh | preset PATH_ID_REGEX '/[0-9]+|/user/[^/]+' swallowed the /user segment (GET /api | 93c9d99 presets/isucon13.sh PATH_ID_REGEX matches only the id segment |
 | 2026-10-17T09:20:15Z | - | bench.sh | /Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/bench-baseline.json exis | a78685b bench.sh files out-of-experiment samples under baseline/<stable>/ with a timestamp |
 | 2026-10-17T09:20:15Z | - | status.sh | command failed with status 141 | a78685b friction_err ignores status 141 |
+| 2026-10-17T09:23:54Z | - | retro.sh | a baseline sample taken under the slow log (long_query_time=0) scored 5077 vs 66 | 39506b0 samples taken while OBSERVE_SLOWLOG=1 carry observed:true and evaluate.sh ignores them (the 5077 sample predates the flag and stays in the files) |
