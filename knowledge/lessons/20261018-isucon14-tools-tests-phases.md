@@ -63,3 +63,13 @@ initial samples and fixed-source final verification are outside its20-minute clo
 and separately documented. Different duration, known problem, local transport,
 partial usage reporting and lack of a control arm prevent a causal score claim.
 Problem-specific repair mechanics remain knowledge; no ISUCON14-only skill was added.
+
+Post-window verification redeployed/recovered the selected initial source in a
+fresh clone and restarted its services. Scores were1042 /975 /1047, all official
+PASS, with warnings25:3+26:1 /none /26:2. Plugin quality remained unknown and its
+valid median was null (raw median1042). Thus CODE25 also occurs on the original
+source; the first two baseline samples did not characterize all recurring warnings.
+Do not infer that the status index caused it solely because its warning type was
+absent from those first samples. Fix/reproduce baseline quality and obtain truthful
+comparison denominators. Ordinary native Go test on that unchanged initial source
+still failed its known vet diagnostic; candidate-only fixes were not adopted.
