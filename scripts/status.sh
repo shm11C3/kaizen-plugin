@@ -15,6 +15,9 @@ if [ -n "$EXP" ]; then
   [ -f "$EXP_DIR/decision.json" ] && echo "  decision   $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["decision"], "-", d["reason"])' "$EXP_DIR/decision.json")"
 fi
 echo "last run     $(state_get LAST_RUN) pass=$(state_get LAST_PASS) score=$(state_get LAST_SCORE)"
+python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" summary "$KAIZEN_DIR/bench-attempts.jsonl"
+[ ! -f "$KAIZEN_DIR/manual-bench.json" ] || echo "portal       RESERVED: finish or abandon after confirming the run ended"
+echo "run limits   total $MAX_BENCH_TOTAL; hourly $MAX_BENCH_PER_HOUR; recovery reserve $RECOVERY_BENCH_RESERVE per experiment"
 if [ -n "$stable" ] && ls "$KAIZEN_DIR/baseline/$stable"/*.json >/dev/null 2>&1; then
   python3 - "$KAIZEN_DIR/baseline/$stable" <<'EOF'
 import glob, json, statistics, sys

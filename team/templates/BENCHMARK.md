@@ -10,6 +10,9 @@
 - baseline samples:
 - candidate samples:
 - 正しさ・エラー:
+- error種別・件数・比較可能な分母・失敗率・遅延の根拠:
+- 安定bundle ID / 計測後の資源fingerprint / baseline鮮度:
+- 物理試行（候補・復旧・結果なしを含む）/ 残り回数・時間:
 - 固定評価ルールの結果:
 - 最終判断・理由・人間判断参照（該当時）:
 - 現在配備されているSHA・復旧確認:

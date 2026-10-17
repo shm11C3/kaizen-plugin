@@ -1,6 +1,6 @@
 ---
 name: retro
-description: Turn what broke into plugin fixes. Use after every closed experiment, whenever a script refused or failed on a real host, and before ending a practice session: reads .kaizen/friction.jsonl (written automatically by every script), fixes the plugin (script, skill, signature, checklist) with a test, and marks the entries resolved so the plugin keeps its own improvement log.
+description: "Turn what broke into plugin fixes. Use after every closed experiment, whenever a script refused or failed on a real host, and before ending a practice session: reads .kaizen/friction.jsonl (written automatically by every script), fixes the plugin (script, skill, signature, checklist) with a test, and marks the entries resolved so the plugin keeps its own improvement log."
 ---
 
 # Retro

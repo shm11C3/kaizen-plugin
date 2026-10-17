@@ -39,7 +39,17 @@ def connect(path):
             id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL,
             actor TEXT NOT NULL, action TEXT NOT NULL, details TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS members (
+            agent TEXT PRIMARY KEY, provider TEXT NOT NULL,
+            plugin_version TEXT NOT NULL, joined_at TEXT NOT NULL
+        );
     """)
+    if 'human_question' not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
+        try:
+            db.execute('ALTER TABLE tasks ADD COLUMN human_question TEXT')
+        except sqlite3.OperationalError:
+            if 'human_question' not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
+                raise
     return db
 
 
@@ -85,6 +95,23 @@ def event(db, args, result):
 
 def dispatch(db, args):
     command = args.command
+    if command in ('join', 'queue'):
+        if args.ready_limit < 1:
+            raise ValueError('ready-limit must be positive')
+        version = json.loads((Path(__file__).resolve().parents[2] / '.claude-plugin/plugin.json').read_text())['version']
+        if command == 'join':
+            if args.plugin_version != version:
+                raise ValueError('plugin version differs from control host; align the release before joining')
+            db.execute('INSERT OR REPLACE INTO members VALUES (?,?,?,?)',
+                       (args.agent, args.provider, version, now()))
+        counts = {r['status']: r['n'] for r in db.execute('SELECT status,COUNT(*) AS n FROM tasks GROUP BY status')}
+        env = reservation(db)
+        result = {'plugin_version': version, 'counts': counts,
+                  'integration_owner': env['owner'] if env else None,
+                  'advice': 'analyze submitted candidates or logs before more implementation' if counts.get('READY', 0) >= args.ready_limit else 'claim or discover the next useful task'}
+        if command == 'join':
+            result['member'] = {'agent': args.agent, 'provider': args.provider}
+        return result
     if command == 'status':
         return {'environment': reservation(db), 'tasks': [public_task(r) for r in db.execute(
             'SELECT * FROM tasks ORDER BY priority DESC,id')]}
@@ -109,14 +136,16 @@ def dispatch(db, args):
         if command == 'task-finish':
             env = reservation(db)
             if args.result == 'BLOCKED':
-                if row['owner'] != args.agent or row['status'] not in ('CLAIMED', 'READY'):
+                if row['owner'] != args.agent or row['status'] not in ('CLAIMED', 'READY', 'NEEDS_MEASUREMENT'):
                     raise ValueError('only the current task owner may block active work')
-            elif not env or env['owner'] != args.agent or row['status'] not in ('READY', 'NEEDS_HUMAN'):
+            elif not env or env['owner'] != args.agent or row['status'] not in ('READY', 'NEEDS_HUMAN', 'NEEDS_MEASUREMENT'):
                 raise ValueError('only the environment owner may finish a submitted candidate')
             if args.result == 'ACCEPTED' and (row['review'] == 'human' or row['status'] == 'NEEDS_HUMAN') and not args.human_decision:
                 raise ValueError('human-reviewed candidate needs a recorded human decision reference')
-            db.execute('UPDATE tasks SET status=?,reason=?,human_decision=?,updated_at=? WHERE id=?',
-                       (args.result, args.reason, args.human_decision, now(), row['id']))
+            if args.result == 'NEEDS_HUMAN' and not (args.question or '').strip():
+                raise ValueError('NEEDS_HUMAN requires --question: the actual choice for the human, not unfinished investigation')
+            db.execute('UPDATE tasks SET status=?,reason=?,human_decision=?,human_question=?,updated_at=? WHERE id=?',
+                       (args.result, args.reason, args.human_decision, args.question, now(), row['id']))
         else:
             if row['owner'] != args.agent:
                 raise ValueError('task belongs to another session')
@@ -125,15 +154,22 @@ def dispatch(db, args):
                     raise ValueError('only CLAIMED tasks may be submitted')
                 if not all(re.fullmatch(r'[a-fA-F0-9]{40}', s) for s in (args.base, args.sha)):
                     raise ValueError('submit full 40-character base and source SHAs')
+                if row['review'] == 'human' and args.review != 'human':
+                    raise ValueError('a human-review candidate keeps that classification when resubmitted')
                 db.execute("UPDATE tasks SET status='READY',base_sha=?,source_sha=?,review=?,reason=?,updated_at=? WHERE id=?",
                            (args.base, args.sha, args.review, args.reason, now(), row['id']))
+            elif command == 'task-resume':
+                if row['status'] not in ('NEEDS_MEASUREMENT', 'BLOCKED'):
+                    raise ValueError('only measurement/investigation or blocked work may be resumed')
+                db.execute("UPDATE tasks SET status='CLAIMED',reason=?,human_question=NULL,updated_at=? WHERE id=?",
+                           (args.reason, now(), row['id']))
             elif command == 'task-release':
                 if row['status'] not in ('CLAIMED', 'BLOCKED'):
                     raise ValueError('only CLAIMED/BLOCKED tasks may return to TODO')
                 db.execute("UPDATE tasks SET status='TODO',owner=NULL,reason=?,updated_at=? WHERE id=?",
                            (args.reason, now(), row['id']))
             elif command == 'task-handoff':
-                if row['status'] not in ('CLAIMED', 'BLOCKED', 'READY', 'NEEDS_HUMAN'):
+                if row['status'] not in ('CLAIMED', 'BLOCKED', 'READY', 'NEEDS_HUMAN', 'NEEDS_MEASUREMENT'):
                     raise ValueError('cannot hand off a finished task')
                 db.execute('UPDATE tasks SET owner=?,reason=?,updated_at=? WHERE id=?',
                            (args.to, args.reason, now(), row['id']))
@@ -145,6 +181,8 @@ def dispatch(db, args):
                    (args.agent, uuid.uuid4().hex, args.purpose, now()))
         return reservation(db)
     previous = reservation(db, args.agent, args.token)
+    if Path(str(args.db) + '.manual-bench').exists():
+        raise ValueError('a portal benchmark is reserved; confirm it ended and record/abandon through target bench before release/handoff')
     if command == 'env-release':
         db.execute('DELETE FROM reservation')
         return {'released': previous, 'reason': args.reason}
@@ -161,6 +199,13 @@ def parser():
     commands = p.add_subparsers(dest='command', required=True)
     commands.add_parser('status')
     commands.add_parser('task-list')
+    for name in ('join', 'queue'):
+        c = commands.add_parser(name)
+        c.add_argument('--ready-limit', type=int, default=2)
+        if name == 'join':
+            c.add_argument('--agent', required=True)
+            c.add_argument('--provider', required=True, choices=('claude', 'codex'))
+            c.add_argument('--plugin-version', required=True)
     create = commands.add_parser('task-create')
     create.add_argument('--title', required=True)
     create.add_argument('--evidence', required=True)
@@ -168,7 +213,7 @@ def parser():
     claim = commands.add_parser('task-claim')
     claim.add_argument('--agent', required=True)
     claim.add_argument('--id')
-    for name in ('task-ready', 'task-release', 'task-handoff', 'task-finish'):
+    for name in ('task-ready', 'task-release', 'task-handoff', 'task-finish', 'task-resume'):
         c = commands.add_parser(name)
         c.add_argument('--id', required=True)
         c.add_argument('--agent', required=True)
@@ -181,8 +226,9 @@ def parser():
             c.add_argument('--to', required=True)
         if name == 'task-finish':
             c.add_argument('--result', required=True,
-                           choices=('ACCEPTED', 'REJECTED', 'NEEDS_HUMAN', 'BLOCKED'))
+                           choices=('ACCEPTED', 'REJECTED', 'NEEDS_HUMAN', 'NEEDS_MEASUREMENT', 'BLOCKED'))
             c.add_argument('--human-decision', help='reference to the actual human decision; never fabricate one')
+            c.add_argument('--question', help='concrete human choice, with alternatives and a recommendation in --reason')
     acquire = commands.add_parser('env-acquire')
     acquire.add_argument('--agent', required=True)
     acquire.add_argument('--purpose', required=True)

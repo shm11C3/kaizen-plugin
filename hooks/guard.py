@@ -34,9 +34,9 @@ REMOTE_TOOL = re.compile(r"\b(ssh|rsync|scp)\b")
 RESTART = re.compile(r"systemctl\s+(restart|stop|start|reload)\b")
 PUSH = re.compile(r"\brsync\b[^|;&]*\s\S+:\S*|\bscp\b")
 GIT_DESTRUCTIVE = re.compile(r"\bgit\b[^|;&]*\b(reset\s+--hard|push\s+(-f\b|--force)|checkout\s+--\s|clean\s+-[a-z]*f)")
-PROTECTED_FILE = re.compile(r"(decision|record)\.json|bench-[A-Za-z0-9_-]+\.json|state\.env|\.kaizen/baseline/")
+PROTECTED_FILE = re.compile(r"(decision|record)\.json|bench-[A-Za-z0-9_-]+\.json|state\.env|stable-bundle\.json|bench-attempts\.jsonl|manual-bench\.json|\.kaizen/baseline/")
 WRITE_INDICATOR = re.compile(r">|\btee\b|sed\s+-i|\brm\b|\bmv\b|\bcp\b|\btruncate\b|open\([^)]*['\"][wa]|\bdd\b")
-PROTECTED_PATH = re.compile(r"/\.kaizen/(experiments/[^/]+/(decision|record)\.json|experiments/[^/]+/bench-[^/]+\.json|state\.env|baseline/)")
+PROTECTED_PATH = re.compile(r"/\.kaizen/(experiments/[^/]+/(decision|record)\.json|experiments/[^/]+/bench-[^/]+\.json|state\.env|stable-bundle\.json|bench-attempts\.jsonl|manual-bench\.json|baseline/)")
 
 
 def find_project(start: str | None) -> Path | None:

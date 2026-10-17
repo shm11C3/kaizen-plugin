@@ -24,7 +24,29 @@ load_config
 cmd=${1:-}
 shift || true
 case "$cmd" in
+  capture)
+    [ -z "$EXP" ] || die "capture stable resources before opening an experiment"
+    acquire_bench_lock
+    no_manual_bench
+    stable=$(state_get STABLE_REV)
+    [ -n "$stable" ] && [ "$(state_get DEPLOYED_REV)" = "$stable" ] && [ "$(state_get DEPLOYED_HEALTHY)" = 1 ] || die "deploy healthy stable before capture"
+    [ "$(state_get REVERT_PENDING)" != 1 ] || die "recover before capture; never bless a failed candidate"
+    "$KAIZEN_PLUGIN_ROOT/scripts/verify.sh" "$stable" >/dev/null
+    [ -f "$KAIZEN_DIR/.gitignore" ] || printf '*\n!.gitignore\n!config.sh\n!preset.sh\n!RULES.md\n' > "$KAIZEN_DIR/.gitignore"
+    previous=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$KAIZEN_DIR/stable-bundle.json" 2>/dev/null || true)
+    identity=$(capture_bundle) || die "stable bundle capture failed"
+    if [ "$identity" != "$previous" ]; then
+      if [ -d "$KAIZEN_DIR/baseline/$stable" ]; then
+        mv "$KAIZEN_DIR/baseline/$stable" "$KAIZEN_DIR/baseline/$stable.retired-$(stamp)-$RANDOM"
+      fi
+      state_set BENCH_BUDGET_EXPERIMENT ""
+    fi
+    echo "stable bundle $identity captured; verify schema/config restoration with recover.sh before experiments"
+    ;;
   repin)
+    acquire_bench_lock
+    no_manual_bench
+    verify_bundle
     ref=${1:-$STABLE_BRANCH}
     new=$(git_rev "$ref") || die "unknown revision $ref"
     old=$(state_get STABLE_REV)
@@ -40,6 +62,8 @@ case "$cmd" in
       [ "$a" = "$b" ] || die "$path differs between stable $(short "$old") and $ref $(short "$new"); that is a candidate, not a repin (experiment.sh new)"
     done
     "$KAIZEN_PLUGIN_ROOT/scripts/verify.sh" "$new" >/dev/null || die "hosts do not match $ref; deploy.sh first"
+    config_hash=$(config_digest) || die "cannot identify target configuration"
+    fingerprints=$(resource_fingerprints) || die "cannot probe stable resources"
     deployed=$(state_get DEPLOYED_REV)
     if [ "$deployed" = "$old" ]; then
       for host in $APP_HOSTS; do
@@ -48,6 +72,8 @@ case "$cmd" in
       state_set DEPLOYED_REV "$new"
     fi
     state_set STABLE_REV "$new"
+    python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" repin "$KAIZEN_DIR/stable-bundle.json" \
+      "$new" "$config_hash" "$fingerprints"
     moved=0
     if [ -d "$KAIZEN_DIR/baseline/$old" ]; then
       mkdir -p "$KAIZEN_DIR/baseline/$new"
@@ -85,5 +111,5 @@ PY
     record_step forget-baseline "$(short "$stable")" 0 "$n samples: $reason"
     echo "retired $n baseline samples of $(short "$stable") -> $retired; take a new baseline (bench.sh baseline)"
     ;;
-  *) die "usage: stable.sh repin [<ref>] | forget-baseline <reason>" ;;
+  *) die "usage: stable.sh capture | repin [<ref>] | forget-baseline <reason>" ;;
 esac

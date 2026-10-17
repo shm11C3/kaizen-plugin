@@ -20,6 +20,8 @@
 
 ## タスクを進める
 
+参加時はONBOARDINGのjoinを通し、作業の区切りで `control.py queue` を読む。READYが既定2件以上なら、既存候補のログ解析や計測不足の解消を優先する。役割を固定せず、未計測候補を積み上げない。
+
 以下は各PCでの例です。コマンドの結果はJSONです。証拠には共有ホスト上の観測ファイルなど、他のメンバーが確認できる参照先を指定します。
 
 ```bash
@@ -73,6 +75,8 @@ python3 "$K/scripts/team/target.py" --agent b-claude-01 --token TOKEN experiment
 
 ポータル方式では占有を取ったまま人間がベンチを開始し、終了後に `bench candidate --result 'pass=true score=... errors=none'` で記録します。記録コマンドの時間だけを占有期間にしてはいけません。ログのリセット・プロファイリング設定変更も同じ占有下で行います。
 
+開始前に必ず `target ... bench candidate --reserve` を実行する。物理予算を消費し、結果の記録までdeploy/observe/占有解放・引継ぎを拒否する。終了したが結果を取得できない場合は、実行終了を確認して `target ... bench candidate --abandon '終了確認と理由'`。回数は返却されない。`--requests N`で比較可能なリクエスト総数を記録できる。SSH方式は任意の `parse_bench_requests <log>` で総数を返せる。
+
 採用は計測したcandidateをmainへfast-forwardし、originへpushします。mainへのpushは統合担当だけが行います。更新競合なら止めて実状態を確認します。force-pushはしません。小さな実験要約を `records/` へ保存し、kaizenの手順で記録コミット後のstableを再固定します。却下・保留ならstableを復旧します。
 
 タスクの採否も台帳へ反映します。`task-finish`の採否更新は環境占有者に限定され、人間判断対象の採用には実際の判断への参照が必要です。参照文字列の存在だけで承認の真偽を検証できる仕組みではありません。
@@ -95,6 +99,10 @@ python3 "$K/scripts/team/control.py" env-release --agent b-claude-01 --token TOK
 `env-release`は実行中のラッパーがあれば拒否します。実際のサーバー状態とポータルベンチ終了の確認は統合担当の責任です。
 
 ## 自動採用と人間判断
+
+計測不足や原因未解明のエラーは `task-finish --result NEEDS_MEASUREMENT`。元の担当が `task-resume --id T-0001 --agent SESSION --reason '調査を再開'` してCLAIMEDへ戻し、追加検証・再提出を行う。人間判断待ちは `--result NEEDS_HUMAN --question '判断してほしい選択'` とし、reasonに根拠・選択肢・推奨を記す。
+
+integratorは人間判断対象をmanifest.review=humanに設定する。採用時は `experiment record --human-decision ACTUAL_REF '理由'` とtask-finishの両方に実際の参照を記録する。質が不明な計測や正しさの問題は、この参照でも免除しない。
 
 通常の改善は、観測根拠・正しさ・現在のstableとの比較・性能評価・復旧可能性が揃い、人間判断条件に当てはまらなければAIが採用します。小さい差やノイズは計測を追加するか保留します。
 

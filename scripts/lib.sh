@@ -77,6 +77,13 @@ load_config() {
   : "${SYNC_EXCLUDES:=}" "${RSYNC_PATH:=}" "${SSH_CONFIG:=}" "${HEALTH_RETRIES:=20}"
   : "${STABLE_BRANCH:=main}" "${OVERLAY_DIR:=etc}" "${OVERLAY_SERVICES:=}" "${VERIFY_EXCLUDE_REGEX:=\.gz$}"
   : "${MIN_IMPROVEMENT_BP:=300}" "${MAX_BENCH_PER_EXP:=6}" "${MAX_EXP_MINUTES:=30}" "${MAX_EXP_PER_HOUR:=6}"
+  : "${MIN_SAMPLES:=2}" "${BASELINE_MAX_AGE_MINUTES:=60}" "${CORRECTNESS_ERROR_TYPES:=}"
+  : "${MAX_BENCH_TOTAL:=120}" "${MAX_BENCH_PER_HOUR:=30}" "${RECOVERY_BENCH_RESERVE:=1}"
+  : "${RESOURCE_HOSTS:=$APP_HOSTS}" "${RESOURCE_FINGERPRINT_CMD:=}" "${RECOVERY_CMD:=}"
+  : "${RESOURCE_PATHS:=sql $OVERLAY_DIR}"
+  if [ -n "$RESOURCE_FINGERPRINT_CMD" ] || [ -n "$RECOVERY_CMD" ]; then
+    [ -n "$RESOURCE_FINGERPRINT_CMD" ] && [ -n "$RECOVERY_CMD" ] || die "configure both RESOURCE_FINGERPRINT_CMD and RECOVERY_CMD"
+  fi
   mkdir -p "$KAIZEN_DIR/baseline" "$KAIZEN_DIR/experiments"
   EXP=$(state_get CURRENT_EXPERIMENT)
   if [ -n "$EXP" ]; then EXP_DIR="$KAIZEN_DIR/experiments/$EXP"; else EXP_DIR="$KAIZEN_DIR"; fi
@@ -175,6 +182,57 @@ git_head() { git -C "$KAIZEN_PROJECT" rev-parse HEAD; }
 # The loop's own records under .kaizen/ change during an experiment and may be
 # tracked; only application files count as a dirty tree.
 git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no -- . ':(exclude).kaizen')" ]; }
+
+config_digest() {
+  # Include resolved target commands and preset bytes; emit hashes only.
+  printf '%s\n' "$APP_HOSTS" "$RESOURCE_HOSTS" "$BENCH_HOST" "$BENCH_MODE" "$REMOTE_APP_DIR" \
+    "$LOCAL_SYNC_PATHS" "$OVERLAY_DIR" "$BUILD_CMD" "$RESTART_CMD" "$HEALTH_CMD" \
+    "$RESOURCE_FINGERPRINT_CMD" "$RECOVERY_CMD" "$SSH_CONFIG" \
+    "$(declare -f bench_command parse_bench 2>/dev/null || true)" |
+    python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" config "$KAIZEN_DIR/config.sh" \
+      "$KAIZEN_DIR/preset.sh" "$KAIZEN_PLUGIN_ROOT/.claude-plugin/plugin.json" "$KAIZEN_PLUGIN_ROOT"/presets/*.sh
+}
+
+resource_fingerprints() {
+  local host value
+  [ -n "$RESOURCE_FINGERPRINT_CMD" ] || return 0
+  for host in $RESOURCE_HOSTS; do
+    value=$(remote "$host" "$RESOURCE_FINGERPRINT_CMD") || die "resource probe failed on $host"
+    printf '%s\t%s\n' "$host" "$(printf '%s' "$value" | python3 -c 'import hashlib,sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())')"
+  done
+}
+
+verify_bundle() {
+  local stable config_hash fingerprints
+  stable=$(state_get STABLE_REV)
+  [ -f "$KAIZEN_DIR/stable-bundle.json" ] || die "stable bundle missing; initialize resources then stable.sh capture"
+  config_hash=$(config_digest) || die "cannot identify target configuration"
+  fingerprints=$(resource_fingerprints) || die "cannot probe stable resources"
+  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify "$KAIZEN_DIR/stable-bundle.json" \
+    "$stable" "$config_hash" "$fingerprints" || die "stable resource verification failed"
+}
+
+verify_bundle_config() {
+  local config_hash
+  config_hash=$(config_digest) || die "cannot identify target configuration"
+  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify-config "$KAIZEN_DIR/stable-bundle.json" \
+    "$(state_get STABLE_REV)" "$config_hash" "" || die "stable configuration changed"
+}
+
+capture_bundle() {
+  local paths host config_hash fingerprints
+  paths="$LOCAL_SYNC_PATHS $OVERLAY_DIR"
+  for host in $APP_HOSTS; do paths="$paths $OVERLAY_DIR-$host"; done
+  config_hash=$(config_digest) || die "cannot identify target configuration"
+  fingerprints=$(resource_fingerprints) || die "cannot capture stable resources"
+  # shellcheck disable=SC2086
+  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" capture "$KAIZEN_DIR/stable-bundle.json" \
+    "$(state_get STABLE_REV)" "$config_hash" "$fingerprints" $paths
+}
+
+no_manual_bench() {
+  [ ! -f "$KAIZEN_DIR/manual-bench.json" ] || die "a portal benchmark is reserved; record its result or abandon it after confirming it ended"
+}
 
 # experiments_started_since <epoch>: how many experiments opened after a time.
 experiments_started_since() {

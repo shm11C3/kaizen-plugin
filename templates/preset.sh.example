@@ -34,7 +34,7 @@ PATH_ID_REGEX='/[0-9A-Za-z]{20,}'    # how ids look in URLs, for grouping
 # OBSERVE_EXTRA_CMD='sudo alp ltsv --file /var/log/nginx/access.log --sort sum -r --limit 30'
 
 # Benchmark. On contest day the portal runs it: BENCH_MODE=manual and
-# bench.sh <label> --result 'pass=true score=1234 errors=...'.
+# bench.sh <label> --reserve before the portal, --result 'pass=true score=1234 errors=...' after it ended.
 # In practice with a reachable benchmarker: BENCH_MODE=ssh plus the two
 # functions below.
 BENCH_MODE=manual
@@ -44,3 +44,9 @@ BENCH_MODE=manual
 #   local line; line=$(grep -o 'pass=[a-z]* score=[0-9]*' "$1" | tail -1) || return 1
 #   echo "$(sed -n 's/.*pass=\([a-z]*\).*/\1/p' <<<"$line") $(sed -n 's/.*score=\([0-9]*\).*/\1/p' <<<"$line") none"
 # }
+
+# Quality denominators when the benchmark supplies a comparable request count:
+# parse_bench_requests() { # <log> -> nonnegative integer; never estimate from score
+#   ...
+# }
+# RESOURCE_FINGERPRINT_CMD and RECOVERY_CMD: see team/docs/RECOVERY.md.

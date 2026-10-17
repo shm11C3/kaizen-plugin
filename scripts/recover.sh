@@ -13,7 +13,7 @@ stable=$(state_get STABLE_REV)
 start=$(epoch)
 status=failed
 trap 'record_step recover "$(short "$stable")" $(( $(epoch) - start )) "$status"' EXIT
-"$KAIZEN_PLUGIN_ROOT/scripts/deploy.sh" "$stable" >/dev/null
+"$KAIZEN_PLUGIN_ROOT/scripts/deploy.sh" "$stable" --recover >/dev/null
 "$KAIZEN_PLUGIN_ROOT/scripts/verify.sh" "$stable"
 state_set REVERT_PENDING 0
 status=ok

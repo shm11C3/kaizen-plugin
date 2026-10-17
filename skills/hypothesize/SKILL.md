@@ -1,6 +1,6 @@
 ---
 name: hypothesize
-description: Turn an observation into one testable hypothesis and open an experiment for it. Use after observe, or when the human proposes a change: writes the Candidate Manifest (hypothesis, cited evidence, allowed change, expected effect) that deploy.sh requires before any candidate reaches a server.
+description: "Turn an observation into one testable hypothesis and open an experiment for it. Use after observe, or when the human proposes a change: writes the Candidate Manifest (hypothesis, cited evidence, allowed change, expected effect) that deploy.sh requires before any candidate reaches a server."
 ---
 
 # Hypothesize

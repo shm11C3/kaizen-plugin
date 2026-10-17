@@ -1,6 +1,6 @@
 ---
 name: recover
-description: Put every server back on the stable revision and prove it. Use when a candidate failed, the human says stop, a deploy was interrupted, or status shows deployed != stable with no open experiment.
+description: "Put every server back on the stable revision and prove it. Use when a candidate failed, the human says stop, a deploy was interrupted, or status shows deployed != stable with no open experiment."
 ---
 
 # Recover
@@ -10,12 +10,13 @@ Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 
 ```bash
 $K/scripts/status.sh
-$K/scripts/recover.sh        # deploy.sh <STABLE_REV> on every host + verify.sh
+$K/scripts/recover.sh        # stable code + configured resource restore + bundle verification
 $K/scripts/status.sh
 ```
 
-recover.sh clears REVERT_PENDING only after verify.sh reports every host
-matching stable. If it fails, the target is in an unknown state: read the
+recover.sh clears REVERT_PENDING only after files, target configuration and
+declared resource fingerprints match the captured stable bundle. See
+`$K/team/docs/RECOVERY.md`. If it fails, the target is in an unknown state: read the
 error, fix the host by hand only as far as needed for deploy.sh to succeed
 (a stuck service, a full disk), run recover.sh again, and tell the human
 what was done. Do not start or continue an experiment until it succeeds.

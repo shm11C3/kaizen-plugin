@@ -24,6 +24,7 @@
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 load_config
+no_manual_bench
 : "${ACCESS_LOG:=/var/log/nginx/access.log}" "${MYSQL_CMD:=sudo mysql}" "${PATH_ID_REGEX:=/[0-9A-Za-z]{20,}}"
 : "${DB_HOST:=$APP_HOST}" "${NGINX_HOST:=${APP_HOSTS%% *}}" "${OBSERVE_EXTRA_CMD:=}" "${OBSERVE_RESET_CMD:=}" "${MYSQL_DIGEST_SOURCE:=performance_schema}"
 case "$MYSQL_DIGEST_SOURCE" in performance_schema|slowlog) ;; *) die "MYSQL_DIGEST_SOURCE must be performance_schema or slowlog" ;; esac

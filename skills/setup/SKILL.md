@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Prepare a repository and its servers for the kaizen loop. Use at the start of a contest or practice session, or whenever .kaizen/config.sh is missing, hosts changed, or the stable revision must be re-pinned. Writes .kaizen/config.sh from a preset or the day's manual, pins STABLE_REV, deploys it, runs the recovery drill, and takes the first baseline.
+description: "Prepare a repository and its servers for the kaizen loop. Use at the start of a contest or practice session, or whenever .kaizen/config.sh is missing, hosts changed, or the stable revision must be re-pinned. Writes .kaizen/config.sh from a preset or the day's manual, pins STABLE_REV, deploys it, runs the recovery drill, and takes the first baseline."
 ---
 
 # Setup
@@ -68,6 +68,7 @@ the manual before touching timers.
 cd <project>
 printf 'STABLE_REV=%s\n' "$(git rev-parse main)" > .kaizen/state.env
 $K/scripts/deploy.sh main            # pushes, builds, restarts, verifies every host
+$K/scripts/stable.sh capture        # code/config/resource identity; initialize resources first
 $K/scripts/recover.sh                # the drill: stable must be restorable before any candidate
 ```
 
@@ -75,15 +76,26 @@ If deploy fails, fix config.sh (paths, commands, SSH) until `verify.sh main`
 reports every host matching; do not start experiments on a target you cannot
 restore.
 
+Configure RESOURCE_FINGERPRINT_CMD/RECOVERY_CMD for schema, indexes, data or
+external configuration changes before deploying those candidates. See
+`$K/team/docs/RECOVERY.md`. Never capture a failed candidate as stable.
+Record original updater/service settings before making authorised changes.
+Check the benchmark host as well as app hosts, including Snap refreshes;
+BENCH_HOST_PRECHECK_CMD can refuse a busy SSH benchmark host.
+
 ## 4. First baseline
 
 ```bash
 $K/scripts/observe.sh reset
 $K/scripts/bench.sh baseline          # ssh mode
-$K/scripts/bench.sh baseline --result 'pass=true score=1234 errors=none'   # manual mode, after the portal run
+$K/scripts/bench.sh baseline --reserve  # manual mode, before the portal run
+$K/scripts/bench.sh baseline --result 'pass=true score=1234 errors=none'   # after it ended
 $K/scripts/observe.sh dump baseline
 $K/scripts/bench.sh baseline-2
 ```
+
+Manual mode also reserves baseline-2 before the portal starts. All attempts,
+including missing results and recovery, count against physical-run budgets.
 
 Two samples show the noise; three when the two differ by more than
 `MIN_IMPROVEMENT_BP`. Commit `.kaizen/` (config, RULES, samples, dump) on

@@ -1,6 +1,6 @@
 ---
 name: status
-description: Show where the improvement loop stands: stable and deployed revisions, open experiment and its samples, baseline, budget, and the log of closed experiments. Use when resuming, before deciding what to do next, or when the human asks how it is going.
+description: "Show where the improvement loop stands: stable and deployed revisions, open experiment and its samples, baseline, budget, and the log of closed experiments. Use when resuming, before deciding what to do next, or when the human asks how it is going."
 ---
 
 # Status

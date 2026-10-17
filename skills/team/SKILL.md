@@ -1,6 +1,6 @@
 ---
 name: team
-description: Join or resume an autonomous ISUCON team after cloning the competition repository. Use for Claude or Codex team participation, task discovery and atomic claims, candidate submission, serialized integration and benchmarks, human decisions, or control-host operations. Keeps all shared operating rules and tooling in the installed plugin.
+description: "Join or resume an autonomous ISUCON team after cloning the competition repository. Use for Claude or Codex team participation, task discovery and atomic claims, candidate submission, serialized integration and benchmarks, human decisions, or control-host operations. Keeps all shared operating rules and tooling in the installed plugin."
 ---
 
 # Team
@@ -15,12 +15,17 @@ installation and the competition clone are separate directories.
    `$K/team/docs/RUNBOOK.md`. These are the shared operational source of truth.
 2. Pick a unique session ID, e.g. `a-codex-01`. Read the human's current
    strategy, exclusions, time budget, and stop instructions.
-3. Run `python3 "$K/scripts/team/control.py" status`. It uses the plugin's
-   `team/environments/competition/control-host.json`; pass `--host-config`
-   explicitly for another environment. Verify the AWS account before work.
+3. Run `python3 "$K/scripts/team/join.py" --project "$KAIZEN_PROJECT" --agent SESSION --provider codex`
+   (or `--provider claude`). This checks the clone/Git access, makes a tiny model
+   request with no source in an empty directory, checks AWS/SSM and the control
+   release, and registers membership. `--model MODEL` is a command-only override.
+   `--offline` checks files only and does not mean joined. Use `--host-config`
+   explicitly for another environment. Do not start work until `joined: true`.
 4. Work autonomously through discovery, task creation/claim, local implementation,
    validation, candidate submission, and the next useful task. Keep source work
    isolated in a branch or worktree. Use the plugin's `team/templates/`.
+   Check `control.py queue` at work boundaries. If READY candidates accumulate,
+   analyze existing evidence or help unblock measurement before adding more code.
 
 ## Integration
 
@@ -49,6 +54,22 @@ Escalate ambiguous adoption, broad risky changes, significant tradeoffs, or
 competing architectural/strategic options with evidence and a recommendation.
 Do safe comparison work first; ask before the risky shared action itself.
 Never waive correctness. Restore stable while waiting for human judgment.
+
+Missing samples, unexplained timeouts and incomplete validation are AI work:
+use NEEDS_MEASUREMENT, then the task owner uses task-resume to continue. Reserve
+NEEDS_HUMAN for a concrete value/risk/design choice; task-finish requires
+--question. Put the options, evidence and recommendation in --reason/the human
+decision template. Do not send unfinished investigation to the human queue.
+
+The integrator sets manifest.review=human for human candidates and supplies the
+actual --human-decision reference to experiment record as well as task-finish.
+Keep changedResources accurate. Capture the stable bundle before experiments;
+code-only recovery cannot restore SQL/config state. See team/docs/RECOVERY.md.
+
+Plan fresh baseline and candidate samples within the physical-run budget,
+reserving a final recovery slot. For a portal run, target bench LABEL --reserve
+comes before starting the portal; retain ownership until --result or --abandon
+after confirming the portal run ended. All attempts count, even without a score.
 
 Reservations have no expiry. Inspect actual processes and target state after a
 disconnect; never steal a reservation. Follow the runbook for handoff and freeze.

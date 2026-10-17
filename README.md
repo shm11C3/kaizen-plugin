@@ -10,6 +10,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [teamスキル](skills/team/SKILL.md)と[共通規約](team/POLICY.md)
 - [運用ガイド](team/docs/OPERATIONS.md)と[当日の手順](team/docs/RUNBOOK.md)
 - [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
+- [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 
 チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
 
@@ -34,7 +35,7 @@ tests/       偽リモートに対するループ全体のテスト
 | hooks/ | scripts/ を通さないベンチ・配備・記録の書き換えを拒否、未記録のまま終わらせない |
 | 人間 | 設定、ルールの確認、いつでも停止、判定の上書き |
 
-採否は固定ルール `plugin-rule-v1`（`evaluate.sh`）が `decision.json` に書き、Claude か人間がそれを読んで `experiment.sh record` で確定します。ルールと違う判断をするときは `--override` で理由ごと記録します。正しさ違反だけは上書きできません。
+採否は固定ルール `plugin-rule-v2`（`evaluate.sh`）が `decision.json` に書き、AIがそれを読んで `experiment.sh record` で確定します。通常改善は自動採用し、計測不足はAIが調査を続けます。具体的な価値・リスク判断を人間へ渡します。性能判定をpromoteへ上書きする場合は実際の `--human-decision` 参照が必要です。正しさ違反・品質未確認・比較不能な条件は参照だけで免除できません。
 
 ## 使い方
 
@@ -51,7 +52,7 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 1. チームの repo（サーバーのアプリ一式を `go/` `sql/` などに置いたもの）を用意する
 2. `/kaizen:setup`：`templates/preset.sh.example` を当日マニュアルから埋め、`.kaizen/config.sh` に `APP_HOSTS`（3 台）と `BENCH_MODE=manual` を書く。マニュアルで禁止されていることを `.kaizen/RULES.md` に書く
 3. stable を固定して配備し、復旧ドリルを通す
-4. ポータルでベンチを回し、結果を `bench.sh baseline --result 'pass=true score=... errors=...'` で記録する
+4. `bench.sh baseline --reserve`で枠を確保してからポータルでベンチを回し、`bench.sh baseline --result 'pass=true score=... errors=...'`で記録する
 5. `/kaizen:observe` → `/kaizen:hypothesize` → `/kaizen:experiment` を回す
 
 ### 練習（ISUCON14）
@@ -73,16 +74,21 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | 変数 | 既定 | 意味 |
 |---|---|---|
 | `MIN_IMPROVEMENT_BP` | 300 | 中央値の改善がこれ未満なら inconclusive |
-| `MAX_BENCH_PER_EXP` | 6 | 1 実験あたりのサンプル数上限 |
+| `MAX_BENCH_PER_EXP` | 6 | 復旧・結果なし・実験終了後の追加復旧も含む物理試行上限 |
+| `MAX_BENCH_TOTAL` / `MAX_BENCH_PER_HOUR` | 120 / 30 | project全体 / 直近1時間の物理試行上限 |
+| `RECOVERY_BENCH_RESERVE` | 1 | 実験内で最後のstable計測用に残す枠 |
+| `MIN_SAMPLES` | 2 | baseline/candidateそれぞれの最低サンプル数 |
+| `BASELINE_MAX_AGE_MINUTES` | 60 | 古いbaselineを判定から外す期限 |
 | `MAX_EXP_MINUTES` | 30 | 1 実験の制限時間 |
 | `MAX_EXP_PER_HOUR` | 6 | 1 時間に開ける実験数 |
 
-promote の条件は「候補の中央値が baseline の中央値を `MIN_IMPROVEMENT_BP` 以上上回り、最悪の候補サンプルが最良の baseline サンプルを上回る」です。
+promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、比較可能なrequest分母がない・新種がある・率が増える候補は調査へ戻します。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
 
 ## テスト
 
 ```bash
 tests/run.sh
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 偽のリモート（ホスト 2 台、偽ベンチ）に対して、配備・検証・baseline・promote・正しさ違反からの復旧・override・予算・hook をひととおり通します。

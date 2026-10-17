@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Decide the order of experiments from evidence before changing anything, and keep that order current. Use after setup (baseline + observation), after every promote, and whenever the remaining time or budget changes: ranks the matched patterns, adds whether each is on the benchmark's scoring path, and writes the order, reason and stop condition into .kaizen/plan.md.
+description: "Decide the order of experiments from evidence before changing anything, and keep that order current. Use after setup (baseline + observation), after every promote, and whenever the remaining time or budget changes: ranks the matched patterns, adds whether each is on the benchmark's scoring path, and writes the order, reason and stop condition into .kaizen/plan.md."
 ---
 
 # Plan

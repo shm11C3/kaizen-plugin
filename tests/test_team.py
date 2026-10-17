@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import sqlite3
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,6 +84,85 @@ class CoordinationTests(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('unconfigured', result.stderr)
+
+    def test_measurement_work_is_resumable_without_human_approval(self):
+        task_id = self.create()
+        self.call('task-claim', '--id', task_id, '--agent', 'worker')
+        self.call('task-ready', '--id', task_id, '--agent', 'worker', '--base', '1'*40,
+                  '--sha', '2'*40, '--review', 'auto', '--reason', 'candidate')
+        self.call('env-acquire', '--agent', 'integrator', '--purpose', task_id)
+        base = ('task-finish', '--id', task_id, '--agent', 'integrator')
+        self.assertNotEqual(self.run_cli(*base, '--result', 'NEEDS_HUMAN', '--reason', 'missing samples').returncode, 0)
+        self.call(*base, '--result', 'NEEDS_MEASUREMENT', '--reason', 'investigate errors and request denominator')
+        resumed = self.call('task-resume', '--id', task_id, '--agent', 'worker', '--reason', 'continue investigation')
+        self.assertEqual(resumed['status'], 'CLAIMED')
+        self.call('task-ready', '--id', task_id, '--agent', 'worker', '--base', '1'*40,
+                  '--sha', '3'*40, '--review', 'human', '--reason', 'now a latency tradeoff')
+        question = 'Accept increased notification latency for lower CPU?'
+        pending = self.call(*base, '--result', 'NEEDS_HUMAN', '--question', question,
+                            '--reason', 'comparison complete; recommend current behavior')
+        self.assertEqual(pending['human_question'], question)
+
+    def test_join_release_alignment_and_queue_do_not_disclose_reservation_token(self):
+        version = json.loads((ROOT / '.claude-plugin/plugin.json').read_text())['version']
+        self.call('env-acquire', '--agent', 'integrator', '--purpose', 'work')
+        self.assertNotEqual(self.run_cli('join', '--agent', 'a', '--provider', 'codex', '--plugin-version', 'wrong').returncode, 0)
+        result = self.call('join', '--agent', 'a', '--provider', 'codex', '--plugin-version', version)
+        self.assertNotIn('token', json.dumps(result))
+        self.assertEqual(result['integration_owner'], 'integrator')
+        self.assertIn('counts', self.call('queue'))
+
+    def test_existing_tasks_survive_additive_schema_upgrade(self):
+        legacy = Path(self.tmp.name) / 'legacy.sqlite3'
+        with sqlite3.connect(legacy) as db:
+            db.execute('CREATE TABLE tasks (id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,evidence TEXT NOT NULL,priority INTEGER NOT NULL,status TEXT NOT NULL DEFAULT "TODO",owner TEXT,base_sha TEXT,source_sha TEXT,review TEXT,reason TEXT,human_decision TEXT,updated_at TEXT NOT NULL)')
+            db.execute('INSERT INTO tasks(title,evidence,priority,status,owner,updated_at) VALUES (?,?,?,?,?,?)',
+                       ('existing work', 'old observation', 80, 'READY', 'worker', '2026-10-17'))
+        self.db = legacy
+        row = self.call('task-list')[0]
+        self.assertEqual((row['title'], row['status'], row['owner']), ('existing work', 'READY', 'worker'))
+        self.assertIsNone(row['human_question'])
+
+    def test_portal_benchmark_blocks_release_and_handoff_between_commands(self):
+        env = self.call('env-acquire', '--agent', 'a', '--purpose', 'portal')
+        marker = Path(str(self.db) + '.manual-bench')
+        marker.touch()
+        self.assertNotEqual(self.run_cli('env-release', '--agent', 'a', '--token', env['token'], '--reason', 'too early').returncode, 0)
+        self.assertNotEqual(self.run_cli('env-handoff', '--agent', 'a', '--token', env['token'], '--to', 'b', '--reason', 'too early').returncode, 0)
+        marker.unlink()
+        self.call('env-release', '--agent', 'a', '--token', env['token'], '--reason', 'portal finished')
+
+    def test_target_portal_marker_and_isolated_knowledge_survive_between_calls(self):
+        env = self.call('env-acquire', '--agent', 'a', '--purpose', 'portal')
+        project, plugin = Path(self.tmp.name) / 'project', Path(self.tmp.name) / 'plugin'
+        (project / '.kaizen').mkdir(parents=True)
+        (project / '.kaizen/config.sh').write_text('# fixture\n')
+        (plugin / 'scripts').mkdir(parents=True)
+        knowledge = (Path(self.tmp.name) / 'isolated-knowledge').resolve()
+        (plugin / 'knowledge/patterns').mkdir(parents=True)
+        (plugin / 'knowledge/match.py').write_text('# corpus seed\n')
+        (plugin / 'knowledge/patterns/test.md').write_text('seed pattern\n')
+        (plugin / 'scripts/bench.sh').write_text(
+            '#!/bin/bash\nset -eu\n'
+            'test "$KAIZEN_KNOWLEDGE_DIR" = ' + repr(str(knowledge)) + '\n'
+            'if [ "$2" = --reserve ]; then echo pending > .kaizen/manual-bench.json; else rm .kaizen/manual-bench.json; fi\n')
+        config = Path(self.tmp.name) / 'target.json'
+        config.write_text(json.dumps(dict(enabled=True, confirmed_rules=True, confirmed_recovery_drill=True,
+                                          project=str(project), plugin_root=str(plugin), knowledge_dir=str(knowledge))))
+        base = [sys.executable, str(ROOT / 'scripts/team/target.py'), '--agent', 'a', '--token', env['token'],
+                '--db', str(self.db), '--config', str(config), 'bench', 'baseline']
+        r = subprocess.run([*base, '--reserve'], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(Path(str(self.db) + '.manual-bench').exists())
+        self.assertEqual((knowledge / 'patterns/test.md').read_text(), 'seed pattern\n')
+        (knowledge / 'patterns/test.md').write_text('local measured evidence\n')
+        self.assertNotEqual(self.run_cli('env-release', '--agent', 'a', '--token', env['token'], '--reason', 'early').returncode, 0)
+        r = subprocess.run([*base, '--abandon', 'portal ended'], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertFalse(Path(str(self.db) + '.manual-bench').exists())
+        self.assertEqual((knowledge / 'patterns/test.md').read_text(), 'local measured evidence\n')
+        self.assertEqual((plugin / 'knowledge/patterns/test.md').read_text(), 'seed pattern\n')
+        self.call('env-release', '--agent', 'a', '--token', env['token'], '--reason', 'ended')
 
     def test_target_requires_current_owner_and_holds_operation_lock(self):
         env = self.call('env-acquire', '--agent', 'a', '--purpose', 'fixture')

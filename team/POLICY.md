@@ -100,6 +100,16 @@ contains source and minimal bootstrap files, not these rules or management tools
 - While a candidate awaits human judgment, restore stable and free the
   environment for other experiments. Reintegrate and remeasure if stable moves
   before that candidate is accepted.
+- Missing data, noisy measurements and unexplained errors are NEEDS_MEASUREMENT,
+  owned by AI investigation. NEEDS_HUMAN requires a concrete choice with options
+  and a recommendation. Exhausting the measurement budget does not create a
+  human decision by itself; preserve evidence and work on another useful task.
+- Install/join success includes actual model readiness and matching control-host
+  release. A filesystem-only check is not a joined member. Keep environment DB,
+  target configuration and knowledge paths together and isolated for rehearsals.
+- Stable includes the resource bundle, not only Git SHA. Probe/restore failures
+  cannot be waived. Count every physical attempt, including recovery and portal
+  reservations, within the configured project/hour/experiment budgets.
 
 ## Interruption, handoff, and finish
 

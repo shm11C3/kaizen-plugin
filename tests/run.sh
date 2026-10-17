@@ -62,6 +62,10 @@ RESTART_CMD='sudo systemctl restart app.service'
 HEALTH_CMD='true'
 bench_command() { echo "bash $PLUGIN/tests/fake-bench.sh"; }
 MAX_BENCH_PER_EXP=3
+RECOVERY_BENCH_RESERVE=0  # dedicated budget tests cover the default reserved recovery slot
+RESOURCE_FINGERPRINT_CMD='test ! -f fail-probe && cat database.state'
+RECOVERY_CMD='test ! -f fail-recovery && cp webapp/sql/1-schema.sql database.state'
+BENCH_PRECHECK_CMD='test ! -f busy.marker'
 PROBLEM=test
 RETRO_BLOCK_AFTER=1000
 EOF
@@ -75,11 +79,18 @@ echo "== setup: pin stable, deploy, recovery drill"
 printf 'STABLE_REV=%s\n' "$(git rev-parse main)" > .kaizen/state.env
 expect_fail "$S/bench.sh" baseline                    # nothing deployed yet
 "$S/deploy.sh" main >/dev/null
+for host in isu1 isu2; do cp "$KAIZEN_FAKE_REMOTE/$host/webapp/sql/1-schema.sql" "$KAIZEN_FAKE_REMOTE/$host/database.state"; done
+"$S/stable.sh" capture >/dev/null
 [ "$(state DEPLOYED_REV)" = "$(git rev-parse main)" ] || fail "DEPLOYED_REV after deploy"
 [ "$(cat "$KAIZEN_FAKE_REMOTE/isu2/webapp/.deployed-revision")" = "$(git rev-parse main)" ] || fail "marker on isu2"
 [ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/etc/mysql/my.cnf")" = "innodb_flush_log_at_trx_commit=1" ] || fail "overlay synced"
 "$S/recover.sh" >/dev/null
 "$S/verify.sh" main >/dev/null
+cp .kaizen/stable-bundle.json "$T/original-bundle.json"
+touch "$KAIZEN_FAKE_REMOTE/isu1/fail-probe"
+expect_fail "$S/stable.sh" capture
+cmp .kaizen/stable-bundle.json "$T/original-bundle.json" || fail "failed probe must not bless empty resource fingerprints"
+rm "$KAIZEN_FAKE_REMOTE/isu1/fail-probe"
 
 echo "== baseline"
 expect_fail "$S/bench.sh" candidate                   # no experiment open
@@ -88,7 +99,6 @@ expect_fail "$S/bench.sh" candidate                   # no experiment open
 [ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples filed"
 
 echo "== precheck: a busy host refuses a sample; forget-baseline retires contaminated samples"
-echo "BENCH_PRECHECK_CMD='test ! -f busy.marker'" >> .kaizen/config.sh
 touch "$KAIZEN_FAKE_REMOTE/isu2/busy.marker"
 expect_fail "$S/bench.sh" baseline-pc1
 [ ! -e .kaizen/bench-baseline-pc1.json ] || fail "no sample recorded when the precheck fails"
@@ -102,6 +112,17 @@ grep -q "upgrade ran" .kaizen/baseline/"$(git rev-parse main)".retired-*/REASON.
 expect_fail "$S/stable.sh" forget-baseline "nothing left"
 "$S/bench.sh" baseline-pc2 >/dev/null
 "$S/bench.sh" baseline-pc3 >/dev/null
+
+echo "== resource recovery: a code SHA alone does not restore a database"
+echo extra-index > "$KAIZEN_FAKE_REMOTE/isu1/database.state"
+"$S/deploy.sh" main >/dev/null
+expect_fail "$S/bench.sh" baseline-stale-db
+touch "$KAIZEN_FAKE_REMOTE/isu1/fail-recovery"
+expect_fail "$S/recover.sh"
+[ "$(state REVERT_PENDING)" = 1 ] || fail "failed resource restore keeps recovery pending"
+rm "$KAIZEN_FAKE_REMOTE/isu1/fail-recovery"
+"$S/recover.sh" >/dev/null
+cmp "$KAIZEN_FAKE_REMOTE/isu1/database.state" "$KAIZEN_FAKE_REMOTE/isu1/webapp/sql/1-schema.sql" || fail "original schema restored"
 
 echo "== repin: records committed on main move the branch, not the servers"
 echo "- no rule" > .kaizen/RULES.md && git add .kaizen/RULES.md && git commit -qm "records"
@@ -211,15 +232,21 @@ expect_fail "$S/bench.sh" candidate-4                  # MAX_BENCH_PER_EXP=3
 "$S/experiment.sh" record --override reject "too small to keep" >/dev/null
 python3 -c 'import json; r=json.load(open(".kaizen/experiments/003-tiny/record.json")); assert r["finalDecision"]=="reject" and r["override"]["decision"]=="reject" and r["ruleDecision"]["decision"]=="inconclusive"' || fail "override recorded"
 [ "$(state DEPLOYED_REV)" = "$cand" ] || fail "stable back after override reject"
+expect_fail "$S/bench.sh" baseline-after-close         # closed experiments still own their recovery budget
 
 echo "== manual bench mode"
 cat >> .kaizen/config.sh <<'EOF'
 BENCH_MODE=manual
 EOF
+"$S/stable.sh" capture >/dev/null                       # mode changed: retire incomparable baselines
 expect_fail "$S/bench.sh" baseline-3                   # needs --result
+expect_fail "$S/bench.sh" baseline-3 --result 'pass=true score=2100 errors=none'
+"$S/bench.sh" baseline-3 --reserve >/dev/null
+expect_fail "$S/deploy.sh" main                        # portal operation remains active between CLI calls
 "$S/bench.sh" baseline-3 --result 'pass=true score=2100 errors=none' --seconds 65 >/dev/null
 python3 -c 'import json,glob; s=[json.load(open(p)) for p in glob.glob(".kaizen/baseline/*/bench-*baseline-3.json")]; assert s and s[0]["score"]==2100 and s[0]["mode"]=="manual"' || fail "manual sample"
-"$S/bench.sh" baseline --result 'pass=true score=2050 errors=none' >/dev/null   # a label used before the promotion is fine again
+"$S/bench.sh" baseline --reserve >/dev/null
+"$S/bench.sh" baseline --result 'pass=true score=2050 errors=none' >/dev/null
 [ "$(ls .kaizen/baseline/"$(state STABLE_REV)"/bench-*-baseline.json | wc -l | tr -d ' ')" = 1 ] || fail "stable baseline sample filed under the new stable"
 [ ! -e .kaizen/bench-baseline.json ] || fail "no top-level sample file outside an experiment"
 
@@ -253,7 +280,10 @@ EOF
 "$S/deploy.sh" HEAD >/dev/null
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")" | grep -q '"block"' || fail "Stop should block with candidate deployed"
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":True}))' "$P")")" ] || fail "Stop must not loop"
+"$S/bench.sh" candidate --reserve >/dev/null
 "$S/bench.sh" candidate --result 'pass=true score=2600 errors=none' >/dev/null
+"$S/bench.sh" candidate-2 --reserve >/dev/null
+"$S/bench.sh" candidate-2 --result 'pass=true score=2601 errors=none' >/dev/null
 "$S/evaluate.sh" >/dev/null
 "$S/experiment.sh" record "stop check" >/dev/null
 [ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/004-stop-check/record.json"))["finalDecision"])')" = promote ] || fail "exp 4 should promote"
@@ -324,6 +354,11 @@ dump=$("$S/observe.sh" dump test)
 grep -q "extra-evidence-line" "$dump" || fail "OBSERVE_EXTRA_CMD output appended to the dump"
 grep -q '/api/x/:id' "$dump" || fail "ids normalized in the request section"
 echo "== observed samples are evidence, not measurements"
+"$S/stable.sh" capture >/dev/null
+for label in baseline-observe-1 baseline-observe-2; do
+  "$S/bench.sh" "$label" --reserve >/dev/null
+  "$S/bench.sh" "$label" --result 'pass=true score=2600 errors=none' >/dev/null
+done
 "$S/experiment.sh" new observed >/dev/null
 echo 3000 > go/score; git commit -qam "candidate: observed"
 python3 - <<'EOF'
@@ -333,15 +368,43 @@ m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observation
 EOF
 "$S/deploy.sh" HEAD >/dev/null
 printf 'OBSERVE_SLOWLOG=1\n' >> .kaizen/state.env          # what observe.sh reset does in slowlog mode
+"$S/bench.sh" candidate --reserve >/dev/null
 "$S/bench.sh" candidate --result 'pass=true score=9000 errors=none' | grep -q "observed under the slow log" || fail "observed sample announced"
 printf 'OBSERVE_SLOWLOG=0\n' >> .kaizen/state.env
 "$S/evaluate.sh" | grep -q '"inconclusive"' || fail "an observed-only candidate cannot decide"
 "$S/evaluate.sh" | grep -q "1 observed under the slow log were left out" || fail "reason names the ignored sample"
+"$S/bench.sh" candidate-2 --reserve >/dev/null
 "$S/bench.sh" candidate-2 --result 'pass=true score=2700 errors=none' >/dev/null
+"$S/evaluate.sh" | grep -q '"inconclusive"' || fail "one measured candidate is insufficient"
+"$S/bench.sh" candidate-3 --reserve >/dev/null
+"$S/bench.sh" candidate-3 --result 'pass=true score=2701 errors=none' >/dev/null
 "$S/evaluate.sh" | grep -q '"promote"' || fail "measured sample decides"
 "$S/experiment.sh" record "observed check" >/dev/null
 ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "candidate-2-reseed" || fail "measured candidate reseeded"
 ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "bench-candidate-reseed" && fail "observed candidate must not reseed the baseline"
+
+echo "== quality: score gain and a human reference cannot waive unexplained errors"
+"$S/experiment.sh" new quality >/dev/null
+echo 6000 > go/score; git commit -qam 'candidate: more throughput with unexplained errors'
+python3 - <<'EOF'
+import json
+p='.kaizen/experiments/006-quality/manifest.json'
+m=json.load(open(p));m.update(hypothesis='x',expectedEffect='y',observations=[{'artifact':'a'}]);json.dump(m,open(p,'w'))
+EOF
+"$S/deploy.sh" HEAD >/dev/null
+for label in candidate candidate-2; do
+  "$S/bench.sh" "$label" --reserve >/dev/null
+  "$S/bench.sh" "$label" --result 'pass=true score=6000 errors=map[25:12]' >/dev/null
+done
+"$S/evaluate.sh" | grep -q 'investigate' || fail 'unexplained errors need investigation'
+expect_fail "$S/experiment.sh" record --override promote --human-decision 'fixture: approval cannot waive quality' 'no'
+"$S/experiment.sh" record 'needs AI investigation, not a human waiver' >/dev/null
+before=$(wc -l < .kaizen/bench-attempts.jsonl)
+"$S/bench.sh" baseline-abandoned --reserve >/dev/null
+expect_fail "$S/stable.sh" capture
+"$S/bench.sh" baseline-abandoned --abandon 'fixture: portal run confirmed ended without a result' >/dev/null
+after=$(wc -l < .kaizen/bench-attempts.jsonl)
+[ "$after" -eq "$((before + 1))" ] || fail 'abandoned portal attempt stays counted'
 
 echo "== observe: slow-log digest aggregator"
 out=$(python3 "$PLUGIN/scripts/slowlog_digest.py" "$PLUGIN/tests/fixtures/mysql-slow.log")

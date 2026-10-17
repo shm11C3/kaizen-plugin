@@ -1,6 +1,6 @@
 ---
 name: observe
-description: Collect the evidence a hypothesis must cite. Use before every hypothesis and after every promotion: resets the counters, runs or records one benchmark, dumps MySQL digests, request mix, and indexes into observe-<name>.txt, and summarizes the top three costs.
+description: "Collect the evidence a hypothesis must cite. Use before every hypothesis and after every promotion: resets the counters, runs or records one benchmark, dumps MySQL digests, request mix, and indexes into observe-<name>.txt, and summarizes the top three costs."
 ---
 
 # Observe
@@ -11,7 +11,8 @@ Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 ```bash
 $K/scripts/status.sh                      # stable, deployed, open experiment, budget
 $K/scripts/observe.sh reset               # clear performance_schema digests and the access log
-$K/scripts/bench.sh <label>               # ssh mode; manual mode: --result '...' after the portal run
+$K/scripts/bench.sh <label>               # ssh mode
+# manual: bench.sh <label> --reserve before the portal; --result '...' after it ended
 $K/scripts/observe.sh dump <name>         # writes observe-<name>.txt, prints its path
 ```
 

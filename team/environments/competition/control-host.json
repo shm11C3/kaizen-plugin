@@ -11,5 +11,7 @@
   "plugin_repository": "shm11C3/kaizen-plugin",
   "remote_plugin_root": "/srv/isucon/kaizen-plugin",
   "access": "ssm",
-  "target_configured": false
+  "target_configured": false,
+  "state_db": "/srv/isucon/state/team.sqlite3",
+  "target_config": "/srv/isucon/state/target.json"
 }

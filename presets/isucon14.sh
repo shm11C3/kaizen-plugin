@@ -49,5 +49,5 @@ parse_bench() {
   pass=$(printf '%s' "$line" | sed -n 's/.*pass=\([a-z]*\).*/\1/p')
   score=$(printf '%s' "$line" | sed -n 's/.*スコア=\([0-9]*\).*/\1/p')
   errors=$(sed -n 's/.*種別エラー数="\{0,1\}\(map\[[^]]*\]\).*/\1/p' "$1" | tail -1 | tr ' ' ',')
-  echo "$pass $score ${errors:-none}"
+  echo "$pass $score ${errors:-unknown}"
 }

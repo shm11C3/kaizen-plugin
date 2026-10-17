@@ -1,6 +1,6 @@
 ---
 name: knowledge
-description: Use the measured pattern corpus. Before a hypothesis, match an observation dump against the pattern signatures and read the matching pattern files; after an experiment, confirm it was ingested and improve the pattern file (checklist, signature) from what happened. Also the place to add a new pattern from a write-up or an official 解説.
+description: "Use the measured pattern corpus. Before a hypothesis, match an observation dump against the pattern signatures and read the matching pattern files; after an experiment, confirm it was ingested and improve the pattern file (checklist, signature) from what happened. Also the place to add a new pattern from a write-up or an official 解説."
 ---
 
 # Knowledge

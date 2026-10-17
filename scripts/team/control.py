@@ -9,6 +9,21 @@ import sys
 import time
 
 
+def remote_command(config, command, arguments):
+    if ('state_db' in config) != ('target_config' in config):
+        raise ValueError('set both state_db and target_config for an environment; never mix a test ledger with the default target')
+    for key in ('state_db', 'target_config'):
+        if key in config and (not isinstance(config[key], str) or not Path(config[key]).is_absolute()):
+            raise ValueError(key + ' must be an absolute control-host path')
+    script = 'target.py' if command == 'target' else 'team.py'
+    forwarded = list(arguments) if command == 'target' else [command, *arguments]
+    options = ['--db', config.get('state_db', '/srv/isucon/state/team.sqlite3')]
+    if command == 'target':
+        options += ['--config', config.get('target_config', '/srv/isucon/state/target.json')]
+    return shlex.join(['runuser', '-u', 'isucon', '--', 'python3',
+                      config['remote_plugin_root'] + '/scripts/team/' + script, *options, *forwarded])
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--host-config', default=str(Path(__file__).resolve().parents[2] / 'team/environments/competition/control-host.json'))
@@ -32,11 +47,7 @@ def main():
                 raise ValueError('result requires the previous SSM Command ID')
             command_id = args.arguments[0]
         else:
-            script = 'target.py' if args.command == 'target' else 'team.py'
-            forwarded = args.arguments if args.command == 'target' else [args.command, *args.arguments]
-            command = shlex.join(['runuser', '-u', 'isucon', '--', 'python3',
-                                  config['remote_plugin_root'] + '/scripts/team/' + script, '--db',
-                                  '/srv/isucon/state/team.sqlite3', *forwarded])
+            command = remote_command(config, args.command, args.arguments)
             response = aws('ssm', 'send-command', '--document-name', 'AWS-RunShellScript',
                            '--instance-ids', config['instance_id'], '--timeout-seconds', '60',
                            '--parameters', json.dumps({'commands': [command], 'executionTimeout':

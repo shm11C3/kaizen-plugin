@@ -4,5 +4,6 @@
   "project": "/srv/isucon/repo",
   "confirmed_rules": false,
   "confirmed_recovery_drill": false,
-  "note": "The control host stores this at /srv/isucon/state/target.json. Enable only after today's source, rules, preset and recovery drill are confirmed. Never put credentials here."
+  "note": "The control host stores this at /srv/isucon/state/target.json. Enable only after today's source, rules, preset and recovery drill are confirmed. Never put credentials here.",
+  "knowledge_dir": "/srv/isucon/state/knowledge"
 }

@@ -16,14 +16,17 @@
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 load_config
 
-ref=${1:?usage: deploy.sh <git-ref>}
-[ $# -eq 1 ] || die "usage: deploy.sh <git-ref> (one committed revision, nothing else)"
+ref=${1:?usage: deploy.sh <git-ref> [--recover]}
+restore=0
+if [ $# -eq 2 ] && [ "$2" = --recover ]; then restore=1; else [ $# -eq 1 ] || die "usage: deploy.sh <git-ref> [--recover]"; fi
 rev=$(git_rev "$ref") || die "unknown revision $ref"
 stable=$(state_get STABLE_REV)
+[ "$restore" = 0 ] || [ "$rev" = "$stable" ] || die "--recover restores only stable"
 if [ "$(state_get REVERT_PENDING)" = 1 ] && [ "$rev" != "$stable" ]; then
   die "the last candidate failed and is still deployed; run recover.sh first"
 fi
 if [ "$rev" != "$stable" ]; then
+  verify_bundle_config
   [ -n "$EXP" ] || die "no open experiment; a non-stable revision deploys only inside one (experiment.sh new <slug>)"
   # Config, rules, the plan and the ignore file may legitimately change in a
   # candidate; records (experiments, baseline, timeline, friction, log) may not.
@@ -35,9 +38,18 @@ m = json.load(open(sys.argv[1]))
 ok = m.get("hypothesis") and m.get("expectedEffect") and m.get("observations") and m["observations"][0].get("artifact")
 sys.exit(0 if ok else 1)
 EOF
+  # SQL/overlay changes can outlive a code redeploy. Require explicit restoration.
+  # shellcheck disable=SC2086
+  changed_resources=$(git -C "$KAIZEN_PROJECT" diff --name-only "$stable" "$rev" -- $RESOURCE_PATHS ":(glob)$OVERLAY_DIR-*")
+  declared_resources=$(python3 -c 'import json,sys; print(bool(json.load(open(sys.argv[1])).get("changedResources")))' "$EXP_DIR/manifest.json")
+  if [ -n "$changed_resources" ] || [ "$declared_resources" = True ]; then
+    [ -n "$RECOVERY_CMD" ] || die "SQL/config/resource candidate needs RESOURCE_FINGERPRINT_CMD and RECOVERY_CMD before deployment"
+  fi
 fi
 
 acquire_bench_lock
+no_manual_bench
+[ "$restore" = 0 ] || state_set REVERT_PENDING 1
 start=$(epoch)
 status=failed
 export_dir=""
@@ -100,7 +112,13 @@ $(sync_overlay "$export_dir/$OVERLAY_DIR-$host" "$host")"
 done
 
 "$KAIZEN_PLUGIN_ROOT/scripts/verify.sh" "$rev" >/dev/null
+if [ "$restore" = 1 ]; then
+  if [ -n "$RECOVERY_CMD" ]; then
+    for host in $RESOURCE_HOSTS; do remote "$host" "$RECOVERY_CMD"; done
+  fi
+  verify_bundle
+fi
 state_set DEPLOYED_HEALTHY 1
-[ "$rev" = "$stable" ] && state_set REVERT_PENDING 0
+[ "$restore" = 0 ] || state_set REVERT_PENDING 0
 status=ok
 echo "$rev"

@@ -24,6 +24,8 @@ case "$cmd" in
     case "$slug" in *[!A-Za-z0-9_-]*) die "slug must be [A-Za-z0-9_-]" ;; esac
     [ -z "$EXP" ] || die "experiment $EXP is still open; record its decision first"
     [ "$(state_get REVERT_PENDING)" != 1 ] || die "a failed candidate is still deployed; recover.sh first"
+    no_manual_bench
+    verify_bundle
     git_dirty && die "the working tree has uncommitted changes; commit or stash them before a new experiment"
     stable=$(state_get STABLE_REV)
     [ -n "$stable" ] || die "STABLE_REV is not set; run /kaizen:setup"
@@ -46,9 +48,9 @@ case "$cmd" in
     dir="$KAIZEN_DIR/experiments/$name"
     mkdir -p "$dir"
     git -C "$KAIZEN_PROJECT" switch -q -c "exp/$name" "$base"
-    python3 - "$dir/manifest.json" "$name" "$stable" "$(now)" <<'EOF'
+    python3 - "$dir/manifest.json" "$name" "$stable" "$(now)" "$KAIZEN_DIR/stable-bundle.json" <<'EOF'
 import json, sys
-path, name, stable, started = sys.argv[1:]
+path, name, stable, started, bundle = sys.argv[1:]
 json.dump({
     "schemaVersion": "v1",
     "experimentId": name,
@@ -60,12 +62,17 @@ json.dump({
     "changeSummary": "",
     "expectedEffect": "",
     "stableRevision": stable,
+    "stableBundle": json.load(open(bundle)),
     "candidateRevision": None,
+    "review": "auto",
+    "humanQuestion": "",
+    "changedResources": [],
     "startedAt": started,
 }, open(path, "w"), indent=2, ensure_ascii=False)
 EOF
     : > "$dir/timeline.tsv"
     state_set CURRENT_EXPERIMENT "$name"
+    state_set BENCH_BUDGET_EXPERIMENT "$name"
     echo "$name opened on branch exp/$name from $(short "$base"); fill $dir/manifest.json, commit the change, then deploy.sh and bench.sh"
     ;;
 
@@ -76,16 +83,22 @@ EOF
     ;;
 
   record)
+    no_manual_bench
     override=""
-    if [ "${1:-}" = --override ]; then
-      override=${2:?--override needs promote, reject, or inconclusive}
-      shift 2
-      case "$override" in promote|reject|inconclusive) ;; *) die "override must be promote, reject, or inconclusive" ;; esac
-    fi
+    human_decision=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --override) override=${2:?--override needs a decision}; shift 2 ;;
+        --human-decision) human_decision=${2:?--human-decision needs an actual reference}; shift 2 ;;
+        *) break ;;
+      esac
+    done
+    case "$override" in ''|promote|reject|inconclusive) ;; *) die "override must be promote, reject, or inconclusive" ;; esac
     reason=${*:-}
     [ -n "$reason" ] || die "give a reason after the decision"
     [ -n "$EXP" ] || die "no open experiment"
     [ -f "$EXP_DIR/decision.json" ] || die "no decision.json; run evaluate.sh first (even to record an override)"
+    "$KAIZEN_PLUGIN_ROOT/scripts/evaluate.sh" >/dev/null
     rule=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["decision"])' "$EXP_DIR/decision.json")
     final=${override:-$rule}
     stable=$(state_get STABLE_REV)
@@ -94,6 +107,15 @@ EOF
     recovery="not-needed"
 
     if [ "$final" = promote ]; then
+      verify_bundle_config
+      python3 - "$EXP_DIR/decision.json" <<'EOF' || die "quality or comparable measurement conditions are unresolved; investigate/re-measure, never waive them"
+import json,sys
+d=json.load(open(sys.argv[1]))
+sys.exit(1 if d.get('qualityBlockPromotion',True) else 0)
+EOF
+      [ "$rule" = promote ] || [ -n "$human_decision" ] || die "ambiguous performance adoption requires --human-decision with a real reference"
+      review=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("review","auto"))' "$EXP_DIR/manifest.json")
+      [ "$review" != human ] || [ -n "$human_decision" ] || die "this manifest requires a real human decision reference"
       [ "$(state_get REVERT_PENDING)" != 1 ] || die "the candidate failed correctness and cannot be promoted, override or not"
       git_dirty && die "commit the change before promoting"
       [ "$deployed" = "$head" ] || die "deployed ($(short "$deployed")) is not HEAD ($(short "$head")); the promoted revision must be the benchmarked one"
@@ -103,20 +125,27 @@ EOF
       python3 - "$EXP_DIR" "$deployed" <<'EOF' || die "no passing candidate sample of $(short "$deployed") in $EXP_DIR"
 import glob, json, sys
 d, rev = sys.argv[1:]
-ok = [s for s in (json.load(open(p)) for p in glob.glob(f"{d}/bench-candidate*.json")) if s["pass"] and s["deployedRevision"] == rev]
-sys.exit(0 if ok else 1)
+samples=[json.load(open(p)) for p in glob.glob(f"{d}/bench-candidate*.json")]
+ok=[s for s in samples if s['pass'] and not s.get('observed') and s['deployedRevision']==rev]
+sys.exit(0 if ok and all(s['pass'] for s in samples) else 1)
 EOF
       mainrev=$(git_rev "$STABLE_BRANCH")
       git -C "$KAIZEN_PROJECT" merge-base --is-ancestor "$mainrev" "$head" || die "$STABLE_BRANCH ($(short "$mainrev")) is not an ancestor of the candidate; rebase the experiment branch on it and deploy again"
       git -C "$KAIZEN_PROJECT" update-ref "refs/heads/$STABLE_BRANCH" "$head" "$mainrev" || die "stable branch $STABLE_BRANCH moved while recording; resolve by hand"
       git -C "$KAIZEN_PROJECT" switch -q "$STABLE_BRANCH"
       state_set STABLE_REV "$head"
+      capture_bundle >/dev/null
       state_set REVERT_PENDING 0
       mkdir -p "$KAIZEN_DIR/baseline/$head"
       for f in "$EXP_DIR"/bench-candidate*.json; do
         [ -f "$f" ] || continue
         python3 -c 'import json,sys; sys.exit(1 if json.load(open(sys.argv[1])).get("observed") else 0)' "$f" || continue
-        cp "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json"
+        python3 - "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json" "$KAIZEN_DIR/stable-bundle.json" <<'EOF'
+import json,sys
+s=json.load(open(sys.argv[1]));s['measuredAgainstBundle']=s.get('stableBundleId')
+s['stableBundleId']=json.load(open(sys.argv[3]))['id']
+json.dump(s,open(sys.argv[2],'w'),indent=2)
+EOF
       done
     else
       if [ "$deployed" != "$stable" ] || [ "$(state_get REVERT_PENDING)" = 1 ]; then
@@ -124,13 +153,14 @@ EOF
         "$KAIZEN_PLUGIN_ROOT/scripts/recover.sh" >/dev/null && recovery="ok" || recovery="failed"
         [ "$recovery" = ok ] || die "recovery failed; the target is not stable. Fix it before recording"
       fi
+      verify_bundle
       git_dirty && die "commit or discard the working tree changes before closing the experiment"
       git -C "$KAIZEN_PROJECT" switch -q "$STABLE_BRANCH"
     fi
 
-    python3 - "$EXP_DIR" "$EXP" "$rule" "$final" "${override:-}" "$reason" "$stable" "$(state_get STABLE_REV)" "$head" "$recovery" "$(now)" <<'EOF'
+    python3 - "$EXP_DIR" "$EXP" "$rule" "$final" "${override:-}" "$reason" "$stable" "$(state_get STABLE_REV)" "$head" "$recovery" "$(now)" "$human_decision" <<'EOF'
 import glob, json, os, sys
-d, exp, rule, final, override, reason, before, after, head, recovery, closed = sys.argv[1:]
+d, exp, rule, final, override, reason, before, after, head, recovery, closed, human = sys.argv[1:]
 manifest = json.load(open(f"{d}/manifest.json"))
 manifest["candidateRevision"] = head
 json.dump(manifest, open(f"{d}/manifest.json", "w"), indent=2, ensure_ascii=False)
@@ -143,6 +173,7 @@ json.dump({
     "finalDecision": final,
     "override": {"decision": override, "reason": reason} if override else None,
     "reason": reason,
+    "humanDecision": human or None,
     "stableBefore": before,
     "stableAfter": after,
     "candidateRevision": head,
