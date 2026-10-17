@@ -43,11 +43,17 @@ the restart.
 - If binary logging is on, `sync_binlog=0` matters as much; check
   `SHOW VARIABLES LIKE 'log_bin'`.
 - Confirm the mysql restart actually happened (overlay restarts only when a
-  file under `etc/mysql/` changed).
+  file under `etc/mysql/` changed) and `SHOW VARIABLES` shows the value.
+- 001-fsync-commit (isucon14): with indexes in place the score is bounded by
+  matching, not by commit latency; three samples each gave +5.9% median
+  inside a ±15% baseline spread, so the rule stayed inconclusive. Try it
+  again after the matcher is fixed, or bundle it later with other
+  config-only changes as one "mysql tuning" hypothesis.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
+| isucon14 | 001-fsync-commit | 2519/2527/2900 | 2322/2675/3090 | +6% | 3+3 | 8 | inconclusive | inconclusive | map[25:16]; map[25:21]; map[25:24] |
 
 ## Observed
 

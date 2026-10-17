@@ -1,0 +1,124 @@
+{
+  "experimentId": "001-fsync-commit",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "001-fsync-commit",
+    "patternId": "fsync-on-commit",
+    "hypothesisId": "fsync-commit-2",
+    "hypothesis": "COMMIT is 82% of DB statement time (202s of 245s in a 60s run, 24,894 commits at 8.1ms): every transaction waits on a redo-log fsync; innodb_flush_log_at_trx_commit=2 writes the log per commit and flushes once a second, so commits return in microseconds and the write-heavy endpoints stop queueing on the disk.",
+    "observations": [
+      {
+        "summary": "observe-baseline: COMMIT 202.03s total, 24894 calls, 8.12ms avg, 82% of DB time; baseline scores 2519/2900",
+        "artifact": ".kaizen/observe-baseline.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "etc/mysql/mysql.conf.d/zz-kaizen.cnf",
+        "changeKind": "add",
+        "reason": "mysqld flush settings via the etc/ overlay; deploy restarts mysql.service"
+      }
+    ],
+    "changeSummary": "add etc/mysql/mysql.conf.d/zz-kaizen.cnf with innodb_flush_log_at_trx_commit=2 and sync_binlog=0",
+    "expectedEffect": "commit latency drops from ~8ms to sub-millisecond; POST /api/chair/coordinate and ride status transitions get faster; score up",
+    "stableRevision": "0901d112df720fc8669aea4e465cf1cbbd574906",
+    "candidateRevision": "ba6bcbb00337aa76ed8f6e8808d0537f9c4e42fb",
+    "startedAt": "2026-10-17T08:54:06Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "inconclusive",
+    "reason": "median improved 585 bp but worst candidate 2322 does not clear best baseline 2900; noise not separated",
+    "improvementBasisPoints": 585,
+    "baselineScores": [
+      2519,
+      2527,
+      2900
+    ],
+    "candidateScores": [
+      2322,
+      2675,
+      3090
+    ],
+    "baselineRevisions": [
+      "0901d112df720fc8669aea4e465cf1cbbd574906"
+    ],
+    "candidateRevisions": [
+      "890d613c7fb788028aaa76470dd8072e6bf2105a"
+    ],
+    "decidedAt": "2026-10-17T09:02:00Z"
+  },
+  "finalDecision": "inconclusive",
+  "override": null,
+  "reason": "rule inconclusive: +5.9% median under ±15% noise; fsync setting alone does not move the score while matching bounds it",
+  "stableBefore": "0901d112df720fc8669aea4e465cf1cbbd574906",
+  "stableAfter": "0901d112df720fc8669aea4e465cf1cbbd574906",
+  "candidateRevision": "ba6bcbb00337aa76ed8f6e8808d0537f9c4e42fb",
+  "samples": [
+    {
+      "label": "baseline-3",
+      "experiment": "001-fsync-commit",
+      "deployedRevision": "0901d112df720fc8669aea4e465cf1cbbd574906",
+      "pass": true,
+      "score": 2527,
+      "errors": "map[25:16]",
+      "durationSec": 69,
+      "finishedAt": "2026-10-17T09:00:46Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/001-fsync-commit/bench-baseline-3.log"
+    },
+    {
+      "label": "candidate-2",
+      "experiment": "001-fsync-commit",
+      "deployedRevision": "890d613c7fb788028aaa76470dd8072e6bf2105a",
+      "pass": true,
+      "score": 3090,
+      "errors": "map[25:21]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T08:58:45Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/001-fsync-commit/bench-candidate-2.log"
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "001-fsync-commit",
+      "deployedRevision": "890d613c7fb788028aaa76470dd8072e6bf2105a",
+      "pass": true,
+      "score": 2322,
+      "errors": "map[25:24]",
+      "durationSec": 69,
+      "finishedAt": "2026-10-17T09:02:00Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/001-fsync-commit/bench-candidate-3.log"
+    },
+    {
+      "label": "candidate",
+      "experiment": "001-fsync-commit",
+      "deployedRevision": "890d613c7fb788028aaa76470dd8072e6bf2105a",
+      "pass": true,
+      "score": 2675,
+      "errors": "map[25:16]",
+      "durationSec": 68,
+      "finishedAt": "2026-10-17T08:57:37Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isuride-practice/.kaizen/experiments/001-fsync-commit/bench-candidate.log"
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T08:54:15Z\tdeploy\tHEAD\t4s\tok",
+    "2026-10-17T08:55:25Z\tbench\tcandidate\t69s\tpass=true score=3392",
+    "2026-10-17T08:56:27Z\tdeploy\tHEAD\t6s\tok",
+    "2026-10-17T08:57:37Z\tbench\tcandidate\t68s\tpass=true score=2675",
+    "2026-10-17T08:58:45Z\tbench\tcandidate-2\t68s\tpass=true score=3090",
+    "2026-10-17T08:58:49Z\tdeploy\t0901d112df720fc8669aea4e465cf1cbbd574906\t3s\tok",
+    "2026-10-17T08:58:50Z\trecover\t0901d11\t4s\tok",
+    "2026-10-17T09:00:46Z\tbench\tbaseline-3\t69s\tpass=true score=2527",
+    "2026-10-17T09:00:51Z\tdeploy\tHEAD\t5s\tok",
+    "2026-10-17T09:02:00Z\tbench\tcandidate-3\t69s\tpass=true score=2322",
+    "2026-10-17T09:02:05Z\tdeploy\t0901d112df720fc8669aea4e465cf1cbbd574906\t5s\tok",
+    "2026-10-17T09:02:06Z\trecover\t0901d11\t6s\tok"
+  ],
+  "closedAt": "2026-10-17T09:02:56Z"
+}
