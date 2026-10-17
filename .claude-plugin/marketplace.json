@@ -1,0 +1,14 @@
+{
+  "name": "kaizen-plugin",
+  "owner": {
+    "name": "shm11C3"
+  },
+  "plugins": [
+    {
+      "name": "kaizen",
+      "source": "./",
+      "description": "ISUCON improvement loop: observe, hypothesize, change, deploy, bench, decide, record."
+    }
+  ],
+  "description": "ISUCON improvement loop plugin for Claude Code"
+}

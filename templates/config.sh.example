@@ -1,0 +1,26 @@
+# Copy to <project>/.kaizen/config.sh and fill in the hosts.
+# Sourced by every kaizen script; keep it shell, keep secrets out of it.
+
+# Practice: the ISUCON14 preset. Contest day: a preset you filled from the
+# manual (templates/preset.sh.example) or the values inline below.
+. "$KAIZEN_PLUGIN_ROOT/presets/isucon14.sh"
+
+# SSH aliases (from SSH_CONFIG or ~/.ssh/config). APP_HOSTS all receive the
+# deploy; APP_HOST is the first of them unless the roles differ.
+APP_HOST=isu1
+APP_HOSTS="isu1"                 # contest: "isu1 isu2 isu3"
+DB_HOST=isu1                     # where observe.sh reads performance_schema
+SSH_CONFIG=/Users/you/Develop/ISUCON/ssh_config
+
+# Practice only (BENCH_MODE=ssh): the benchmarker host and the addresses the
+# hosts use to reach each other. Contest day: BENCH_MODE=manual, no BENCH_HOST.
+BENCH_HOST=isubench
+APP_PRIVATE_IP=172.31.0.10
+BENCH_PRIVATE_IP=172.31.0.20
+
+# Fixed evaluation rule (plugin-rule-v1) and budgets. Change per target, never
+# per experiment.
+MIN_IMPROVEMENT_BP=300     # promote needs median +3% and noise separation
+MAX_BENCH_PER_EXP=6
+MAX_EXP_MINUTES=30
+MAX_EXP_PER_HOUR=6

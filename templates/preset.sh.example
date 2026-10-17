@@ -1,0 +1,43 @@
+# Preset for a new contest. Fill every value from the day's manual and the
+# servers themselves, save as presets/<contest>.sh (or straight into
+# .kaizen/config.sh), and keep the manual's URL in a comment next to each
+# value you took from it.
+
+# Where the application lives on each server and what to push there.
+REMOTE_APP_DIR=/home/isucon/webapp
+LOCAL_SYNC_PATHS="go sql"            # directories under the repo root
+SYNC_EXCLUDES="--exclude <binary>"   # build outputs that live next to sources
+RSYNC_PATH="sudo -u isucon rsync"
+
+# Build, restart, health. Run over SSH on every host in APP_HOSTS.
+BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/go && go build -o <binary> ."'
+RESTART_CMD='sudo systemctl daemon-reload && sudo systemctl restart <service>'
+SERVICE_NAME=<service>
+HEALTH_CMD='curl -s -o /dev/null -m 3 http://127.0.0.1:8080/'
+HEALTH_RETRIES=20
+
+# Configuration overlay: <repo>/etc/... -> /etc/... on every host,
+# <repo>/etc-<host>/... -> /etc/... on that host. Map top-level directories
+# to the service that must restart when files under them change.
+OVERLAY_DIR=etc
+OVERLAY_SERVICES="mysql:mysql.service nginx:nginx.service systemd:daemon-reload"
+VERIFY_EXCLUDE_REGEX='\.gz$'
+
+# Observation sources.
+ACCESS_LOG=/var/log/nginx/access.log
+MYSQL_CMD="sudo mysql"
+DB_NAME=<database>
+PATH_ID_REGEX='/[0-9A-Za-z]{20,}'    # how ids look in URLs, for grouping
+# OBSERVE_EXTRA_CMD='sudo alp ltsv --file /var/log/nginx/access.log --sort sum -r --limit 30'
+
+# Benchmark. On contest day the portal runs it: BENCH_MODE=manual and
+# bench.sh <label> --result 'pass=true score=1234 errors=...'.
+# In practice with a reachable benchmarker: BENCH_MODE=ssh plus the two
+# functions below.
+BENCH_MODE=manual
+# BENCH_HOST=bench
+# bench_command() { echo "<command that runs one benchmark and prints its result>"; }
+# parse_bench() { # <log> -> "pass score errors"
+#   local line; line=$(grep -o 'pass=[a-z]* score=[0-9]*' "$1" | tail -1) || return 1
+#   echo "$(sed -n 's/.*pass=\([a-z]*\).*/\1/p' <<<"$line") $(sed -n 's/.*score=\([0-9]*\).*/\1/p' <<<"$line") none"
+# }
