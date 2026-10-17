@@ -14,38 +14,71 @@ JSONのtest duration・hash・pass等のmetadataは正しい。秘匿を既定�
 明示分類する方法を検討し、短いsecretの漏えい防止と非秘密の数値保持を回帰検証する。
 文字数だけで短い値を秘匿対象外にする対応は行わない。今回の固定版・実測coreは変更しない。
 
+## 今回の3時間実機試行で確認したこと（継続中）
+
+2026-10-18 04:51 JST時点。runtimeは`0.7.5@f3ef308`に固定しており、この文書更新で変更しない。
+対象はISUCON14 Goの練習環境で、`competition`も実際の公式競技サーバーではない。
+[詳細な暫定報告](https://github.com/shm11C3/isucon14-ec2-parallel-validation-20261018/blob/main/evidence/TRIAL-RESULTS.md)は
+集計時刻を持つsnapshotであり、最終値とは区別する。実source採用は現時点で313e・0656・4177の3回。
+追加のマッチング改善は検証中で、最終stable・score・終了処理は未確定。
+
+- 実EC2の独立した単独app＋専用benchを3組使い、最大3環境の同時計測を確認した。
+  stable-syncは実採用0656の記録から両laneをa09→0656へ同期し、target操作は約16秒ずつ。
+  新bundleを確認して各laneで新baselineを取り、公式や旧laneのsampleを流用していない。
+- Go remote checkerで実MySQLの隔離schemaを使い、5・6・7・8件のfixture実行、
+  old-red/new-green、negative control、cleanupを確認した。全競合の不存在を証明したとは扱わない。
+- source-bound品質保留3件を313eの実official採用記録へ結び付け、RESOLVEDまで通した。
+  新しいcovering-index候補のCODE32に関するT12の保留はOPENのまま保持している。
+  実promote直前の資源fingerprintも計測済みcandidateと照合した。
+- 開始から初期3環境の準備完了まで9分17秒、初実採用まで94分43秒。
+  PSSPは3/24で中断しserial対照は実行していないため、並列化による時間短縮の因果効果は未証明。
+- `ec2_lanes.py`の新規create APIはfake検証のみ。実機ensure/statusは確認済みだが、
+  実stopと原状復旧の完了はこれから確認する。Discord接続、別PC3台でのClaude/Codex native install、
+  Rust版の競技build/test/runtime比較、本来の複数app構成も未検証のまま。
+
+**台帳の未解消課題: tooling作業の完了表現**。T7のplugin toolingは実装・release済みだが、
+`work_kind`にtoolingがなくアプリの採用proofを要求するため、CLAIMED表示が残っている。
+偽のアプリ採用記録で閉じず、tooling用の種別・検証証跡・完了経路を設計して検証する。
+
+## リリース別の確認と残作業
+
 0.7.5では通常比較・観測専用・未計測・旧形式不明を分け、比較合格と実際の採用を
 別集計する。意図的な未採用だけでno_verified_gainを出さず、失敗・警告・品質不明は
 保持する。全102unit/E2Eと追加修正後13focused tests、実台帳のread-only再集計で確認した。
 待機も競技時計を消費し、これらの件数だけでは採用率の分母や因果効果を定義しない。
-実測中の配布版は境界まで据え置く。
+今回の実測runtimeへはidle境界で読み込み、以後`f3ef308`の固定版を維持している。
 
 0.7.4ではpromote直前の実資源を、同candidate SHAの非観測sampleのfingerprintと照合する。
 human待ちrecoverでschemaが戻り、コード再deployだけで異なる資源を採用できる問題を
 fake remoteで再現して修正した。probe失敗もmain/STABLE_REV更新前に拒否し、
-元sampleは保持する。スコア・evaluate・benchの判定は変更しない。実測中の旧版更新は境界まで保留する。
+元sampleは保持する。スコア・evaluate・benchの判定は変更しない。今回の固定版へ取り込み、
+実採用時にも現在の資源とcandidate sampleを照合した。
 
 0.7.3では未解消の品質保留をtask IDを越えて継承し、提出sourceの変更内容が実測SHAに
 含まれることを検証する。公式promote前とtask採用時の両方で確認し、重なる編集は実際の
 統合SHAで再提出する。全93unit/E2Eと実候補のread-only replayで確認済み。
-閉じた履歴や任意の意味的書換えの検出は範囲外として記録を残す。実機の正常な採用・同期は検証継続中。
+閉じた履歴や任意の意味的書換えの検出は範囲外として記録を残す。今回の実機では3件の
+保留を313eの実採用proofでRESOLVEDとし、新しいT12の保留は解消扱いにしていない。
 
 0.7.2では公式の実promote記録に束縛したsandbox stable同期を追加。別環境のsampleを
 転用せずbaselineをretireし、同期後の新baselineを必須にする。FF制限、失敗時の旧stable
-復旧、復旧不能時のpendingと他操作拒否をfake remoteで検証する。実機は境界で更新後に確認する。
+復旧、復旧不能時のpendingと他操作拒否はfake remoteで検証した。今回の実機positiveは
+両laneのa09→0656同期と、新baseline取得まで確認した。実機の故障注入は未実施。
 
 0.7.1では所有レーンの操作ロック内でimmutable refをcrossbuildするGo remote checkerを追加。
 明示include・private env map・隔離schema fixtureを使い、失敗・skip・選択0件を区別する。
 誤ref・missing include・cleanup対象限定・native失敗保持・target排他はfakeで確認し、
-実DBでの旧版再現→修正版確認は実機検証に続ける。
+今回の実機で旧版再現→修正版確認・negative control・隔離schema cleanupを確認した。
 
-0. **EC2並列レーンを実機で検証する（0.7.0）**。app＋benchのplan/ensure/status/stopと
+0. **EC2並列レーンの終了・復旧まで確認する（0.7.0）**。app＋benchのplan/ensure/status/stopと
    起動前状態・client tokenの保存を追加した。誤account、資源重複・公式資源、応答喪失後の
-   二重作成防止、停止対象の限定はfake AWSで確認済み。実機での並列deploy/bench、
-   品質保留→修正→公式再測定と準備を含む時間短縮はこれから測る。新規作成APIは実機未検証。
+   二重作成防止、停止対象の限定はfake AWSで確認済み。実機の最大3並列計測と
+   品質保留→修正→公式再測定・実採用は確認済み。実stopは未実施、新規create APIはfakeのみ。
+   準備を含む時間短縮の因果効果は未証明。
 
-1. **品質保留から修正・採用まで通す**。基準版でも出る警告と候補の退行を区別し、
-   実DBで通知・可視性の再現→修正→公式再計測を行う。同じ内容の再試行には未解明の警告を引き継ぐ。
+1. **品質保留の修復を続ける**。基準版でも出る警告と候補の退行を区別し、
+   実DBの再現・修正・公式採用proofで3件を解消した。新T12のCODE32を調査し、
+   同じ内容の再試行には未解明の警告を引き継ぐ。
 2. **導入したLintを競技アプリでも確認する**。Goのgofmt／vet、Rustのfmt／Clippyを
    候補提出手順とcheck記録へ接続済み。小さなfixtureでの検出と時間は計測済み。実アプリと並列時の費用を次に確認する。
 3. **Go／Rustを改善サイクル全体で比較する**。ビルド・テスト・修正・復旧時間と、実行性能、
@@ -56,8 +89,8 @@ Discordを用意できたら、各人の実PCで独立したClaude/Codexセッ�
 先頭に使い、セッションIDを区別する。実際の会話・候補提出・統合・結果共有を通す。
 過去の検証補助や同一PCでの試験を当日の連携手段として前提にしない。
 
-[並列検証と品質保留](team/docs/PARALLEL_QUALITY.md)の仕組みは追加済みだが、実Discordでの
-協調と複数EC2による時間短縮は未検証。[最小構成との比較](team/docs/COMPARISON.md)は
+[並列検証と品質保留](team/docs/PARALLEL_QUALITY.md)は今回の実EC2で並列実行と修復・採用まで確認した。
+実Discordでの協調と、複数EC2による時間短縮の因果効果は未検証。[最小構成との比較](team/docs/COMPARISON.md)は
 並列化・品質保留の扱いを優先する方針で延期しており、競技力の優位性は未証明。
 
 以下の練習は異なる問題・条件の事例で、プラグインやplanの因果効果を示す比較ではない。下の「次の改善案」は当時の候補一覧。追加の管理機能は、比較で分かった損失と得点への効果を見て選ぶ。
@@ -114,7 +147,8 @@ prepare-tests/refactor、既存ツール選択、汎用観測セッションと�
 20分の追加試行では3実験すべて品質保留、採用0。回帰の失敗検出は確認したが得点効果は未確認。
 [知見](knowledge/lessons/20261018-isucon14-tools-tests-phases.md)に、同一内容の警告再発、
 保留台帳の未使用、clone内の並列操作混線、実DBテストの不足を記録した。
-入口手順を補強した。実験をまたぐ同一内容の品質判定は現在も統合担当による履歴確認が必要。
+入口手順を補強した。当時不足した実験をまたぐ品質保留の継承とsource bindingは0.7.3で補い、
+後の3時間実機では3件の保留を実採用proofへ結び付けた。意味的な同一性の任意の書換えまで自動検出はしない。
 
 候補最高は2,846点だが最終採用スコアではない。初期版に戻して3回測定したraw中央値は1,042点、
 pluginの品質判定はunknown。同じ警告が初期版でも出たため、候補が品質を悪化させたと断定できない。
@@ -152,4 +186,4 @@ sampleの取得元IDを追加した。方法変更時の予約・登録拒否、
 読取失敗・不正出力・カウンター減少を偽リモートで確認した。
 [検証記録](knowledge/lessons/20261018-manual-request-counts.md)を参照。
 DESIGN_REVIEWの断定表現も修正した。旧bundleは安定状態で再captureし、新baselineを取る。
-実サーバーの権限・ログ条件・ポータル運用、およびv3の本番適性は未検証。
+今回のSSH運用では実ログの分母取得を確認した。manualポータルでの実運用、およびv3の本番適性は未検証。
