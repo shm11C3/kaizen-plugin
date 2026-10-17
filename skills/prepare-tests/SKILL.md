@@ -9,9 +9,12 @@ Read `../../team/docs/PHASES.md`. Use existing language test tools and the
 provided official checker; the plugin records execution, not a replacement test framework.
 
 1. Read the actual specification, checker and current scoring paths. List the
-   invariants affected by likely changes: authorization/ownership, state transitions,
+   invariants affected by the current high-priority candidates: authorization/ownership, state transitions,
    amounts/aggregation, initialization, persistence, visibility and concurrency.
    Current output is a characterization, not automatically the correct contract.
+   Name which near-term candidate each check protects. Do not spend the whole
+   budget on easy pure helpers while the planned SQL/concurrency change remains
+   untested; record that gap. A human may deliberately choose broader preparation.
 2. Claim a scoped test task. Other members continue source analysis and observation
    in independent clones; do not block all implementation until coverage is complete.
    Set a time budget and the improvements these checks will unblock in the plan.

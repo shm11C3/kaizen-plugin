@@ -100,6 +100,10 @@ tasks may link to it. Do not replace its immutable failure history with an unrel
 new task. Resolve with task-finish ACCEPTED only after an official promotion,
 passing --record and --tested-sha. Sample shortage alone is remeasurement; known
 candidate quality problems require the hold ledger. No routine human approval.
+For an unchanged-source retry, explain the newly identified cause, corrected
+conditions or discriminating measurement. Do not open fresh experiments merely
+to obtain a clean pair; carry unresolved warnings from the same source/conditions
+forward, even when later runs happen to be clean.
 
 For isolated parallel validation or a quality-held candidate, read
 `../../team/docs/PARALLEL_QUALITY.md`. Keep one shared task DB, register the official
