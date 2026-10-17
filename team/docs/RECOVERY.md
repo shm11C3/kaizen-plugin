@@ -2,6 +2,8 @@
 
 0.3.0ではGit SHA、配備tree、target設定hash、宣言した資源のfingerprintを `.kaizen/stable-bundle.json` に保存する。計測にはこのbundle IDと計測終了時の資源fingerprintを記録する。設定を変えた場合は安定状態でcaptureし直し、異なる条件のbaselineを退避して測り直す。repinは資源が一致する場合だけrevisionを更新する。
 
+bundle の `configHash` は計測条件（ホスト、配備・復旧・ベンチのコマンド）の解決済みの値から計算する。予算・閾値・観測設定・plugin の版は含めない。plugin を競技中に更新しても bundle は保たれ、どの plugin 版で計測したかは bundle と各サンプルの `pluginRevision` に残る。
+
 ## 初期設定
 
 当日マニュアルと対象環境に合う次の設定を、統合用cloneのconfig.shへ書く。

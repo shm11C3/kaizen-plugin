@@ -97,6 +97,8 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | `MAX_EXP_MINUTES` | 30 | 1 実験の制限時間 |
 | `MAX_EXP_PER_HOUR` | 6 | 1 時間に開ける実験数 |
 
+stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘルスチェック・復旧・ベンチのコマンド、資源の指紋）だけで決まります。予算や閾値、観測の設定、plugin 自体の更新では bundle は無効になりません。本番中に plugin を直す前提なので、どの plugin 版で測ったかは bundle と各サンプルの `pluginRevision` に記録します。
+
 promoteは、同じstable bundleに紐付く新しいbaselineと固定candidateで品質を確認し、中央値が `MIN_IMPROVEMENT_BP` 以上改善し、最悪candidateが最良baselineを上回る場合です。非ゼロのerrorがある場合、比較可能なrequest分母がない・新種がある・率が増える候補は調査へ戻します。エラー種別を `CORRECTNESS_ERROR_TYPES` に指定した場合はpassフラグにかかわらず拒否します。
 
 ## テスト

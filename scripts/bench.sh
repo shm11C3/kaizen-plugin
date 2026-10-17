@@ -175,17 +175,17 @@ observed=$(state_get OBSERVE_SLOWLOG)
 
 bundle=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$KAIZEN_DIR/stable-bundle.json")
 fingerprints=$(resource_fingerprints)
-python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-unknown}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" "$observed" "$requests" "$bundle" "$fingerprints" "$attempt" "$KAIZEN_DIR/observation-active.json" <<'EOF'
+python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-unknown}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" "$observed" "$requests" "$bundle" "$fingerprints" "$attempt" "$KAIZEN_DIR/observation-active.json" "$(plugin_revision)" <<'EOF'
 import json, sys
 from pathlib import Path
-out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode, observed, requests, bundle, fingerprints, attempt, observation = sys.argv[1:]
+out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode, observed, requests, bundle, fingerprints, attempt, observation, plugin = sys.argv[1:]
 json.dump({"label": label, "experiment": exp or None, "deployedRevision": rev,
            "pass": passed == "true", "score": int(score), "errors": errors,
            "durationSec": int(secs), "finishedAt": finished, "mode": mode, "log": logfile,
            "observed": observed == "1", "requests": int(requests) if requests else None,
            "observationSession": json.loads(Path(observation).read_text()) if Path(observation).exists() else None,
            "stableBundleId": bundle, "resourceFingerprints": dict(l.split('\t',1) for l in fingerprints.splitlines() if l),
-           "physicalAttemptId": attempt},
+           "physicalAttemptId": attempt, "pluginRevision": plugin},
           open(out, "w"), indent=2, ensure_ascii=False)
 EOF
 [ "$BENCH_MODE" != manual ] || rm "$pending"

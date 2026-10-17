@@ -80,12 +80,22 @@ printf 'STABLE_REV=%s\n' "$(git rev-parse main)" > .kaizen/state.env
 expect_fail "$S/bench.sh" baseline                    # nothing deployed yet
 "$S/deploy.sh" main >/dev/null
 for host in isu1 isu2; do cp "$KAIZEN_FAKE_REMOTE/$host/webapp/sql/1-schema.sql" "$KAIZEN_FAKE_REMOTE/$host/database.state"; done
+msg=$("$S/experiment.sh" new too-early 2>&1 || true)
+printf '%s' "$msg" | grep -q "stable bundle missing" || fail "a missing bundle is named as such, not as a changed configuration: $msg"
 "$S/stable.sh" capture >/dev/null
 [ "$(state DEPLOYED_REV)" = "$(git rev-parse main)" ] || fail "DEPLOYED_REV after deploy"
 [ "$(cat "$KAIZEN_FAKE_REMOTE/isu2/webapp/.deployed-revision")" = "$(git rev-parse main)" ] || fail "marker on isu2"
 [ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/etc/mysql/my.cnf")" = "innodb_flush_log_at_trx_commit=1" ] || fail "overlay synced"
 "$S/recover.sh" >/dev/null
 "$S/verify.sh" main >/dev/null
+python3 -c 'import json,sys; b=json.load(open(sys.argv[1])); assert b.get("pluginRevision") and b.get("capturedAt"), b' .kaizen/stable-bundle.json || fail "bundle records the plugin revision as provenance"
+# The bundle binds measurement conditions, not the plugin or non-measurement settings.
+echo "TIME_BUDGET_MIN=480" >> .kaizen/config.sh
+(. "$S/lib.sh"; load_config; verify_bundle_config) || fail "a non-measurement setting must not retire the bundle"
+echo "BUILD_CMD='test -f webapp/go/score || true'" >> .kaizen/config.sh
+(. "$S/lib.sh"; load_config; verify_bundle_config) 2>/dev/null && fail "a changed build command must retire the bundle"
+sed -i '' '$d' .kaizen/config.sh
+(. "$S/lib.sh"; load_config; verify_bundle_config) || fail "restored build command matches the bundle again"
 cp .kaizen/stable-bundle.json "$T/original-bundle.json"
 touch "$KAIZEN_FAKE_REMOTE/isu1/fail-probe"
 expect_fail "$S/stable.sh" capture
@@ -170,6 +180,7 @@ grep -q "restart mysql.service (isu1)" "$KAIZEN_FAKE_REMOTE/systemctl.log" || fa
 grep -q "restart mysql.service (isu2)" "$KAIZEN_FAKE_REMOTE/systemctl.log" || fail "mysql restarted on isu2"
 expect_fail "$S/bench.sh" baseline                     # candidate deployed, not stable
 "$S/bench.sh" candidate >/dev/null
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); assert s.get("pluginRevision"), s' .kaizen/experiments/001-flush-log/bench-candidate.json || fail "sample records the plugin revision"
 "$S/bench.sh" candidate-2 >/dev/null
 "$S/evaluate.sh" >/dev/null
 [ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/001-flush-log/decision.json"))["decision"])')" = promote ] || fail "rule should promote"

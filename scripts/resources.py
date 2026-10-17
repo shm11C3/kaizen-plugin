@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Stable bundle metadata. Remote restore/probe commands are owned by lib.sh."""
+import datetime
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -29,6 +31,8 @@ def main():
     p = Path(path)
     actual = snapshot(fingerprints)
     if action in ('verify', 'verify-config'):
+        if not p.is_file():
+            raise ValueError('stable bundle missing; deploy stable, then stable.sh capture')
         expected = json.loads(p.read_text())
         assert expected['revision'] == revision, 'stable bundle revision differs; stable.sh capture/repin'
         assert expected['configHash'] == config_hash, 'target config changed; recapture stable and take fresh baseline'
@@ -44,6 +48,9 @@ def main():
         identity = {'configHash': config_hash, 'resourceFingerprints': actual, 'trees': trees}
         identity['id'] = digest(json.dumps(identity, sort_keys=True).encode())
         identity['revision'] = revision
+        # Provenance, not identity: the plugin may change mid-contest without retiring the bundle.
+        identity['pluginRevision'] = os.environ.get('KAIZEN_PLUGIN_REVISION') or None
+        identity['capturedAt'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         history = p.parent / 'bundles'
         history.mkdir(exist_ok=True)
         archived = history / (identity['id'] + '.json')

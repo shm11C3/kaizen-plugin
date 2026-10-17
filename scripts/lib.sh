@@ -183,14 +183,32 @@ git_head() { git -C "$KAIZEN_PROJECT" rev-parse HEAD; }
 # tracked; only application files count as a dirty tree.
 git_dirty() { [ -n "$(git -C "$KAIZEN_PROJECT" status --porcelain --untracked-files=no -- . ':(exclude).kaizen')" ]; }
 
+# plugin_revision: which plugin measured a sample. Recorded in bundles and
+# samples for the retro, never part of a bundle's identity: the plugin is
+# expected to change during a contest (retro fixes) without invalidating
+# the stable it measures.
+plugin_revision() {
+  local rev dirty version
+  rev=$(git -C "$KAIZEN_PLUGIN_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
+  dirty=$(git -C "$KAIZEN_PLUGIN_ROOT" status --porcelain 2>/dev/null | grep -q . && echo "-dirty" || true)
+  version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version","?"))' "$KAIZEN_PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || echo "?")
+  echo "$version@$rev$dirty"
+}
+
+# config_digest: the measurement conditions a stable bundle is bound to:
+# which hosts run what, how it is built, restarted, probed, recovered and
+# benchmarked. Budgets, thresholds, observation sources, comments and the
+# plugin's own files are not conditions: changing them must not retire a
+# bundle. Resolved values are hashed, so an edited preset only matters when
+# it changes one of these.
 config_digest() {
-  # Include resolved target commands and preset bytes; emit hashes only.
+  local bench
+  bench=$(declare -f bench_command >/dev/null 2>&1 && bench_command 2>/dev/null || true)
   printf '%s\n' "$APP_HOSTS" "$RESOURCE_HOSTS" "$BENCH_HOST" "$BENCH_MODE" "$REMOTE_APP_DIR" \
-    "$LOCAL_SYNC_PATHS" "$OVERLAY_DIR" "$BUILD_CMD" "$RESTART_CMD" "$HEALTH_CMD" \
-    "$RESOURCE_FINGERPRINT_CMD" "$RECOVERY_CMD" "$SSH_CONFIG" \
-    "$(declare -f bench_command parse_bench 2>/dev/null || true)" |
-    python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" config "$KAIZEN_DIR/config.sh" \
-      "$KAIZEN_DIR/preset.sh" "$KAIZEN_PLUGIN_ROOT/.claude-plugin/plugin.json" "$KAIZEN_PLUGIN_ROOT"/presets/*.sh
+    "$LOCAL_SYNC_PATHS" "$SYNC_EXCLUDES" "$RSYNC_PATH" "$OVERLAY_DIR" "$OVERLAY_SERVICES" "$RESOURCE_PATHS" \
+    "$BUILD_CMD" "$RESTART_CMD" "$HEALTH_CMD" "$RESOURCE_FINGERPRINT_CMD" "$RECOVERY_CMD" "$SSH_CONFIG" \
+    "$bench" "$(declare -f parse_bench 2>/dev/null || true)" |
+    python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" config
 }
 
 resource_fingerprints() {
@@ -203,20 +221,21 @@ resource_fingerprints() {
 }
 
 verify_bundle() {
-  local stable config_hash fingerprints
+  local stable config_hash fingerprints message
   stable=$(state_get STABLE_REV)
-  [ -f "$KAIZEN_DIR/stable-bundle.json" ] || die "stable bundle missing; initialize resources then stable.sh capture"
+  [ -f "$KAIZEN_DIR/stable-bundle.json" ] || die "stable bundle missing; deploy stable, then stable.sh capture"
   config_hash=$(config_digest) || die "cannot identify target configuration"
   fingerprints=$(resource_fingerprints) || die "cannot probe stable resources"
-  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify "$KAIZEN_DIR/stable-bundle.json" \
-    "$stable" "$config_hash" "$fingerprints" || die "stable resource verification failed"
+  message=$(python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify "$KAIZEN_DIR/stable-bundle.json" \
+    "$stable" "$config_hash" "$fingerprints" 2>&1) || die "stable bundle: $message"
 }
 
 verify_bundle_config() {
-  local config_hash
+  local config_hash message
+  [ -f "$KAIZEN_DIR/stable-bundle.json" ] || die "stable bundle missing; deploy stable, then stable.sh capture"
   config_hash=$(config_digest) || die "cannot identify target configuration"
-  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify-config "$KAIZEN_DIR/stable-bundle.json" \
-    "$(state_get STABLE_REV)" "$config_hash" "" || die "stable configuration changed"
+  message=$(python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" verify-config "$KAIZEN_DIR/stable-bundle.json" \
+    "$(state_get STABLE_REV)" "$config_hash" "" 2>&1) || die "stable bundle: $message"
 }
 
 capture_bundle() {
@@ -226,7 +245,7 @@ capture_bundle() {
   config_hash=$(config_digest) || die "cannot identify target configuration"
   fingerprints=$(resource_fingerprints) || die "cannot capture stable resources"
   # shellcheck disable=SC2086
-  python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" capture "$KAIZEN_DIR/stable-bundle.json" \
+  KAIZEN_PLUGIN_REVISION=$(plugin_revision) python3 "$KAIZEN_PLUGIN_ROOT/scripts/resources.py" capture "$KAIZEN_DIR/stable-bundle.json" \
     "$(state_get STABLE_REV)" "$config_hash" "$fingerprints" $paths
 }
 
