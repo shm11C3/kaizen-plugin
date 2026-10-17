@@ -12,6 +12,8 @@ provided official checker; the plugin records execution, not a replacement test 
    invariants affected by the current high-priority candidates: authorization/ownership, state transitions,
    amounts/aggregation, initialization, persistence, visibility and concurrency.
    Current output is a characterization, not automatically the correct contract.
+   Prioritize a reproducer for existing baseline warnings/correctness defects
+   before unrelated coverage; preserve an explicit gap if reproduction is unavailable.
    Name which near-term candidate each check protects. Do not spend the whole
    budget on easy pure helpers while the planned SQL/concurrency change remains
    untested; record that gap. A human may deliberately choose broader preparation.

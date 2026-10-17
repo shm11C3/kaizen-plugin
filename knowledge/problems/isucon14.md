@@ -27,3 +27,7 @@ Experiments in the order they were run.
 The separate 2026-10-17 pilot is recorded in
 [quality recovery and recurrence](../lessons/20261017-isucon14-quality-recovery.md).
 Its single-host conditions and experiment IDs are separate from the runs above.
+
+The 2026-10-18 tools/tests/preparation follow-up is recorded in
+[tests and quality holds](../lessons/20261018-isucon14-tools-tests-phases.md).
+Its20-minute run adopted0/3 experiments; candidate peaks are not final scores.
