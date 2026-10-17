@@ -15,6 +15,13 @@ OpenTelemetryは収集・関連付けの仕組み。必要なら既存Collector�
 既存ログやpprofで判断できるならbackend構築を先行させない。SDK／統合crateの対応状況は
 使うバージョンで確認し、Go用計装をRustに流用できると扱わない。
 
+実DBのfixtureも既存の仕組みを先に選ぶ。Goなら[Testcontainers for Go](https://golang.testcontainers.org/)、
+Rustなら[Testcontainers for Rust](https://rust.testcontainers.org/)や、既にsqlxを使うプロジェクトの
+[sqlx::test](https://docs.rs/sqlx/latest/sqlx/attr.test.html)等を検討する。
+利用可能なcontainer runtime／接続先、対象と同じDB版、初期化、並行テスト間の隔離を確認する。
+導入・起動費用を準備予算へ含め、計測用ホストと資源を競合させない。接続できずskipした
+DBテストを合格扱いにせず、純粋関数やSQLiteでの比較だけでMySQLの可視性を証明しない。
+
 ## 実行と採否用スコアの分離
 
 1. `--version`、小さな実入力、出力を確認する。導入失敗、空trace、未対応ログ形式は未計測。
