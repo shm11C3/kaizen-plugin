@@ -31,6 +31,10 @@ contains source and minimal bootstrap files, not these rules or management tools
 
 - Go and Rust use native checks and existing tools under `team/docs/TOOLS.md`.
   Retain raw and machine-readable evidence; missing data is not a pass.
+- Follow `team/docs/LINT.md` before candidate submission and after integration
+  changes tested source. Resolve correctness diagnostics, explicitly triage
+  advisory findings, and retain versions, source-bound records and duration.
+  A native exit0 alone does not clear gofmt output or Clippy warnings.
 - Follow `team/docs/PHASES.md`: prepare specification-backed regression checks
   in parallel with analysis, and repair quality holds using reproductions.
 - A bounded refactor can unblock a named optimization/repair. Timebox it,

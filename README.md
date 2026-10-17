@@ -14,6 +14,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 - [Go／Rustの既存ツール・観測モード](team/docs/TOOLS.md)
+- [候補提出前のLint・指摘の扱い](team/docs/LINT.md)
 - [Go／Rustの選択・ビルド時間・キャッシュ・終盤の予算](team/docs/RUST_BUILD.md)
 - [初期テスト・整備フェーズ](team/docs/PHASES.md)、[prepare-tests](skills/prepare-tests/SKILL.md)・[refactor](skills/refactor/SKILL.md)
 - [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
@@ -111,3 +112,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 偽のリモート（ホスト 2 台、偽ベンチ）に対して、配備・検証・baseline・promote・正しさ違反からの復旧・override・予算・hook をひととおり通します。
+
+Go／RustのLint検出と実行時間は`python3 tests/measure_lint.py --output .local/lint-validation-new`で
+再測定できます。出力先は新規にし、native Go／Rustとfmt／Clippyを用意します。
+[実測記録](knowledge/lessons/20261018-lint-validation.md)は小さなfixtureの結果です。

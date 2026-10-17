@@ -15,6 +15,10 @@ On the branch opened by hypothesize (`<github-login>/exp/NNN-<slug>` in a team,
 manifest allows. Configuration changes go under `etc/` (every host) or
 `etc-<host>/` (one host) and deploy with the code. Commit with a message
 that states the mechanism. Uncommitted changes never deploy.
+Before deploying that commit, run relevant native lint and regression checks
+under `team/docs/LINT.md` and the prepare-tests skill. Resolve correctness
+diagnostics; retain explicit dispositions for advisory/style findings. Recheck
+the integrated source if composition changed it; no routine human approval.
 
 ## 2. Deploy and measure
 

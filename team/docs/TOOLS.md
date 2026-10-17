@@ -6,6 +6,7 @@ Rustは[ビルド時間の運用](RUST_BUILD.md)も適用し、キャッシュ�
 
 | 問い | Go | Rust | 保存する証拠 |
 |---|---|---|---|
+| 整形・静的解析 | gofmt、go vet | cargo fmt、Clippy | [Lint手順](LINT.md)のJSON・生ログ・指摘の対応理由・時間 |
 | 契約・回帰・再現 | go test、必要箇所のrace検査 | cargo test、DB統合テスト | SHA・差分、コマンド、成否、時間、生ログ |
 | CPU・割当・待ち | pprof、execution trace | perf／flamegraph、利用可能なallocator計測 | profile、ビルド設定、採取区間 |
 | 処理区間の関連 | OpenTelemetryと対応するHTTP/DB計装 | tracingと対応するOpenTelemetry連携 | sampling率、静的span名、export先、欠落 |

@@ -1,0 +1,4 @@
+[package]
+name = "kaizen-lint-fixture"
+version = "0.1.0"
+edition = "2021"

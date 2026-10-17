@@ -31,11 +31,46 @@ def source(project):
     return dict(revision=revision, treeFingerprint=h.hexdigest())
 
 
+def diagnostics(mode, output):
+    """Interpret native output without treating a warning-free exit as correctness."""
+    if mode == 'gofmt':
+        return [dict(level='format', file=line) for line in output.splitlines() if line.strip()], True
+    if mode != 'cargo':
+        return [], True
+    findings = []
+    finished = False
+    valid = True
+    for line in output.splitlines():
+        if not line.startswith('{'):
+            continue  # Cargo progress and build-script output can be non-JSON.
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            valid = False
+            continue
+        if not isinstance(item, dict):
+            valid = False
+            continue
+        if item.get('reason') == 'build-finished':
+            finished = item.get('success') is True
+        elif item.get('reason') == 'compiler-message':
+            message = item.get('message')
+            if not isinstance(message, dict) or 'level' not in message:
+                valid = False
+                continue
+            if message['level'] in ('warning', 'error', 'failure-note'):
+                findings.append(dict(level=message['level'], code=message.get('code'),
+                                     message=message.get('message'), spans=message.get('spans', [])))
+    return findings, valid and finished
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--project', type=Path, default=Path.cwd())
     p.add_argument('--label', required=True)
     p.add_argument('--timeout', type=int, default=120)
+    p.add_argument('--diagnostics', choices=['gofmt', 'cargo'],
+                   help='interpret gofmt -l or Cargo --message-format=json output; warnings need AI triage')
     p.add_argument('command', nargs=argparse.REMAINDER)
     a = p.parse_args()
     command = a.command[1:] if a.command[:1] == ['--'] else a.command
@@ -69,14 +104,21 @@ def main():
         except OSError as error:
             output.write(str(error).encode()); code = 127
     after = source(project)
+    findings, complete = diagnostics(a.diagnostics, log.read_text(errors='replace') if a.diagnostics else '')
+    process_passed = code == 0 and before == after
+    errors = any(item['level'] in ('error', 'failure-note') for item in findings)
+    status = ('failed' if not process_passed or not complete or errors else
+              'needs_review' if findings else 'passed')
     result = dict(label=a.label, command=command, project=str(project), startedAt=started,
                   durationSeconds=round(time.monotonic()-start, 6), timeoutSeconds=a.timeout,
                   exitCode=code, timedOut=timed_out, interrupted=interrupted,
                   sourceBefore=before, sourceAfter=after, sourceChanged=before != after,
-                  passed=code == 0 and before == after, log=str(log))
+                  passed=status == 'passed', processPassed=process_passed, status=status,
+                  diagnosticsMode=a.diagnostics, diagnosticsComplete=complete,
+                  diagnostics=findings, log=str(log))
     record.write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n')
     print(json.dumps(dict(record=str(record), **result), ensure_ascii=False, indent=2))
-    return 0 if result['passed'] else 2
+    return {'passed': 0, 'failed': 2, 'needs_review': 3}[status]
 
 
 if __name__ == '__main__':

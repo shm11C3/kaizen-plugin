@@ -11,6 +11,7 @@ Rustでは[ビルド時間](RUST_BUILD.md)も準備予算に含め、実際のde
 [prepare-tests](../../skills/prepare-tests/SKILL.md)で、仕様・checkerから初期化・権限・集計・
 状態遷移・永続性・並行実行など予定する改善が壊しうる契約を守る。現実装の誤りを正解にしない。
 実DBが必要なもの、未実行、skip、依存不足を区別する。品質保留は再現→修正→再計測へ戻す。
+[Lint手順](LINT.md)も同じ準備予算に含め、開始時の既存診断と候補提出前の関連検査を記録する。
 
 既存の言語ツールを使う。`scripts/check.py`は実行証拠を残す補助:
 
@@ -20,7 +21,8 @@ python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT" --label regression --t
 ```
 
 projectにはgo.mod／Cargo.tomlのあるディレクトリを指定する。`.kaizen/checks/`にログとJSONを保存する。
-終了0かつ実行中のソース変化なしが`passed`。テスト内容の十分性や公式checker合格は別途必要。
+通常checkは終了0かつ実行中のソース変化なしが`passed`。Lint用parserを指定した場合は指摘も判定し、
+終了0でも`needs_review`になりうる。テスト内容の十分性や公式checker合格は別途必要。
 wrapper成功にskipを隠さない。成果物は追跡対象から除外し、到達可能なartifact参照で共有する。
 
 ## 変更容易性を整える

@@ -1,0 +1,2249 @@
+{
+  "startedAtEpoch": 1792255899.4837801,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpuCount": 10,
+  "cachePolicy": "empty dedicated GOCACHE / Cargo target and build-dir; installed toolchain standard libraries retained",
+  "environment": {
+    "GOTOOLCHAIN": "local",
+    "GOFLAGS": "",
+    "RUSTFLAGS": "",
+    "CARGO_ENCODED_RUSTFLAGS": "",
+    "CARGO_BUILD_WARNINGS": "warn",
+    "CARGO_INCREMENTAL": null,
+    "CARGO_NET_OFFLINE": "true",
+    "RUSTC_WRAPPER": "",
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "CARGO_TARGET_DIR": "$STUDY/rust-target",
+    "CARGO_BUILD_BUILD_DIR": "$STUDY/rust-build"
+  },
+  "versions": {
+    "go": "go version go1.24.4 darwin/arm64",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "clippy": "clippy 0.1.98 (48a229ceae 2026-09-01)",
+    "rustfmt": "rustfmt 1.9.0-stable (48a229ceae 2026-09-01)"
+  },
+  "fixtureHashes": {
+    "tests/fixtures/lint/go/go.mod": "c36fc7051a6140539b6c787832c4a4c609dcad07245b9b829faff798d8339860",
+    "tests/fixtures/lint/go/main.go": "d9c69451ac6e16ced72ac18520b93b6c25174a356e2a2970df7d44e925e80cb9",
+    "tests/fixtures/lint/go/main_test.go": "9623abc19857080be95d12be0a03660379870dc6b35d04456d94fdbb37c44dba",
+    "tests/fixtures/lint/rust/Cargo.lock": "6787631a1d59cccf62ce801d79ef4a5d3ca00025653982baec18aa254d49fc7e",
+    "tests/fixtures/lint/rust/Cargo.toml": "0b79e83a10cce962f3c3ec6dc90e351d84f5c511b5934937f39df2f637f0fa7a",
+    "tests/fixtures/lint/rust/src/lib.rs": "ae247de4aa0f509c44dc06e0d10a3727cee6fbf26fad248b2a037c5a1d79ad56"
+  },
+  "runnerHashes": {
+    "scripts/check.py": "862aecbefe57742faaf64a9acc420e35aeb45ceec24bd63e25894f87f0f6368f",
+    "tests/measure_lint.py": "9f6993ed046f3daad2649c91be420bcbfedc6a24616fcdc00bfd2907f92f96f6"
+  },
+  "runs": [
+    {
+      "language": "go",
+      "case": "initial",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.125929,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/initial-format-e2f21193ea78.json",
+        "label": "initial-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:39.763032+00:00",
+        "durationSeconds": 0.052672,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/initial-format-e2f21193ea78.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "88d4446da114df4f63783fa8defcee00d42a25830cdd36e826e0fe1811bb7ad0"
+    },
+    {
+      "language": "go",
+      "case": "initial",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 2.491801,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/initial-vet-8fc7d4fb8168.json",
+        "label": "initial-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:39.896794+00:00",
+        "durationSeconds": 2.410672,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/initial-vet-8fc7d4fb8168.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "cf274252f6986e5c1f0487e587751441ca20526d15003ba2874fb2882e77c1cc"
+    },
+    {
+      "language": "go",
+      "case": "warm-1",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.111675,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-1-format-496308cc3213.json",
+        "label": "warm-1-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:42.381137+00:00",
+        "durationSeconds": 0.037477,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-1-format-496308cc3213.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "49320e5089b452c53a4deb81eb2f41164877d98ae7e61fe2d4973639751739c6"
+    },
+    {
+      "language": "go",
+      "case": "warm-1",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.343155,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-1-vet-1e234e91c347.json",
+        "label": "warm-1-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:42.489557+00:00",
+        "durationSeconds": 0.255117,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-1-vet-1e234e91c347.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "c82ca92e3de1254038e301b5960a53e7217d8b3bcd9e8c2973028c8c568d6fce"
+    },
+    {
+      "language": "go",
+      "case": "warm-2",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.129422,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-2-format-ec1fd664f249.json",
+        "label": "warm-2-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:42.850026+00:00",
+        "durationSeconds": 0.041671,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-2-format-ec1fd664f249.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "543d7d75212b04dfa0fe40addfffb51c158b10b89a4fbc6f63c4bc5a70a2675d"
+    },
+    {
+      "language": "go",
+      "case": "warm-2",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.251135,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-2-vet-5aedaecb4661.json",
+        "label": "warm-2-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:42.972396+00:00",
+        "durationSeconds": 0.170428,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-2-vet-5aedaecb4661.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "1cd6c57a707694d2cbd3e282c1756dcaa380c50dcdb94a7de5a3b4dee4875f59"
+    },
+    {
+      "language": "go",
+      "case": "warm-3",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.13346,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-3-format-2a0af9d98fc1.json",
+        "label": "warm-3-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:43.232887+00:00",
+        "durationSeconds": 0.043841,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-3-format-2a0af9d98fc1.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "f1224587e24ac14ebe9fb4c71e9e91fe489b2bcec761015841e5af84bd49976b"
+    },
+    {
+      "language": "go",
+      "case": "warm-3",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.29353,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/warm-3-vet-35adc2dd294c.json",
+        "label": "warm-3-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:43.359586+00:00",
+        "durationSeconds": 0.211256,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceAfter": {
+          "revision": "fd53bee0f36887fd91f892c2567c72a868c28d05",
+          "treeFingerprint": "0dc39edce9f1101697005cbcc938369d0376c780070d5fea30546852e9930aec"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/warm-3-vet-35adc2dd294c.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "38064e96cefcfffb377d2c9a323da5abf8fef5c2ebb1c0e5f790296d4e4e1b17"
+    },
+    {
+      "language": "go",
+      "case": "edited",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.115709,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/edited-format-78510371385b.json",
+        "label": "edited-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:43.686263+00:00",
+        "durationSeconds": 0.037787,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "5d823463d62a9989da2f4d0763414aaabfa1396d",
+          "treeFingerprint": "8714a81d992979813aa4e4c864e5d534f42f5d0a9dbf0299d60493cc5c87c03a"
+        },
+        "sourceAfter": {
+          "revision": "5d823463d62a9989da2f4d0763414aaabfa1396d",
+          "treeFingerprint": "8714a81d992979813aa4e4c864e5d534f42f5d0a9dbf0299d60493cc5c87c03a"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/edited-format-78510371385b.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "4c071a39bdd85ae8081e8a764dc0f80242558385f74df190a6931f92386f8783"
+    },
+    {
+      "language": "go",
+      "case": "edited",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.245255,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/edited-vet-67485641fa9b.json",
+        "label": "edited-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:43.804831+00:00",
+        "durationSeconds": 0.164886,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "5d823463d62a9989da2f4d0763414aaabfa1396d",
+          "treeFingerprint": "8714a81d992979813aa4e4c864e5d534f42f5d0a9dbf0299d60493cc5c87c03a"
+        },
+        "sourceAfter": {
+          "revision": "5d823463d62a9989da2f4d0763414aaabfa1396d",
+          "treeFingerprint": "8714a81d992979813aa4e4c864e5d534f42f5d0a9dbf0299d60493cc5c87c03a"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/edited-vet-67485641fa9b.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "d2a07ea676848dc938741d8e3d9458b8fb69d5dc1a922760722634603f4abfe8"
+    },
+    {
+      "language": "go",
+      "case": "unformatted",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 3,
+      "wrapperWallSeconds": 0.114239,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/unformatted-format-20486e236f99.json",
+        "label": "unformatted-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:44.079461+00:00",
+        "durationSeconds": 0.037136,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "ac8937351d4bd98290615e2d61abc013dcab934b",
+          "treeFingerprint": "f5aa1a57b01359e7139a06c7e122c909fc24a9d193b82357c48480fe71a92581"
+        },
+        "sourceAfter": {
+          "revision": "ac8937351d4bd98290615e2d61abc013dcab934b",
+          "treeFingerprint": "f5aa1a57b01359e7139a06c7e122c909fc24a9d193b82357c48480fe71a92581"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": true,
+        "status": "needs_review",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [
+          {
+            "level": "format",
+            "file": "main.go"
+          }
+        ],
+        "log": "$STUDY/go/.kaizen/checks/unformatted-format-20486e236f99.log"
+      },
+      "nativeOutput": "main.go\n",
+      "nativeOutputSha256": "8bf50172b962773a2d84ff1fb98b73d53615ccea71fc3511786230fa8c8d4346",
+      "originalRecordSha256": "9a4f2c60a76ec7e4902b175165dc14592e6ca2f276ed4e335fd891cdee63041b"
+    },
+    {
+      "language": "go",
+      "case": "unformatted",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.232861,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/unformatted-vet-3feb5b2d0322.json",
+        "label": "unformatted-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:44.194084+00:00",
+        "durationSeconds": 0.156041,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "ac8937351d4bd98290615e2d61abc013dcab934b",
+          "treeFingerprint": "f5aa1a57b01359e7139a06c7e122c909fc24a9d193b82357c48480fe71a92581"
+        },
+        "sourceAfter": {
+          "revision": "ac8937351d4bd98290615e2d61abc013dcab934b",
+          "treeFingerprint": "f5aa1a57b01359e7139a06c7e122c909fc24a9d193b82357c48480fe71a92581"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/unformatted-vet-3feb5b2d0322.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "d9a885f5b1b3972b33054664895978ab4e10e37c6941b352aee0caa4434d8bf6"
+    },
+    {
+      "language": "go",
+      "case": "defect",
+      "tool": "build",
+      "command": [
+        "go",
+        "build",
+        "-o",
+        "$STUDY/go-fixture",
+        "."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.341744,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/defect-build-78b88d402a67.json",
+        "label": "defect-build",
+        "command": [
+          "go",
+          "build",
+          "-o",
+          "$STUDY/go-fixture",
+          "."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:44.453591+00:00",
+        "durationSeconds": 0.267439,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceAfter": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/defect-build-78b88d402a67.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "ead51dd5afe6423c0a148864da5b3f3baf2b436f58b7aa779e27f063ee172981"
+    },
+    {
+      "language": "go",
+      "case": "defect",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.113487,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/defect-format-72b642dfa1ef.json",
+        "label": "defect-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:44.793483+00:00",
+        "durationSeconds": 0.039876,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceAfter": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/defect-format-72b642dfa1ef.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "238afd629fa7c3860f33d621db9802f26e148b66f5ec601ecd34d1bf7524f8fa"
+    },
+    {
+      "language": "go",
+      "case": "defect",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 2,
+      "wrapperWallSeconds": 0.232784,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/defect-vet-c380a561f8b8.json",
+        "label": "defect-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:44.911289+00:00",
+        "durationSeconds": 0.156378,
+        "timeoutSeconds": 120,
+        "exitCode": 1,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceAfter": {
+          "revision": "40f694b2b229bc30046381ab60d6dfd02e27a8c7",
+          "treeFingerprint": "1e5fc40ccba7bd726a88b8911172dfc5987e6c0708149766e604a320d859e63e"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": false,
+        "status": "failed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/defect-vet-c380a561f8b8.log"
+      },
+      "nativeOutput": "# kaizen-lint-fixture\n# [kaizen-lint-fixture]\n./main.go:10:20: slog.Info arg \"fare(500, 2)\" should be a string or a slog.Attr (possible missing key or value)\n",
+      "nativeOutputSha256": "7495637b25dee4e3960084a576e0ae978f72be3d3cd73bf12aa484d835349934",
+      "originalRecordSha256": "e14df43710194fb159607eb851820fec42232107bcb7bafc5406714e7f12cb56"
+    },
+    {
+      "language": "go",
+      "case": "repaired",
+      "tool": "format",
+      "command": [
+        "gofmt",
+        "-l",
+        "main.go",
+        "main_test.go"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.113166,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/repaired-format-aa44dfdceb8a.json",
+        "label": "repaired-format",
+        "command": [
+          "gofmt",
+          "-l",
+          "main.go",
+          "main_test.go"
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:45.169401+00:00",
+        "durationSeconds": 0.040613,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceAfter": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "gofmt",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/repaired-format-aa44dfdceb8a.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "84515949f74996742eaf7fc2f3f07b56e64e4ac0903d94041b5580cbb88dbd43"
+    },
+    {
+      "language": "go",
+      "case": "repaired",
+      "tool": "vet",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.2369,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/repaired-vet-f291fcbf5293.json",
+        "label": "repaired-vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:45.283236+00:00",
+        "durationSeconds": 0.163412,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceAfter": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/repaired-vet-f291fcbf5293.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "3832e821d475aeea9e8f39edb35ad2ae970a516454757e52e9653cfb0a7ccfef"
+    },
+    {
+      "language": "go",
+      "case": "repaired",
+      "tool": "tests",
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "./..."
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 1.30436,
+      "check": {
+        "record": "$STUDY/go/.kaizen/checks/repaired-tests-ea5f94ef0de7.json",
+        "label": "repaired-tests",
+        "command": [
+          "go",
+          "test",
+          "-count=1",
+          "./..."
+        ],
+        "project": "$STUDY/go",
+        "startedAt": "2026-10-17T16:51:45.520945+00:00",
+        "durationSeconds": 1.229769,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceAfter": {
+          "revision": "e08c493721765ad57f7f8355ca4018d88055da62",
+          "treeFingerprint": "d8791461cd8bf6437ea24ef2d248780b79364f9337a44a20c73eae2e035410c4"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/go/.kaizen/checks/repaired-tests-ea5f94ef0de7.log"
+      },
+      "nativeOutput": "ok  \tkaizen-lint-fixture\t0.375s\n",
+      "nativeOutputSha256": "52adaad1ac17b7e7a0dd44a5cd44a3012939a2ba7f49e6a7cd9591891b1b20b8",
+      "originalRecordSha256": "07cd9368bf70fa526ad2133dcfa8237962c588c70d6b8e175860ea1e4abed36b"
+    },
+    {
+      "language": "rust",
+      "case": "initial",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.188755,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/initial-format-8284bba5c32e.json",
+        "label": "initial-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:46.914119+00:00",
+        "durationSeconds": 0.107624,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/initial-format-8284bba5c32e.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "0afe4f3a21ac8e3476500869103c857d7e3599cc2743a40d0d141034859b8681"
+    },
+    {
+      "language": "rust",
+      "case": "initial",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.448207,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/initial-clippy-fc974329b2c1.json",
+        "label": "initial-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:47.097614+00:00",
+        "durationSeconds": 0.373781,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/initial-clippy-fc974329b2c1.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.25s\n",
+      "nativeOutputSha256": "0088fd5fb2de25ca8f5a68e37affb2ae30e78cd58a0816efc25fe0493668930c",
+      "originalRecordSha256": "d433a939d9885e49b1adc3fb86d453487c1e3d2668e60c34ee587bc46035274c"
+    },
+    {
+      "language": "rust",
+      "case": "warm-1",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.18938,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-1-format-c09a647b4aa4.json",
+        "label": "warm-1-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:47.549516+00:00",
+        "durationSeconds": 0.111581,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-1-format-c09a647b4aa4.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "3babce861e561b9e993ef3a9c14a05f3e1ae17fbabf50d4f5a6125abe01dd8ed"
+    },
+    {
+      "language": "rust",
+      "case": "warm-1",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.246336,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-1-clippy-1e11507a95e7.json",
+        "label": "warm-1-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:47.737481+00:00",
+        "durationSeconds": 0.170283,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-1-clippy-1e11507a95e7.log"
+      },
+      "nativeOutput": "{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s\n",
+      "nativeOutputSha256": "5ddc653a358eed9e4564986fe90e51623225a993afe6d19d468d747ce21a715b",
+      "originalRecordSha256": "6b8c0ff8ac955951380ca8c295d382eb996120711bc6b6d7a5906fc216389813"
+    },
+    {
+      "language": "rust",
+      "case": "warm-2",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.184563,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-2-format-2239d16565ef.json",
+        "label": "warm-2-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:47.982571+00:00",
+        "durationSeconds": 0.110533,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-2-format-2239d16565ef.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "3917c41bb830997b32230d7cbb0e9043687f4789c7a5e4da5c903e7e69fccaf2"
+    },
+    {
+      "language": "rust",
+      "case": "warm-2",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.241247,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-2-clippy-d04d6f659317.json",
+        "label": "warm-2-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:48.166671+00:00",
+        "durationSeconds": 0.167323,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-2-clippy-d04d6f659317.log"
+      },
+      "nativeOutput": "{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s\n",
+      "nativeOutputSha256": "980a5d4eb45ca984747e3e641ad88b2b1e9f176934fd120fe637dd2dac9ef50c",
+      "originalRecordSha256": "9e30f74e49e9d35664580fd825785cc7f6e8af9ddc58f78345ddee9b5a778b79"
+    },
+    {
+      "language": "rust",
+      "case": "warm-3",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.178088,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-3-format-6475b535b89e.json",
+        "label": "warm-3-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:48.406895+00:00",
+        "durationSeconds": 0.106305,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-3-format-6475b535b89e.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "1cff180a6876033f92d000d9fbec4349bfecd215aa3d3adf07f44999a83de61d"
+    },
+    {
+      "language": "rust",
+      "case": "warm-3",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.23864,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/warm-3-clippy-4ed120c6818a.json",
+        "label": "warm-3-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:48.585313+00:00",
+        "durationSeconds": 0.166789,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceAfter": {
+          "revision": "e7753201e74a2708a0b47d82e6aaf5062a162592",
+          "treeFingerprint": "9e7ce5dd38de0f28102da3f789a1e24e1d3db5ecc94a93fd8ae196cbb7cc9a5b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/warm-3-clippy-4ed120c6818a.log"
+      },
+      "nativeOutput": "{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":true}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s\n",
+      "nativeOutputSha256": "6738b6a8261f968ccfee6eb0360854144e2bc06dba8ff6b8820df8c440fc2860",
+      "originalRecordSha256": "180b2e90607206c614b8bdc0dd7e95394116488f76262f9f8ab7d4a705c3ccbe"
+    },
+    {
+      "language": "rust",
+      "case": "edited",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.182061,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/edited-format-f308d76f231f.json",
+        "label": "edited-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:48.854244+00:00",
+        "durationSeconds": 0.111081,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "cdec2667b7ff979f9dfdb8620f81608b76bc04f4",
+          "treeFingerprint": "1bb2459781f8a436b26812668d8ed4724dd4ecf057b2db435b787a3f884f3d5c"
+        },
+        "sourceAfter": {
+          "revision": "cdec2667b7ff979f9dfdb8620f81608b76bc04f4",
+          "treeFingerprint": "1bb2459781f8a436b26812668d8ed4724dd4ecf057b2db435b787a3f884f3d5c"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/edited-format-f308d76f231f.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "e4c81ff84e69a76cf50ef1d30fb998d79683e8cb742941c781d52242743082d3"
+    },
+    {
+      "language": "rust",
+      "case": "edited",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.238115,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/edited-clippy-62c94ef600ad.json",
+        "label": "edited-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:49.039406+00:00",
+        "durationSeconds": 0.164276,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "cdec2667b7ff979f9dfdb8620f81608b76bc04f4",
+          "treeFingerprint": "1bb2459781f8a436b26812668d8ed4724dd4ecf057b2db435b787a3f884f3d5c"
+        },
+        "sourceAfter": {
+          "revision": "cdec2667b7ff979f9dfdb8620f81608b76bc04f4",
+          "treeFingerprint": "1bb2459781f8a436b26812668d8ed4724dd4ecf057b2db435b787a3f884f3d5c"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/edited-clippy-62c94ef600ad.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n",
+      "nativeOutputSha256": "6f0c6d9672dbedfc9ba188ad1ce36cf473be10995aadacc5c4946e9884823513",
+      "originalRecordSha256": "42a457e1a7f78760014842241d1c5582be90ebefebac66bb99b57dbdeb817b1e"
+    },
+    {
+      "language": "rust",
+      "case": "unformatted",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 2,
+      "wrapperWallSeconds": 0.186274,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/unformatted-format-251bb749c250.json",
+        "label": "unformatted-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:49.305893+00:00",
+        "durationSeconds": 0.113496,
+        "timeoutSeconds": 120,
+        "exitCode": 1,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "badaadae7908ee71482faf6947a6b2bfeba4aab3",
+          "treeFingerprint": "02c5a961fc70997ff2e8d84bff0022c2b9c616c1eafb387e9424b15d01fe5a9b"
+        },
+        "sourceAfter": {
+          "revision": "badaadae7908ee71482faf6947a6b2bfeba4aab3",
+          "treeFingerprint": "02c5a961fc70997ff2e8d84bff0022c2b9c616c1eafb387e9424b15d01fe5a9b"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": false,
+        "status": "failed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/unformatted-format-251bb749c250.log"
+      },
+      "nativeOutput": "Diff in $STUDY/rust/src/lib.rs:1:\n-pub fn within_limit(distance:u64, limit: u64) -> bool {\n+pub fn within_limit(distance: u64, limit: u64) -> bool {\n     distance <= limit\n }\n \n",
+      "nativeOutputSha256": "bacd667f6cac2b79b689b857df4c7a3d0a4e1207d9e42d44d50d61bd8fa62df7",
+      "originalRecordSha256": "6c64de2b22dd7b06c95dc81551f38eb65e36b8449194f3b1947ae6fd1f260e7f"
+    },
+    {
+      "language": "rust",
+      "case": "unformatted",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.24153,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/unformatted-clippy-2b2d8a671fd1.json",
+        "label": "unformatted-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:49.497126+00:00",
+        "durationSeconds": 0.16513,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "badaadae7908ee71482faf6947a6b2bfeba4aab3",
+          "treeFingerprint": "02c5a961fc70997ff2e8d84bff0022c2b9c616c1eafb387e9424b15d01fe5a9b"
+        },
+        "sourceAfter": {
+          "revision": "badaadae7908ee71482faf6947a6b2bfeba4aab3",
+          "treeFingerprint": "02c5a961fc70997ff2e8d84bff0022c2b9c616c1eafb387e9424b15d01fe5a9b"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/unformatted-clippy-2b2d8a671fd1.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n",
+      "nativeOutputSha256": "6f0c6d9672dbedfc9ba188ad1ce36cf473be10995aadacc5c4946e9884823513",
+      "originalRecordSha256": "7eeb0dd64c030ca247d83d2ff260f225ecdbbf9e3c7a2799e1d4d393ba041a20"
+    },
+    {
+      "language": "rust",
+      "case": "defect",
+      "tool": "build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.26872,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/defect-build-532cfd52b225.json",
+        "label": "defect-build",
+        "command": [
+          "cargo",
+          "build",
+          "--locked"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:49.765341+00:00",
+        "durationSeconds": 0.195788,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceAfter": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/defect-build-532cfd52b225.log"
+      },
+      "nativeOutput": "   Compiling kaizen-lint-fixture v0.1.0 ($STUDY/rust)\nwarning: unused variable: `limit`\n --> src/lib.rs:1:36\n  |\n1 | pub fn within_limit(distance: u64, limit: u64) -> bool {\n  |                                    ^^^^^ help: if this is intentional, prefix it with an underscore: `_limit`\n  |\n  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\n\nwarning: `kaizen-lint-fixture` (lib) generated 1 warning (run `cargo fix --lib -p kaizen-lint-fixture` to apply 1 suggestion)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s\n",
+      "nativeOutputSha256": "3f76728d01243d5ccb46d3d0f34f706219e084b500439f47e51e86736d743b9a",
+      "originalRecordSha256": "a4181f3918b7a908f370c7cb80905d5e258f980044080743216419db3a0e2211"
+    },
+    {
+      "language": "rust",
+      "case": "defect",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.185196,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/defect-format-b31a7ee0f437.json",
+        "label": "defect-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:50.038122+00:00",
+        "durationSeconds": 0.109653,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceAfter": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/defect-format-b31a7ee0f437.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "39a1515d261fdfa398dadcc6b82d1abaa6242d2d80869e0af99eb9e1a4df5516"
+    },
+    {
+      "language": "rust",
+      "case": "defect",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 2,
+      "wrapperWallSeconds": 0.236213,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/defect-clippy-583f10e9d54b.json",
+        "label": "defect-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:50.219345+00:00",
+        "durationSeconds": 0.164678,
+        "timeoutSeconds": 120,
+        "exitCode": 101,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceAfter": {
+          "revision": "53748643b9846aab738bc759789127022ba7c2b9",
+          "treeFingerprint": "33fdde783584d0029e13c68e0c6b0c47ea45b82b319aa52687e3a67344a14b1c"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": false,
+        "status": "failed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": false,
+        "diagnostics": [
+          {
+            "level": "warning",
+            "code": {
+              "code": "unused_variables",
+              "explanation": null
+            },
+            "message": "unused variable: `limit`",
+            "spans": [
+              {
+                "byte_end": 40,
+                "byte_start": 35,
+                "column_end": 41,
+                "column_start": 36,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 1,
+                "line_start": 1,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 41,
+                    "highlight_start": 36,
+                    "text": "pub fn within_limit(distance: u64, limit: u64) -> bool {"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "level": "warning",
+            "code": {
+              "code": "unused_variables",
+              "explanation": null
+            },
+            "message": "unused variable: `limit`",
+            "spans": [
+              {
+                "byte_end": 40,
+                "byte_start": 35,
+                "column_end": 41,
+                "column_start": 36,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 1,
+                "line_start": 1,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 41,
+                    "highlight_start": 36,
+                    "text": "pub fn within_limit(distance: u64, limit: u64) -> bool {"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "level": "error",
+            "code": {
+              "code": "clippy::eq_op",
+              "explanation": null
+            },
+            "message": "equal expressions as operands to `==`",
+            "spans": [
+              {
+                "byte_end": 81,
+                "byte_start": 61,
+                "column_end": 25,
+                "column_start": 5,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 2,
+                "line_start": 2,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 25,
+                    "highlight_start": 5,
+                    "text": "    distance == distance"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "level": "error",
+            "code": {
+              "code": "clippy::eq_op",
+              "explanation": null
+            },
+            "message": "equal expressions as operands to `==`",
+            "spans": [
+              {
+                "byte_end": 81,
+                "byte_start": 61,
+                "column_end": 25,
+                "column_start": 5,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 2,
+                "line_start": 2,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 25,
+                    "highlight_start": 5,
+                    "text": "    distance == distance"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "log": "$STUDY/rust/.kaizen/checks/defect-clippy-583f10e9d54b.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"warning: unused variable: `limit`\\n --> src/lib.rs:1:36\\n  |\\n1 | pub fn within_limit(distance: u64, limit: u64) -> bool {\\n  |                                    ^^^^^ help: if this is intentional, prefix it with an underscore: `_limit`\\n  |\\n  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"if this is intentional, prefix it with an underscore\",\"rendered\":null,\"spans\":[{\"byte_end\":40,\"byte_start\":35,\"column_end\":41,\"column_start\":36,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":1,\"line_start\":1,\"suggested_replacement\":\"_limit\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":41,\"highlight_start\":36,\"text\":\"pub fn within_limit(distance: u64, limit: u64) -> bool {\"}]}]}],\"level\":\"warning\",\"message\":\"unused variable: `limit`\",\"spans\":[{\"byte_end\":40,\"byte_start\":35,\"column_end\":41,\"column_start\":36,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":1,\"line_start\":1,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":41,\"highlight_start\":36,\"text\":\"pub fn within_limit(distance: u64, limit: u64) -> bool {\"}]}],\"code\":{\"code\":\"unused_variables\",\"explanation\":null}}}\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"warning: unused variable: `limit`\\n --> src/lib.rs:1:36\\n  |\\n1 | pub fn within_limit(distance: u64, limit: u64) -> bool {\\n  |                                    ^^^^^ help: if this is intentional, prefix it with an underscore: `_limit`\\n  |\\n  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"if this is intentional, prefix it with an underscore\",\"rendered\":null,\"spans\":[{\"byte_end\":40,\"byte_start\":35,\"column_end\":41,\"column_start\":36,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":1,\"line_start\":1,\"suggested_replacement\":\"_limit\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":41,\"highlight_start\":36,\"text\":\"pub fn within_limit(distance: u64, limit: u64) -> bool {\"}]}]}],\"level\":\"warning\",\"message\":\"unused variable: `limit`\",\"spans\":[{\"byte_end\":40,\"byte_start\":35,\"column_end\":41,\"column_start\":36,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":1,\"line_start\":1,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":41,\"highlight_start\":36,\"text\":\"pub fn within_limit(distance: u64, limit: u64) -> bool {\"}]}],\"code\":{\"code\":\"unused_variables\",\"explanation\":null}}}\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"error: equal expressions as operands to `==`\\n --> src/lib.rs:2:5\\n  |\\n2 |     distance == distance\\n  |     ^^^^^^^^^^^^^^^^^^^^\\n  |\\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#eq_op\\n  = note: `#[deny(clippy::eq_op)]` on by default\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#eq_op\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[deny(clippy::eq_op)]` on by default\",\"rendered\":null,\"spans\":[]}],\"level\":\"error\",\"message\":\"equal expressions as operands to `==`\",\"spans\":[{\"byte_end\":81,\"byte_start\":61,\"column_end\":25,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":25,\"highlight_start\":5,\"text\":\"    distance == distance\"}]}],\"code\":{\"code\":\"clippy::eq_op\",\"explanation\":null}}}\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"error: equal expressions as operands to `==`\\n --> src/lib.rs:2:5\\n  |\\n2 |     distance == distance\\n  |     ^^^^^^^^^^^^^^^^^^^^\\n  |\\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#eq_op\\n  = note: `#[deny(clippy::eq_op)]` on by default\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#eq_op\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[deny(clippy::eq_op)]` on by default\",\"rendered\":null,\"spans\":[]}],\"level\":\"error\",\"message\":\"equal expressions as operands to `==`\",\"spans\":[{\"byte_end\":81,\"byte_start\":61,\"column_end\":25,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":25,\"highlight_start\":5,\"text\":\"    distance == distance\"}]}],\"code\":{\"code\":\"clippy::eq_op\",\"explanation\":null}}}\nerror: could not compile `kaizen-lint-fixture` (lib test) due to 1 previous error; 1 warning emitted\nwarning: build failed, waiting for other jobs to finish...\nerror: could not compile `kaizen-lint-fixture` (lib) due to 1 previous error; 1 warning emitted\n{\"reason\":\"build-finished\",\"success\":false}\n",
+      "nativeOutputSha256": "caca257b759173da4540998c3a39c331884ae0af938489245614752013ac0e99",
+      "originalRecordSha256": "46445a3af64855e33be4f4c83fc5d8ae837b0291532abb41820991da7fd88700"
+    },
+    {
+      "language": "rust",
+      "case": "advisory",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.186673,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/advisory-format-57354fc1b6cd.json",
+        "label": "advisory-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:50.488270+00:00",
+        "durationSeconds": 0.112683,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "3e84d15302e0663bf36eaf639bcfeee02f64bab1",
+          "treeFingerprint": "279558c189f4e1fcb5fe53960d51d1793e68a9b0c8f80a0d49e44f9e597df6a4"
+        },
+        "sourceAfter": {
+          "revision": "3e84d15302e0663bf36eaf639bcfeee02f64bab1",
+          "treeFingerprint": "279558c189f4e1fcb5fe53960d51d1793e68a9b0c8f80a0d49e44f9e597df6a4"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/advisory-format-57354fc1b6cd.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "3c7fa5520aae68ecd38023d2bbcdda42ddddd9cd9004b53a7af057f8613163dd"
+    },
+    {
+      "language": "rust",
+      "case": "advisory",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 3,
+      "wrapperWallSeconds": 0.235693,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/advisory-clippy-8f02871f02c6.json",
+        "label": "advisory-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:50.675745+00:00",
+        "durationSeconds": 0.162,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "3e84d15302e0663bf36eaf639bcfeee02f64bab1",
+          "treeFingerprint": "279558c189f4e1fcb5fe53960d51d1793e68a9b0c8f80a0d49e44f9e597df6a4"
+        },
+        "sourceAfter": {
+          "revision": "3e84d15302e0663bf36eaf639bcfeee02f64bab1",
+          "treeFingerprint": "279558c189f4e1fcb5fe53960d51d1793e68a9b0c8f80a0d49e44f9e597df6a4"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": true,
+        "status": "needs_review",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [
+          {
+            "level": "warning",
+            "code": {
+              "code": "clippy::needless_return",
+              "explanation": null
+            },
+            "message": "unneeded `return` statement",
+            "spans": [
+              {
+                "byte_end": 85,
+                "byte_start": 61,
+                "column_end": 29,
+                "column_start": 5,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 2,
+                "line_start": 2,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 29,
+                    "highlight_start": 5,
+                    "text": "    return distance <= limit;"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "level": "warning",
+            "code": {
+              "code": "clippy::needless_return",
+              "explanation": null
+            },
+            "message": "unneeded `return` statement",
+            "spans": [
+              {
+                "byte_end": 85,
+                "byte_start": 61,
+                "column_end": 29,
+                "column_start": 5,
+                "expansion": null,
+                "file_name": "src/lib.rs",
+                "is_primary": true,
+                "label": null,
+                "line_end": 2,
+                "line_start": 2,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                  {
+                    "highlight_end": 29,
+                    "highlight_start": 5,
+                    "text": "    return distance <= limit;"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "log": "$STUDY/rust/.kaizen/checks/advisory-clippy-8f02871f02c6.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"warning: unneeded `return` statement\\n --> src/lib.rs:2:5\\n  |\\n2 |     return distance <= limit;\\n  |     ^^^^^^^^^^^^^^^^^^^^^^^^\\n  |\\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_return\\n  = note: `#[warn(clippy::needless_return)]` on by default\\nhelp: remove `return`\\n  |\\n2 -     return distance <= limit;\\n2 +     distance <= limit\\n  |\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_return\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[warn(clippy::needless_return)]` on by default\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"remove `return`\",\"rendered\":null,\"spans\":[{\"byte_end\":85,\"byte_start\":61,\"column_end\":29,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":\"distance <= limit\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":29,\"highlight_start\":5,\"text\":\"    return distance <= limit;\"}]},{\"byte_end\":86,\"byte_start\":85,\"column_end\":30,\"column_start\":29,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":\"\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":30,\"highlight_start\":29,\"text\":\"    return distance <= limit;\"}]}]}],\"level\":\"warning\",\"message\":\"unneeded `return` statement\",\"spans\":[{\"byte_end\":85,\"byte_start\":61,\"column_end\":29,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":29,\"highlight_start\":5,\"text\":\"    return distance <= limit;\"}]}],\"code\":{\"code\":\"clippy::needless_return\",\"explanation\":null}}}\n{\"reason\":\"compiler-message\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"message\":{\"rendered\":\"warning: unneeded `return` statement\\n --> src/lib.rs:2:5\\n  |\\n2 |     return distance <= limit;\\n  |     ^^^^^^^^^^^^^^^^^^^^^^^^\\n  |\\n  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_return\\n  = note: `#[warn(clippy::needless_return)]` on by default\\nhelp: remove `return`\\n  |\\n2 -     return distance <= limit;\\n2 +     distance <= limit\\n  |\\n\\n\",\"$message_type\":\"diagnostic\",\"children\":[{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#needless_return\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"note\",\"message\":\"`#[warn(clippy::needless_return)]` on by default\",\"rendered\":null,\"spans\":[]},{\"children\":[],\"code\":null,\"level\":\"help\",\"message\":\"remove `return`\",\"rendered\":null,\"spans\":[{\"byte_end\":85,\"byte_start\":61,\"column_end\":29,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":\"distance <= limit\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":29,\"highlight_start\":5,\"text\":\"    return distance <= limit;\"}]},{\"byte_end\":86,\"byte_start\":85,\"column_end\":30,\"column_start\":29,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":\"\",\"suggestion_applicability\":\"MachineApplicable\",\"text\":[{\"highlight_end\":30,\"highlight_start\":29,\"text\":\"    return distance <= limit;\"}]}]}],\"level\":\"warning\",\"message\":\"unneeded `return` statement\",\"spans\":[{\"byte_end\":85,\"byte_start\":61,\"column_end\":29,\"column_start\":5,\"expansion\":null,\"file_name\":\"src/lib.rs\",\"is_primary\":true,\"label\":null,\"line_end\":2,\"line_start\":2,\"suggested_replacement\":null,\"suggestion_applicability\":null,\"text\":[{\"highlight_end\":29,\"highlight_start\":5,\"text\":\"    return distance <= limit;\"}]}],\"code\":{\"code\":\"clippy::needless_return\",\"explanation\":null}}}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n",
+      "nativeOutputSha256": "7fd4ac23969ae2b5e2885aa6c51ecd270fdb958c088e86048f47e77d907c245e",
+      "originalRecordSha256": "78176a267218dfc9a5357c23c24f044f7198417584a75be6575f4c1f8481abd0"
+    },
+    {
+      "language": "rust",
+      "case": "repaired",
+      "tool": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.180975,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/repaired-format-e3bdca7da11c.json",
+        "label": "repaired-format",
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:50.941017+00:00",
+        "durationSeconds": 0.10804,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceAfter": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/repaired-format-e3bdca7da11c.log"
+      },
+      "nativeOutput": "",
+      "nativeOutputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalRecordSha256": "c8293c8e0b2a225e15bcecc8fa1b0bcbf889b177d0873d9e43da1b827ad1600e"
+    },
+    {
+      "language": "rust",
+      "case": "repaired",
+      "tool": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--all-targets",
+        "--message-format=json",
+        "--",
+        "--no-deps"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.236007,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/repaired-clippy-432f8473f223.json",
+        "label": "repaired-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:51.123642+00:00",
+        "durationSeconds": 0.162674,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceAfter": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/repaired-clippy-432f8473f223.log"
+      },
+      "nativeOutput": "    Checking kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":false},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-a4e91f3c5f5ac388.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"compiler-artifact\",\"package_id\":\"path+file://$STUDY/rust#kaizen-lint-fixture@0.1.0\",\"manifest_path\":\"$STUDY/rust/Cargo.toml\",\"target\":{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"kaizen_lint_fixture\",\"src_path\":\"$STUDY/rust/src/lib.rs\",\"edition\":\"2021\",\"doc\":true,\"doctest\":true,\"test\":true},\"profile\":{\"opt_level\":\"0\",\"debuginfo\":2,\"debug_assertions\":true,\"overflow_checks\":true,\"test\":true},\"features\":[],\"filenames\":[\"$STUDY/rust-build/debug/deps/libkaizen_lint_fixture-4c159086910ba3fa.rmeta\"],\"executable\":null,\"fresh\":false}\n{\"reason\":\"build-finished\",\"success\":true}\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s\n",
+      "nativeOutputSha256": "6f0c6d9672dbedfc9ba188ad1ce36cf473be10995aadacc5c4946e9884823513",
+      "originalRecordSha256": "ab6fdab3ae7e7170928dae5c0eff708f3325e76a207e841c5acab543d7437c1a"
+    },
+    {
+      "language": "rust",
+      "case": "repaired",
+      "tool": "tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked"
+      ],
+      "wrapperExitCode": 0,
+      "wrapperWallSeconds": 0.954503,
+      "check": {
+        "record": "$STUDY/rust/.kaizen/checks/repaired-tests-c5e3f9bff315.json",
+        "label": "repaired-tests",
+        "command": [
+          "cargo",
+          "test",
+          "--locked"
+        ],
+        "project": "$STUDY/rust",
+        "startedAt": "2026-10-17T16:51:51.362103+00:00",
+        "durationSeconds": 0.877834,
+        "timeoutSeconds": 120,
+        "exitCode": 0,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceAfter": {
+          "revision": "ada488f317e79c60112f6bf2a71043e419f4a1b2",
+          "treeFingerprint": "902c8c29436df61f898215ced0738d48a4d38b03759f6d0ee79180493b14adeb"
+        },
+        "sourceChanged": false,
+        "passed": true,
+        "processPassed": true,
+        "status": "passed",
+        "diagnosticsMode": null,
+        "diagnosticsComplete": true,
+        "diagnostics": [],
+        "log": "$STUDY/rust/.kaizen/checks/repaired-tests-c5e3f9bff315.log"
+      },
+      "nativeOutput": "   Compiling kaizen-lint-fixture v0.1.0 ($STUDY/rust)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s\n     Running unittests src/lib.rs ($STUDY/rust-build/debug/deps/kaizen_lint_fixture-45fa8cfa2a606b3b)\n\nrunning 1 test\ntest tests::boundary ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n   Doc-tests kaizen_lint_fixture\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+      "nativeOutputSha256": "f5e264a6fd720e01f30d925ba8a058425243d60c7cfd0de2f20f00add2f4f9ea",
+      "originalRecordSha256": "a2f648fde4cf5995efdd6238688c01ec09d5071f054f7e1a9291974fe751d0e6"
+    }
+  ],
+  "wallSeconds": 12.76402,
+  "allAssertionsPassed": true,
+  "startupAttempts": [
+    {
+      "attempt": "lint-validation-20261018",
+      "completed": false,
+      "recordedWallSeconds": 9.307144,
+      "nativeExitCode": 101,
+      "nativeOutput": "error: process didn't exit successfully: `sccache /Users/shm11c3/.rustup/toolchains/stable-aarch64-apple-darwin/bin/clippy-driver /Users/shm11c3/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc -vV` (exit status: 2)\n--- stderr\nsccache: error: Operation not permitted (os error 1)\n\n",
+      "record": {
+        "record": "$PLUGIN/.local/lint-validation-20261018/rust/.kaizen/checks/initial-clippy-e8a21d8c9998.json",
+        "label": "initial-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$PLUGIN/.local/lint-validation-20261018/rust",
+        "startedAt": "2026-10-17T16:50:27.619703+00:00",
+        "durationSeconds": 0.111347,
+        "timeoutSeconds": 120,
+        "exitCode": 101,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "444bb228d52e4e826e8481b8bd809bc0ea9ba6e4",
+          "treeFingerprint": "32585896d17c0799f74a46a353890e8b2d8fe6210a1d07d441e4ae5d494fc6b4"
+        },
+        "sourceAfter": {
+          "revision": "444bb228d52e4e826e8481b8bd809bc0ea9ba6e4",
+          "treeFingerprint": "32585896d17c0799f74a46a353890e8b2d8fe6210a1d07d441e4ae5d494fc6b4"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": false,
+        "status": "failed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": false,
+        "diagnostics": [],
+        "log": "$PLUGIN/.local/lint-validation-20261018/rust/.kaizen/checks/initial-clippy-e8a21d8c9998.log"
+      },
+      "environment": {
+        "GOTOOLCHAIN": "local",
+        "GOFLAGS": "",
+        "RUSTFLAGS": "",
+        "CARGO_ENCODED_RUSTFLAGS": "",
+        "CARGO_BUILD_WARNINGS": "warn",
+        "CARGO_INCREMENTAL": null,
+        "CARGO_NET_OFFLINE": "true"
+      }
+    },
+    {
+      "attempt": "lint-validation-20261018-v2",
+      "completed": false,
+      "recordedWallSeconds": 8.360115,
+      "nativeExitCode": 101,
+      "nativeOutput": "error: failed to create directory `/Users/shm11c3/.cargo/build/shared/9c`\n\nCaused by:\n  Operation not permitted (os error 1)\n",
+      "record": {
+        "record": "$PLUGIN/.local/lint-validation-20261018-v2/rust/.kaizen/checks/initial-clippy-8956981b71c9.json",
+        "label": "initial-clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--all-targets",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "project": "$PLUGIN/.local/lint-validation-20261018-v2/rust",
+        "startedAt": "2026-10-17T16:51:17.312695+00:00",
+        "durationSeconds": 0.539647,
+        "timeoutSeconds": 120,
+        "exitCode": 101,
+        "timedOut": false,
+        "interrupted": false,
+        "sourceBefore": {
+          "revision": "e1c582e243032bec2fd7d6b2dbc0592b15294034",
+          "treeFingerprint": "30e8ea992b4e2e1bfb590cf5384af15f2026e301add581d667ca8f188bb5a645"
+        },
+        "sourceAfter": {
+          "revision": "e1c582e243032bec2fd7d6b2dbc0592b15294034",
+          "treeFingerprint": "30e8ea992b4e2e1bfb590cf5384af15f2026e301add581d667ca8f188bb5a645"
+        },
+        "sourceChanged": false,
+        "passed": false,
+        "processPassed": false,
+        "status": "failed",
+        "diagnosticsMode": "cargo",
+        "diagnosticsComplete": false,
+        "diagnostics": [],
+        "log": "$PLUGIN/.local/lint-validation-20261018-v2/rust/.kaizen/checks/initial-clippy-8956981b71c9.log"
+      },
+      "environment": {
+        "GOTOOLCHAIN": "local",
+        "GOFLAGS": "",
+        "RUSTFLAGS": "",
+        "CARGO_ENCODED_RUSTFLAGS": "",
+        "CARGO_BUILD_WARNINGS": "warn",
+        "CARGO_INCREMENTAL": null,
+        "CARGO_NET_OFFLINE": "true",
+        "RUSTC_WRAPPER": "",
+        "RUSTC_WORKSPACE_WRAPPER": ""
+      }
+    }
+  ],
+  "summary": {
+    "go": {
+      "initialSeconds": 2.6177300000000003,
+      "warmSamplesSeconds": [
+        0.45482999999999996,
+        0.38055700000000003,
+        0.42699
+      ],
+      "warmMedianSeconds": 0.42699,
+      "editedSeconds": 0.360964,
+      "repairedSeconds": 0.350066
+    },
+    "rust": {
+      "initialSeconds": 0.636962,
+      "warmSamplesSeconds": [
+        0.435716,
+        0.42581,
+        0.416728
+      ],
+      "warmMedianSeconds": 0.42581,
+      "editedSeconds": 0.420176,
+      "repairedSeconds": 0.41698199999999996
+    }
+  },
+  "artifactNormalization": "Paths in this exported copy use $STUDY and $PLUGIN; original source fingerprints and original log/record hashes are retained. Raw original records remain in the ignored local output directory."
+}

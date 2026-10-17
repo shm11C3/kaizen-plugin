@@ -68,6 +68,9 @@ or Git commit author is not the member's identity.
 When using the existing setup, observe, hypothesize, experiment or recover skills
 as a team, apply this skill's ownership boundary first. Workers prepare candidate
 changes locally; only the reservation holder operates the control-host experiment.
+Before task-ready, follow `../../team/docs/LINT.md` on the submitted commit:
+attach lint/test records, durations, tool versions and AI diagnostic dispositions.
+The integrator reruns relevant checks when integration changes the tested source.
 
 ## Decisions and interruption
 

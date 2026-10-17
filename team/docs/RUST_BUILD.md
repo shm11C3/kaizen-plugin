@@ -50,6 +50,8 @@ Cargoのダウンロードキャッシュと作業領域ごとの`target/`を維
 deployは`rsync --delete`なので、通常のRust配置ならpresetの`SYNC_EXCLUDES`に
 `--exclude target/`を指定し、受信先のビルド出力を消さない。別のCARGO_TARGET_DIRを使う場合は
 実際の場所・所有者・保持を確認する。生成物はGitへ入れない。
+別の`build.build-dir`を設定したCargoでは中間生成物の場所も確認し、作業領域ごとの隔離・保持を確かめる。
+専用targetの指定だけで全生成物を分離したと扱わず、wrapperと共有設定も記録する。
 並列workerはそれぞれの作業領域でビルドし、共有targetディレクトリのロック待ちや
 CPU・メモリ競合を避ける。check・事前ビルドは対象予約前に並列で行えるが、対象ホスト上の
 ビルドは既存のtarget wrapperと予約の内側で行い、他候補の計測と重ねない。

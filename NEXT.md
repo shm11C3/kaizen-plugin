@@ -6,8 +6,8 @@
 
 1. **品質保留から修正・採用まで通す**。基準版でも出る警告と候補の退行を区別し、
    実DBで通知・可視性の再現→修正→公式再計測を行う。同じ内容の再試行には未解明の警告を引き継ぐ。
-2. **軽いLintを候補提出前へ組み込む**。Goのgofmt／vet、Rustのfmt／Clippyを既存の
-   check記録に接続し、指摘内容と所要時間を残す。導入・実測は下の未完了項目。
+2. **導入したLintを競技アプリでも確認する**。Goのgofmt／vet、Rustのfmt／Clippyを
+   候補提出手順とcheck記録へ接続済み。小さなfixtureでの検出と時間は計測済み。実アプリと並列時の費用を次に確認する。
 3. **Go／Rustを改善サイクル全体で比較する**。ビルド・テスト・修正・復旧時間と、実行性能、
    コンパイル時の安全性を比較する。[判断基準とキャッシュ保持](team/docs/RUST_BUILD.md)は反映済み、言語間の実測は未実施。
 
@@ -82,19 +82,25 @@ pluginの品質判定はunknown。同じ警告が初期版でも出たため、�
 独立したRust fixtureではテストの成功と意図的な不具合の検出を確認したが、Rust版ISUCONの
 性能・ビルド時間は未計測。以上は先の問題別練習と条件が異なり、得点を直接比較しない。
 
-## Lintを運用へ組み込む（未完了）
+## 0.6.1: Lintを運用へ組み込む（2026-10-18）
 
-- [ ] 開始時に対象toolchainで全体を確認し、既存の指摘と実行時間を記録する。
+- [x] 開始時に対象toolchainで全体を確認し、既存の指摘と実行時間を記録する手順を追加した。
   実装中は変更package／crate、候補提出前は関連範囲へ広げる。formatterは変更ファイルを中心に使う。
-- [ ] Goはgofmtとgo vet、Rustはcargo fmt --checkとcargo clippy --lockedを基本に、
-  [prepare-tests](skills/prepare-tests/SKILL.md)と[既存ツール手順](team/docs/TOOLS.md)へ反映する。
+- [x] Goはgofmtとgo vet、Rustはcargo fmt --checkとcargo clippy --lockedを基本に、
+  [prepare-tests](skills/prepare-tests/SKILL.md)と[既存ツール手順](team/docs/TOOLS.md)へ反映した。
   実行をscripts/check.pyで記録し、ツール版・対象・ソース・生ログ・時間を共有する。
-- [ ] 正しさに関わる指摘は原因確認・修正へ戻す。意図した実装なら根拠を残して限定的に扱う。
+- [x] 正しさに関わる指摘は原因確認・修正へ戻す手順を追加。意図した実装なら根拠を残して限定的に扱う。
   既存診断を黙って無効化せず、スタイル提案と区別する。Clippyの終了0でも警告内容を確認する。
-- [ ] 全警告の一律エラー化やpedantic／restrictionの一括導入は初期要件にしない。
+- [x] 全警告の一律エラー化やpedantic／restrictionの一括導入は初期要件にしない方針を反映。
   性能の提案は仮説として扱い、公式ベンチで確認する。仕様・DB整合性は再現テストでも検証する。
-- [ ] 小さな正常／不具合入りfixtureで検出と修正後の解消を確認し、初回・修正後のLint時間を測る。
-  Rustはキャッシュと並列ビルドの資源競合も確認し、増えた待ち時間と避けられた手戻りを記録する。
+- [x] 小さな正常／不具合入りfixtureで検出と修正後の解消を確認し、初回・再実行3回・修正後のLint時間を測った。
+  整形＋解析の記録込み壁時計は初回Go 2.618秒／Rust 0.637秒、再実行中央値Go 0.427秒／Rust 0.426秒。
+  終了0のgofmt差分・Clippy警告もneeds_reviewとして検出した。
+- [ ] 競技アプリの依存・規模と並列ビルドの資源競合を確認し、増えた待ち時間と実際に削減できた手戻りを記録する。
+
+[運用手順](team/docs/LINT.md)、[実測と起動失敗を含む知見](knowledge/lessons/20261018-lint-validation.md)、
+[機械可読の証拠](knowledge/validation/lint-20261018.json)を参照。依存なしの異なるfixtureによる測定で、
+言語間の優劣、AIの自律修正速度、競技アプリの最終スコアへの効果は示していない。
 
 一次資料: [go vet](https://pkg.go.dev/cmd/vet)、
 [Clippyの実行](https://doc.rust-lang.org/clippy/usage.html)・[指摘の分類](https://doc.rust-lang.org/clippy/lints.html)。

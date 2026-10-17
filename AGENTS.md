@@ -46,6 +46,8 @@ Keep competition main separate. Read `team/docs/REGULATIONS.md`
 before choosing manual operations or isolated parallel validation environments.
 
 Go and Rust use native tests and existing profilers under `team/docs/TOOLS.md`.
+Run native lint before candidate submission under `team/docs/LINT.md`; inspect
+zero-exit diagnostics, retain AI dispositions and measure the check cost.
 Initial contract tests and bounded preparation/refactor phases follow
 `team/docs/PHASES.md`, `skills/prepare-tests/SKILL.md` and `skills/refactor/SKILL.md`.
 Record preparation time and the dependent improvement. Costly collection uses

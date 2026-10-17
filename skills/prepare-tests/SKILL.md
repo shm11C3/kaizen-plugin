@@ -7,6 +7,9 @@ description: "Build a fast, specification-backed regression foundation before ag
 
 Read `../../team/docs/PHASES.md`. Use existing language test tools and the
 provided official checker; the plugin records execution, not a replacement test framework.
+Run the native formatting/lint procedure in `../../team/docs/LINT.md` alongside
+these checks. Establish existing diagnostics, inspect zero-exit warnings, and
+attach source-bound records and AI dispositions before candidate submission.
 
 1. Read the actual specification, checker and current scoring paths. List the
    invariants affected by the current high-priority candidates: authorization/ownership, state transitions,
