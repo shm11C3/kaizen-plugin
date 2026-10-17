@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 # stable.sh repin [<ref>]      (default: the stable branch)
+# stable.sh forget-baseline <reason>
+#   Retire every baseline sample of the current stable revision: they are
+#   moved to .kaizen/baseline/<rev>.retired-<stamp>/ with the reason, so the
+#   next bench.sh baseline starts a clean set. For samples that measured
+#   something other than the application (a package upgrade eating a core,
+#   a MySQL restart mid-run); the files stay as evidence, out of evaluate.sh.
 # Move STABLE_REV to a commit whose deployable content is identical to the
 # current stable: the same trees under LOCAL_SYNC_PATHS and the overlays.
 # This is what happens after `.kaizen/` records are committed on the stable
@@ -64,5 +70,20 @@ PY
     record_step repin "$(short "$old")->$(short "$new")" 0 ok
     echo "stable repinned $(short "$old") -> $(short "$new") ($ref); $moved baseline samples re-keyed; hosts unchanged"
     ;;
-  *) die "usage: stable.sh repin [<ref>]" ;;
+  forget-baseline)
+    reason=${*:-}
+    [ -n "$reason" ] || die "stable.sh forget-baseline <reason>"
+    [ -z "$EXP" ] || die "experiment $EXP is open; record it first"
+    stable=$(state_get STABLE_REV)
+    [ -n "$stable" ] || die "STABLE_REV is not set"
+    dir="$KAIZEN_DIR/baseline/$stable"
+    ls "$dir"/*.json >/dev/null 2>&1 || die "no baseline sample for stable $(short "$stable")"
+    retired="$dir.retired-$(stamp)"
+    mv "$dir" "$retired"
+    printf '%s\t%s\n' "$(now)" "$reason" > "$retired/REASON.txt"
+    n=$(count_matches "$retired"/*.json)
+    record_step forget-baseline "$(short "$stable")" 0 "$n samples: $reason"
+    echo "retired $n baseline samples of $(short "$stable") -> $retired; take a new baseline (bench.sh baseline)"
+    ;;
+  *) die "usage: stable.sh repin [<ref>] | forget-baseline <reason>" ;;
 esac

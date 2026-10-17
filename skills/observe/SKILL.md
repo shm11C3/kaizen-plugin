@@ -17,7 +17,13 @@ $K/scripts/observe.sh dump <name>         # writes observe-<name>.txt, prints it
 
 Label rules: `baseline`, `baseline-2`, ... when the stable revision is
 deployed; `candidate`, `candidate-2`, ... inside an open experiment with the
-candidate deployed. The script refuses anything else.
+candidate deployed. The script refuses anything else, and refuses any
+sample while `BENCH_PRECHECK_CMD` (config.sh) fails on a host: a host busy
+with something that is not the application (a package upgrade, a leftover
+process) produces noise, not a sample. When samples turn out to have been
+taken on a busy host, `$K/scripts/stable.sh forget-baseline <reason>`
+retires them (kept as evidence, out of the evaluation) and a new baseline
+is taken.
 
 Read the dump and answer, in a few lines, with numbers from the file:
 

@@ -82,6 +82,22 @@ expect_fail "$S/bench.sh" candidate                   # no experiment open
 "$S/bench.sh" baseline-2 >/dev/null
 [ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples filed"
 
+echo "== precheck: a busy host refuses a sample; forget-baseline retires contaminated samples"
+echo "BENCH_PRECHECK_CMD='test ! -f busy.marker'" >> .kaizen/config.sh
+touch "$KAIZEN_FAKE_REMOTE/isu2/busy.marker"
+expect_fail "$S/bench.sh" baseline-pc1
+[ ! -e .kaizen/bench-baseline-pc1.json ] || fail "no sample recorded when the precheck fails"
+rm "$KAIZEN_FAKE_REMOTE/isu2/busy.marker"
+"$S/bench.sh" baseline-pc1 >/dev/null
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 3 ] || fail "third baseline sample filed"
+"$S/stable.sh" forget-baseline "test: upgrade ran during the samples" >/dev/null
+[ ! -d .kaizen/baseline/"$(git rev-parse main)" ] || fail "baseline directory retired"
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)".retired-*/*.json | wc -l | tr -d ' ')" = 3 ] || fail "retired samples kept as evidence"
+grep -q "upgrade ran" .kaizen/baseline/"$(git rev-parse main)".retired-*/REASON.txt || fail "reason kept"
+expect_fail "$S/stable.sh" forget-baseline "nothing left"
+"$S/bench.sh" baseline-pc2 >/dev/null
+"$S/bench.sh" baseline-pc3 >/dev/null
+
 echo "== repin: records committed on main move the branch, not the servers"
 echo "- no rule" > .kaizen/RULES.md && git add .kaizen/RULES.md && git commit -qm "records"
 "$S/stable.sh" repin >/dev/null
@@ -89,7 +105,7 @@ echo "- no rule" > .kaizen/RULES.md && git add .kaizen/RULES.md && git commit -q
 [ "$(state DEPLOYED_REV)" = "$(git rev-parse main)" ] || fail "DEPLOYED_REV re-keyed"
 [ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/webapp/.deployed-revision")" = "$(git rev-parse main)" ] || fail "marker re-keyed"
 [ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples re-keyed"
-grep -q repinnedFrom .kaizen/baseline/"$(git rev-parse main)"/*baseline.json || fail "re-keyed sample notes its origin"
+grep -q repinnedFrom .kaizen/baseline/"$(git rev-parse main)"/*.json || fail "re-keyed sample notes its origin"
 "$S/verify.sh" main >/dev/null
 git switch -q -c tmp-code && echo 3000 > go/score && git commit -qam "code change"
 expect_fail "$S/stable.sh" repin tmp-code              # deployable tree differs: a candidate, not a repin
@@ -233,6 +249,10 @@ printf '%s' "$out" | grep -q "1 measured, 1 promoted" || fail "measured summary 
 "$S/knowledge.sh" stats | grep -q "^fsync-on-commit" || fail "stats lists patterns"
 [ -f "$T/knowledge/patterns/unclassified.md" ] || fail "stub pattern for an experiment without patternId"
 python3 "$PLUGIN/knowledge/match.py" "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r[0]["stage"]=="early", r[0]'
+out=$("$S/knowledge.sh" match "$PLUGIN/tests/fixtures/observe-isucon12-initial.txt")
+printf '%s' "$out" | grep -q "prepared statements" || fail "matcher says when the MySQL digest is blind to the app"
+printf '%s' "$out" | grep -q "endpoint latency rows" || fail "matcher parses the extra section's latency table"
+printf '%s' "$out" | grep -q "GET /api/player/competition/:id/ranking 200: 472 calls" || fail "endpoint rows reported"
 
 echo "== retro: friction capture, resolve, stop block"
 [ -f .kaizen/friction.jsonl ] || fail "friction.jsonl written by refused calls"

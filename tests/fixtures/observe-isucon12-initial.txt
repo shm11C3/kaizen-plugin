@@ -1,0 +1,73 @@
+# observation: baseline, taken 2026-10-17T09:03:38Z
+# deployed revision: e29dc0fa28ff1a70cd9d6ea9e384cb1341e0204f  hosts: isu12  db: isu12
+
+## MySQL statement digests by total time (performance_schema on isu12, since last reset)
+total_s	calls	avg_ms	rows_examined	rows_sent	query
+4.85	1	4851.36	3225291	0	DELETE FROM `visit_history` WHERE `created_at` >= ?
+0.03	1	25.73	0	0	ALTER TABLE `id_generator` AUTO_INCREMENT = ?
+0.01	1	6.9	6	0	DELETE FROM `tenant` WHERE `id` > ?
+0.01	1	5.84	1	0	UPDATE `id_generator` SET `id` = ? WHERE `stub` = ?
+0	7	0.7	731	731	SELECT * FROM `tenant` ORDER BY `id` DESC
+0	1	0.13	1	1	SELECT @@`version_comment` LIMIT ?
+
+## requests by method, path (ids normalized), status (isu12:/var/log/nginx/access.log)
+472 "GET /api/player/competition/:id/ranking 200
+353 "GET /api/player/player/:id 200
+84 "GET /api/player/competitions 200
+40 "POST /api/organizer/competition/:id/score 200
+35 "GET /api/player/competition/:id/ranking 499
+31 "POST /api/organizer/competitions/add 200
+29 "GET /api/player/player/:id 499
+27 "POST /api/organizer/competition/:id/finish 200
+20 "GET /api/organizer/players 200
+17 "GET /api/organizer/billing 200
+12 "POST /api/organizer/player/:id/disqualified 200
+10 "GET /api/player/competition/:id/ranking 403
+9 "GET /api/player/player/:id 403
+9 "GET /api/player/competitions 403
+7 "POST /api/organizer/players/add 200
+6 "POST /api/admin/tenants/add 200
+4 "POST /api/organizer/competition/:id/score 400
+4 "GET /api/admin/tenants/billing 200
+3 "POST /api/organizer/competition/:id/score 499
+3 "POST /api/admin/tenants/add 401
+3 "GET /api/admin/tenants/billing 499
+2 "POST /api/admin/tenants/add 400
+1 "POST /initialize 200
+1 "POST /api/organizer/player/:id/disqualified 404
+1 "POST /api/organizer/competitions/add 401
+
+## secondary indexes present
+id_generator.PRIMARY(id)
+id_generator.stub(stub)
+tenant.name(name)
+tenant.PRIMARY(id)
+visit_history.tenant_id_idx(tenant_id)
+
+## extra (sudo docker logs webapp-webapp-1 2>&1 | python3 -c "$(echo aW1wb3J0IHN5cyxqc29uLHJlLGNvbGxlY3Rpb25zCmFnZz1jb2xsZWN0aW9ucy5kZWZhdWx0ZGljdChsYW1iZGE6WzAsMC4wLDAuMF0pCmZvciBsIGluIHN5cy5zdGRpbjoKICAgIGlmIG5vdCBsLnN0YXJ0c3dpdGgoJ3sidGltZSInKTogY29udGludWUKICAgIHRyeTogZD1qc29uLmxvYWRzKGwpCiAgICBleGNlcHQgRXhjZXB0aW9uOiBjb250aW51ZQogICAgdT1yZS5zdWIocidcPy4qJywnJyxkLmdldCgndXJpJywnJykpOyB1PXJlLnN1YihyJy9bMC05YS1mXXs4LH0nLCcvOmlkJyx1KQogICAgYT1hZ2dbKGQuZ2V0KCdtZXRob2QnKSx1LGQuZ2V0KCdzdGF0dXMnKSldOyBtcz1kLmdldCgnbGF0ZW5jeScsMCkvMWU2CiAgICBhWzBdKz0xOyBhWzFdKz1tczsgYVsyXT1tYXgoYVsyXSxtcykKcHJpbnQoJ2NvdW50XHRzdW1fbXNcdGF2Z19tc1x0bWF4X21zXHRtZXRob2QgcGF0aCBzdGF0dXMnKQpmb3IgKG0sdSxzKSwobix0LG14KSBpbiBzb3J0ZWQoYWdnLml0ZW1zKCksa2V5PWxhbWJkYSBrdjota3ZbMV1bMV0pWzoyNV06CiAgICBwcmludChmJ3tufVx0e3Q6LjBmfVx0e3QvbjouMWZ9XHR7bXg6LjBmfVx0e219IHt1fSB7c30nKQo= | base64 -d)")
+count	sum_ms	avg_ms	max_ms	method path status
+472	748095	1584.9	9815	GET /api/player/competition/:id/ranking 200
+380	705602	1856.8	18763	GET /api/player/player/:id 200
+35	450626	12875.0	18799	GET /api/player/competition/:id/ranking 500
+43	158009	3674.6	17777	POST /api/organizer/competition/:id/score 200
+6	155492	25915.4	45754	GET /api/admin/tenants/billing 200
+7	33665	4809.3	8246	POST /api/organizer/players/add 200
+17	10627	625.1	5474	GET /api/organizer/billing 200
+1	5253	5252.8	5253	POST /initialize 200
+84	1142	13.6	65	GET /api/player/competitions 200
+31	1127	36.3	86	POST /api/organizer/competitions/add 200
+27	407	15.1	42	POST /api/organizer/competition/:id/finish 200
+6	395	65.8	96	POST /api/admin/tenants/add 200
+12	163	13.5	29	POST /api/organizer/player/:id/disqualified 200
+20	142	7.1	33	GET /api/organizer/players 200
+10	45	4.5	19	GET /api/player/competition/:id/ranking 403
+9	34	3.8	18	GET /api/player/player/:id 403
+9	25	2.8	11	GET /api/player/competitions 403
+2	15	7.6	15	POST /api/admin/tenants/add 400
+4	6	1.4	2	POST /api/organizer/competition/:id/score 400
+1	4	3.8	4	GET /api/player/competitions 401
+1	1	1.4	1	POST /api/organizer/competition/:id/score 404
+1	1	1.3	1	GET /api/player/competition/:id/ranking 404
+1	1	1.2	1	POST /api/organizer/competition/:id/finish 404
+1	1	1.2	1	POST /api/organizer/player/:id/disqualified 404
+1	1	1.2	1	GET /api/player/player/:id 404

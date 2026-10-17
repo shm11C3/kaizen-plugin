@@ -68,6 +68,10 @@ OBSERVE_EXTRA_CMD="sudo $DOCKER_ENV docker logs webapp-webapp-1 2>&1 | python3 -
 # It calls /initialize first (30 s timeout), runs 60 s of load, then the
 # consistency checks. A full run takes about 90 s plus prepare.
 BENCH_MODE=ssh
+# The AMI runs unattended-upgrades on first boot (~25 min at half a core,
+# with mysql-server, docker.io, nginx modules and libc replaced and mysqld
+# restarted mid-benchmark); no sample while it runs.
+BENCH_PRECHECK_CMD='! pgrep -f "/usr/bin/unattended-upgrade" >/dev/null && ! systemctl is-active --quiet apt-daily-upgrade.service && ! pgrep -x dpkg >/dev/null'
 bench_command() {
   echo "sudo -i -u isucon bash -c 'cd ~/bench && ./bench -target-addr ${APP_PRIVATE_IP}:443 -target-url https://t.isucon.local'"
 }

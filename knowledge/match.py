@@ -24,13 +24,13 @@ STAGE_ORDER = {"early": 0, "mid": 1, "late": 2, "unknown": 3}
 
 
 def parse_observation(text: str) -> dict:
-    obs = {"digests": [], "requests": [], "indexes": [], "bench_seconds": None}
+    obs = {"digests": [], "requests": [], "indexes": [], "endpoints": [], "bench_seconds": None}
     section = None
     for line in text.splitlines():
         if line.startswith("## "):
             head = line.lower()
             section = ("digests" if "digest" in head else "requests" if "request" in head
-                       else "indexes" if "index" in head else "other")
+                       else "indexes" if "index" in head else "extra" if "extra" in head else "other")
             continue
         if not line.strip() or line.startswith("#"):
             continue
@@ -49,6 +49,17 @@ def parse_observation(text: str) -> dict:
         elif section == "indexes":
             if re.match(r"^[\w]+\.[\w]+\(", line.strip()):
                 obs["indexes"].append(line.strip())
+        elif section == "extra":
+            # per-endpoint latency table from an application log (OBSERVE_EXTRA_CMD):
+            # count sum_ms avg_ms max_ms method path status
+            cols = line.split("\t")
+            if len(cols) >= 5 and re.match(r"^\d+$", cols[0]) and re.match(r"^[\d.]+$", cols[1]):
+                m = re.match(r"^\s*(\S+)\s+(\S+)\s+(\d{3})\s*$", cols[4])
+                if m:
+                    obs["endpoints"].append({
+                        "count": int(cols[0]), "sum_ms": float(cols[1]), "avg_ms": float(cols[2]),
+                        "max_ms": float(cols[3]), "method": m.group(1), "path": m.group(2), "status": m.group(3),
+                    })
     m = re.search(r"bench_seconds[:=]\s*(\d+)", text)
     if m:
         obs["bench_seconds"] = int(m.group(1))
@@ -112,7 +123,21 @@ def main() -> int:
     if not obs["digests"] and not obs["requests"]:
         print("no digest or request sections found; is this an observe.sh dump?")
         return 1
-    print(f"observation: {len(obs['digests'])} digests, {len(obs['requests'])} request rows, {len(obs['indexes'])} indexes")
+    print(f"observation: {len(obs['digests'])} digests, {len(obs['requests'])} request rows, "
+          f"{len(obs['indexes'])} indexes, {len(obs['endpoints'])} endpoint latency rows")
+    app_digests = [d for d in obs["digests"] if d["calls"] >= 20]
+    if sum(r["count"] for r in obs["requests"]) >= 100 and not app_digests:
+        print("note: the MySQL digest holds no statement with >=20 calls although the access log holds "
+              "hundreds of requests. Server-side prepared statements (go-sql-driver without "
+              "interpolateParams) are recorded as statement/com/Execute without text on some servers; "
+              "the DB's share is in events_statements_summary_global_by_event_name, the per-query view "
+              "needs interpolateParams=true, the slow log, or the application's own trace.")
+    if obs["endpoints"]:
+        total = sum(e["sum_ms"] for e in obs["endpoints"]) or 1.0
+        print("endpoints by total latency (extra section):")
+        for e in obs["endpoints"][:5]:
+            print(f"  {e['sum_ms'] / total:5.0%}  {e['method']} {e['path']} {e['status']}: "
+                  f"{e['count']} calls, avg {e['avg_ms']:.0f} ms, max {e['max_ms']:.0f} ms")
     if not results:
         print("no pattern signature fired; read the dump by hand and add a signature if a pattern is there")
         return 0
