@@ -45,7 +45,8 @@ PY
 die() { friction_log die "$*"; echo "kaizen: $*" >&2; exit 2; }
 log() { echo "kaizen: $*" >&2; }
 friction_err() { # <command> <status>
-  friction_log err "command failed with status $2" "$1"
+  # 141 is SIGPIPE: the reader of our output went away (status.sh | head); not our defect.
+  [ "$2" = 141 ] || friction_log err "command failed with status $2" "$1"
 }
 set -E
 trap 'friction_err "$BASH_COMMAND" $?' ERR
