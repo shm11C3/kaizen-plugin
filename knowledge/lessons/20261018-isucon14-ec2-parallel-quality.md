@@ -1,7 +1,7 @@
 # ISUCON14：実EC2並列検証と品質保留からの修復
 
 - モード：practice。ISUCON14のGo/MySQL固有の知見であり、当日用Skillや自動化の実装ではない。
-- 範囲：2026-10-18 02:40–05:40 JST予定の3時間試行。以下は **05:00 JST時点、採用589まで**の確定記録。進行中のT15と終了処理・最終得点は含めない。
+- 範囲：2026-10-18 02:40–05:40 JST予定の3時間試行。採用表は **05:00 JST時点、採用589まで**の確定記録。末尾に05:04時点のT15を追記し、終了処理・最終得点はまだ含めない。
 - 構成：独立した単独app/MySQL＋専用benchを3組。SubAgentとローカル共有Git/台帳がDiscordの代替fixture。実際の公式複数app構成ではない。
 - 準備・配布・中断・人間待ちも競技時計へ含めた。既知の過去問題に対する一試行の結果で、他チームとの優位性や未知問題への再現性は未証明。
 
@@ -41,7 +41,7 @@ owner距離集計を対象ownerの完全なchair partitionへ絞り、座標INSE
 
 CODE32はユーザーが30秒MATCHINGのままというliveness違反。DB未割当だけでなくchair受諾・通知進行も関係する。障害前のmatching handlerは約12msから約500msへ遅くなり、外部ループの呼出し頻度も落ちた。一方、通知500のcontext canceledはcriticalの約4秒後だった。失敗DB snapshotは復旧前に取れておらず、索引順序・書込/lock負荷・sampling・通知のどれが直接原因かは未確定。
 
-隔離scale fixtureでは60k履歴でowner処理が約161→159ms、600kで約4.55→3.93秒。小さいfixtureのplanを大規模へ一般化できず、coveringでもwindow/sort/materializationは残った。1回のbatch INSERT時間からcoordinate transactionの競合や本番の書込安全性は推定しない。
+隔離scale fixtureでは60k履歴でowner処理が約161→159ms、600kで約4.55→3.93秒。warmな単回比較の概数で、非秘密flagの値1まで置換するログ秘匿の影響もある。小さいfixtureのplanを大規模へ一般化できず、coveringでもwindow/sort/materializationは残った。1回のbatch INSERT時間からcoordinate transactionの競合や本番の書込安全性は推定しない。
 
 **次の仮説**：owner集計の計算量を減らす価値はある。累積距離summaryは有望だが、初期dumpのbackfill、initialize再実行、旧schemaへの復旧、CODE26の原子性、同時刻順を先に検証する必要がある。今回終盤は調査保存のみとし、新schemaを実装しなかった。
 
@@ -68,7 +68,7 @@ CODE32はユーザーが30秒MATCHINGのままというliveness違反。DB未割
 - 初期3環境initializeまで9分17秒、初実採用まで **94分43秒**。準備、品質再現、plugin配布、承認待ちを含み、当日運用では短縮すべきコストだった。
 - 後半には、初採用→次採用5分45秒、T10 claim→実DB品質結果約97秒、固定候補2本・復旧まで約6分12秒、T13実装→実DB修復確認約2分という局所サイクルが成立した。常に3～6分で採用できるという意味ではない。
 - 最大3環境で実ベンチが重なった。同一環境ではdeploy/bench/実DBtestを予約とoperation lockで直列化した。実採用recordを使うstable-syncも実機成功し、新基準を取り直した。
-- 固定P,S,S,P比較は人間の採用指示で **3/24件**のまま中断。serial counterpartは未実行。E003の元pattern名fixed-work-schedulingは採用効果の説明として誤帰属であり、今回の解釈を品質修復へ訂正する。原本recordを編集せず、schedulerの得点効果・controlled speedup・競技全体の因果的短縮を主張しない。
+- 固定P,S,S,P比較は人間の採用回答を受け、エージェントが改善採用を優先する判断で **3/24件**のまま中断した。人間が中止を直接指示したわけではない。serial counterpartは未実行。E003の元pattern名fixed-work-schedulingは採用効果の説明として誤帰属であり、今回の解釈を品質修復へ訂正する。原本recordを編集せず、schedulerの得点効果・controlled speedup・競技全体の因果的短縮を主張しない。
 - 人間は小さな局所的・可逆的修正を自律採用でよいと明確化した。軽微な待機やトレードオフだけで承認待ちにしない。重大なリスク、広範な変更、構成・方針の選択は具体的な証拠を添えて人間へ渡す。
 
 既存Go native tools、httptest、MySQL slowlog/EXPLAIN/status、nginx counterを使い、OpenTelemetryは追加していない。練習の固有手順はこのknowledgeへ保存する。将来の本番固有Skill化は、入力・対象・出力・失敗条件・復旧と、実装/検証/配布の費用を含む残り時間で判断する。今回の文書追加は新しいSkill・script・運用ルールを配布しない。
@@ -85,4 +85,14 @@ native Discord/Gateway/MCP連携、3人の別PCでclone→Claude/Codex plugin in
 - immutable source（検証の共有bare Git内）：initial `a09a95052135d05a28e8b7981384a5db49d6dd39`、repair `313e1795a85839786a946f16881f5e81fe664965`、lookup `0656a6bc89a500909b77efd33aae6f24a5db0411`、pool `4177b3412c1069674d5c9cc0897d13e519356104`、matching `589fa316fa1a4fb8b2cb3989a795ad93426567ad`。
 - 失敗/比較source：長い待ち旧版`252ef77392e32bd7432e67627fd47bc25c640ea6`→限定修復`4be719a7cb623b17e53a8f027f1292f9328836cc`、残余窓旧版`e91024c8a5f176462d1fa671adb64bec2ddab644`、不十分なrowlock`8b537c12297c47e4773b78d2515bca377c21fc80`、cover5`3bdbd1c9ee8f38e79e887dd9f66dc3aabae23a6e`、cover4 negative`5a72ac0ea0a58667ff97e226be1e48ad04ee4212`、matching旧fixture`2d6a4b636ce24965f43384b71e30e26a544f7dd8`→修復`33a4e1cff423758c7e7ad2dae8b8c386f12cf947`。
 
-T15以降・終了前確認は採否確定後の追記対象とし、この文書では結果を先取りしない。
+## 05:04 JST追記：同じ索引を新しい比較条件で検証した結果
+
+589の観測でもcoupon全走査が残ったため、既存T10の非unique used_by索引だけを
+pool＋matching採用後の実baseへ再適用した。元の0656での公式3172/2581と全履歴を保持し、
+同一条件の再試行ではなく比較baseの変更として記録した。
+source `0f45cde17a7ab3e7d1ef1a1afbbd9b95347c3960` の実MySQL9件＋11状態ケースは通過したが、
+通常3261/2974は589の4045/4688に対して中央値−28.61%で不採用となった。
+実データのEXPLAINはused_byが新索引のref/1行、user別未使用検索はPRIMARYのref/3行だった。
+索引未使用やlock用索引の切替えが原因という証拠はなく、得点低下の機序は未分離である。
+SQL処理量の削減を得点効果と同一視せず、T10/T15を今回不採用として589へ復旧した。
+最終2走はこの後に固定した589で行い、観測最高値を最終得点にしない。
