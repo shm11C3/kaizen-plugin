@@ -28,8 +28,10 @@ and note the commit as the initial stable revision. Never edit on the server.
   `.kaizen/config.sh` and set `APP_HOSTS` to every server, `DB_HOST`, and
   `BENCH_MODE=manual` (the portal runs the benchmark). Keep the manual's URL
   in a comment next to each value taken from it.
-- Add `.kaizen/bench.lock` and `.kaizen/state.env` to `.gitignore`; commit
-  `.kaizen/config.sh` and the experiment records.
+- Add `.kaizen/bench.lock`, `.kaizen/state.env`, `.kaizen/baseline/` and
+  `.kaizen/timeline.tsv` to `.gitignore` (runtime state the scripts rewrite;
+  the samples themselves stay in the experiment directories); commit
+  `.kaizen/config.sh`, `RULES.md` and the experiment records.
 
 Read the manual once for the rules the loop must not break and list them in
 `.kaizen/RULES.md`: endpoints whose response shape is fixed, files or
