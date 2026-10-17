@@ -5,8 +5,8 @@ description: Collect the evidence a hypothesis must cite. Use before every hypot
 
 # Observe
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup).
 
 ```bash
 $K/scripts/status.sh                      # stable, deployed, open experiment, budget

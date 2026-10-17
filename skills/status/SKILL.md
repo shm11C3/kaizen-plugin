@@ -5,8 +5,8 @@ description: Show where the improvement loop stands: stable and deployed revisio
 
 # Status
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup).
 
 ```bash
 $K/scripts/status.sh

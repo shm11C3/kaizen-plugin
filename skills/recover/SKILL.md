@@ -5,8 +5,8 @@ description: Put every server back on the stable revision and prove it. Use when
 
 # Recover
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup).
 
 ```bash
 $K/scripts/status.sh

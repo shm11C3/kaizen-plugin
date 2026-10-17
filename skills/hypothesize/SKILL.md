@@ -5,8 +5,8 @@ description: Turn an observation into one testable hypothesis and open an experi
 
 # Hypothesize
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup).
 
 One experiment tests one mechanism. "Add indexes" is one hypothesis;
 "add indexes and cache the user lookup" is two experiments, because a score

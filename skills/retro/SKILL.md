@@ -5,8 +5,8 @@ description: Turn what broke into plugin fixes. Use after every closed experimen
 
 # Retro
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root. The plugin repository is `$K` itself.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup). The plugin repository is `$K` itself.
 
 ```bash
 $K/scripts/retro.sh list                 # unresolved friction, grouped, with ids

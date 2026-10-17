@@ -5,9 +5,11 @@ description: Prepare a repository and its servers for the kaizen loop. Use at th
 
 # Setup
 
-Scripts live at `<this skill's base directory>/../../scripts/`. Set `K` to
-that plugin root once per session and run every script as `$K/scripts/<name>.sh`
-from the repository root (the project is the current directory).
+Scripts live at `<this skill's base directory>/../../scripts/`. Once per
+session set `K` to that plugin root and `export KAIZEN_PROJECT=<absolute path
+of the repository>`: every script reads the project from that variable, so a
+command run from another directory (or a background job) still targets the
+right repository. Run scripts as `$K/scripts/<name>.sh`.
 
 ## 1. The repository
 

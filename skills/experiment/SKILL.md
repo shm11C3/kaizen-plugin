@@ -5,8 +5,8 @@ description: Run one experiment end to end on the open hypothesis: change the co
 
 # Experiment
 
-Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run from
-the repository root. `$K/scripts/status.sh` first when resuming.
+Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
+`KAIZEN_PROJECT` exported (see setup). `$K/scripts/status.sh` first when resuming.
 
 ## 1. Change and commit
 
