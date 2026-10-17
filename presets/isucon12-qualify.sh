@@ -26,10 +26,13 @@ RSYNC_PATH="sudo -u isucon rsync"
 # build as isucon.
 # Measured on isu12 (2 vCPU): build ~5 s, restart until the first HTTP
 # answer ~20-40 s; HEALTH_RETRIES covers a cold compile.
-# unattended-upgrades replaced the docker CLI (docker.io 29.x) while the old
-# daemon (API 1.41) kept running; the new CLI refuses to negotiate that far
-# down, so every docker call pins DOCKER_API_VERSION.
-DOCKER_ENV='DOCKER_API_VERSION=1.41'
+# unattended-upgrades replaced docker.io with 29.x. Until the reboot the old
+# daemon (API 1.41) kept running and the new CLI refused to negotiate down;
+# after the reboot the new daemon (minimum API 1.44) refuses the compose
+# plugin's default 1.42. 1.44 is accepted by both the daemon and compose
+# v2.6.1; isuports.service gets the same value through
+# etc/systemd/system/isuports.service.d/ in the project's overlay.
+DOCKER_ENV='DOCKER_API_VERSION=1.44'
 BUILD_CMD="sudo -i -u isucon bash -c 'cd ~/webapp && $DOCKER_ENV docker compose -f docker-compose-go.yml build'"
 RESTART_CMD='sudo systemctl restart isuports.service'
 SERVICE_NAME=isuports.service
@@ -71,7 +74,8 @@ BENCH_MODE=ssh
 # The AMI runs unattended-upgrades on first boot (~25 min at half a core,
 # with mysql-server, docker.io, nginx modules and libc replaced and mysqld
 # restarted mid-benchmark); no sample while it runs.
-BENCH_PRECHECK_CMD='! pgrep -f "/usr/bin/unattended-upgrade" >/dev/null && ! systemctl is-active --quiet apt-daily-upgrade.service && ! pgrep -x dpkg >/dev/null'
+# The [e] keeps pgrep -f from matching the remote shell whose command line holds this pattern.
+BENCH_PRECHECK_CMD='! pgrep -f "/usr/bin/unattended-upgrad[e]" >/dev/null && ! systemctl is-active --quiet apt-daily-upgrade.service && ! pgrep -x dpkg >/dev/null'
 bench_command() {
   echo "sudo -i -u isucon bash -c 'cd ~/bench && ./bench -target-addr ${APP_PRIVATE_IP}:443 -target-url https://t.isucon.local'"
 }
