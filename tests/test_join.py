@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 import shlex
 import subprocess
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts/team'))
 
 
 def module(name):
@@ -43,6 +45,10 @@ class JoinTests(unittest.TestCase):
         self.assertNotIn('/srv/isucon/state/team.sqlite3', command)
         ledger = shlex.split(control.remote_command(config, 'queue', []))
         self.assertEqual(ledger[-1], 'queue')
+        config['environment'] = 'lane-a'
+        lane = shlex.split(control.remote_command(config, 'target', ['--agent', 'a', '--token', 'token', 'status']))
+        self.assertEqual(lane[lane.index('--environment') + 1], 'lane-a')
+        self.assertEqual(lane[lane.index('--db') + 1], '/srv/test/state.sqlite3')
         with self.assertRaises(ValueError):
             control.remote_command({'remote_plugin_root': '/srv/test/plugin', 'state_db': '/srv/test/db'}, 'target', [])
 

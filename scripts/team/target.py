@@ -11,6 +11,7 @@ import shutil
 import tempfile
 
 from team import connect, operation_lock, reservation
+from environments import OFFICIAL, environment_name, state_path, validate_target
 
 
 def main():
@@ -19,6 +20,7 @@ def main():
     p.add_argument('--token', required=True)
     p.add_argument('--db', default='/srv/isucon/state/team.sqlite3')
     p.add_argument('--config', default='/srv/isucon/state/target.json')
+    p.add_argument('--environment', default=OFFICIAL, type=environment_name)
     p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy'))
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
@@ -33,9 +35,10 @@ def main():
         project = Path(config['project']).resolve()
         if not script.is_file() or not (project / '.kaizen/config.sh').is_file():
             raise ValueError('plugin or target preset is missing')
-        with operation_lock(args.db) as lock_handle:
+        with operation_lock(args.db, args.environment) as lock_handle:
             with contextlib.closing(connect(args.db)) as db:
-                reservation(db, args.agent, args.token)
+                reservation(db, args.agent, args.token, args.environment)
+                validate_target(db, args.environment, config_path)
             environment = dict(os.environ, KAIZEN_PROJECT=str(project),
                                KAIZEN_PLUGIN_ROOT=str(Path(config['plugin_root']).resolve()))
             environment['KAIZEN_KNOWLEDGE_DIR'] = str(Path(config.get(
@@ -53,7 +56,7 @@ def main():
                             pass
                 if not (knowledge / 'match.py').is_file() or not (knowledge / 'patterns').is_dir():
                     raise ValueError('knowledge_dir is not a complete corpus; preserve it and initialize a separate plugin knowledge copy')
-            portal_marker = Path(str(args.db) + '.manual-bench')
+            portal_marker = state_path(args.db, args.environment, '.manual-bench')
             if args.action == 'bench' and '--reserve' in args.arguments:
                 portal_marker.touch()
             try:

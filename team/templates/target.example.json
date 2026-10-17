@@ -1,5 +1,7 @@
 {
   "enabled": false,
+  "environment": "competition",
+  "resources": [],
   "plugin_root": "/srv/isucon/kaizen-plugin",
   "project": "/srv/isucon/repo",
   "confirmed_rules": false,

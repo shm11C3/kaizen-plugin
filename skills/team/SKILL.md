@@ -39,8 +39,8 @@ installation and the competition clone are separate directories.
 
 ## Integration
 
-Any session may become the integration owner, but only one may hold the shared
-reservation. Use `env-acquire` through `control.py`, retain it through portal
+Any session may become the integration owner, but only one may hold a given
+environment's reservation. Use `env-acquire` through `control.py`, retain it through portal
 benchmark execution, adoption or recovery, then verify and release it.
 
 Run shared target actions with:
@@ -70,6 +70,14 @@ use NEEDS_MEASUREMENT, then the task owner uses task-resume to continue. Reserve
 NEEDS_HUMAN for a concrete value/risk/design choice; task-finish requires
 --question. Put the options, evidence and recommendation in --reason/the human
 decision template. Do not send unfinished investigation to the human queue.
+
+For isolated parallel validation or a quality-held candidate, read
+`../../team/docs/PARALLEL_QUALITY.md`. Keep one shared task DB, register the official
+resources before sandboxes, and select the matching environment/configuration.
+Use `task-quality-hold` to preserve the original SHA, category and evidence;
+the owner resumes investigation and resubmits. Submission is RETEST_PENDING,
+not resolution. Only a passing official promotion record resolves the hold.
+Use a linked investigation for recurrence after adoption; keep accepted history.
 
 The integrator sets manifest.review=human for human candidates and supplies the
 actual --human-decision reference to experiment record as well as task-finish.

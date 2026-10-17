@@ -8,6 +8,8 @@ import subprocess
 import sys
 import time
 
+from environments import environment_name
+
 
 def remote_command(config, command, arguments):
     if ('state_db' in config) != ('target_config' in config):
@@ -18,6 +20,8 @@ def remote_command(config, command, arguments):
     script = 'target.py' if command == 'target' else 'team.py'
     forwarded = list(arguments) if command == 'target' else [command, *arguments]
     options = ['--db', config.get('state_db', '/srv/isucon/state/team.sqlite3')]
+    if 'environment' in config:
+        options += ['--environment', environment_name(config['environment'])]
     if command == 'target':
         options += ['--config', config.get('target_config', '/srv/isucon/state/target.json')]
     return shlex.join(['runuser', '-u', 'isucon', '--', 'python3',

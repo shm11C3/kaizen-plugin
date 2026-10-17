@@ -23,3 +23,7 @@ Experiments in the order they were run.
 | 005-nearest-chair-matching-notified | random-order-matching | +123% | promote | rule decision as evaluated |
 | 006-owner-chairs-filter-first | heavy-aggregate-query | +2% | inconclusive | rule decision as evaluated |
 | 007-nearby-chairs-single-query | n-plus-one-query | -5% | reject | rule decision as evaluated |
+
+The separate 2026-10-17 pilot is recorded in
+[quality recovery and recurrence](../lessons/20261017-isucon14-quality-recovery.md).
+Its single-host conditions and experiment IDs are separate from the runs above.

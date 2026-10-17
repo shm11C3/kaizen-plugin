@@ -128,6 +128,12 @@ contains source and minimal bootstrap files, not these rules or management tools
   owned by AI investigation. NEEDS_HUMAN requires a concrete choice with options
   and a recommendation. Exhausting the measurement budget does not create a
   human decision by itself; preserve evidence and work on another useful task.
+- Follow `team/docs/PARALLEL_QUALITY.md` for independent validation lanes and
+  quality holds. All lanes share task ownership; each environment has its own
+  registered resources and persistent reservation. Sandbox results are advisory.
+  Preserve failed source/evidence, repair and retest; only a passing official
+  promotion record resolves a quality hold. A failed run does not forbid fixing
+  its candidate. Later recurrence creates a linked investigation.
 - Install/join success includes actual model readiness and matching control-host
   release. A filesystem-only check is not a joined member. Keep environment DB,
   target configuration and knowledge paths together and isolated for rehearsals.
