@@ -6,6 +6,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 
 各メンバーは [競技用リポジトリ](https://github.com/shm11C3/isucon-competition) をcloneし、このプラグインをインストールします。運用規約・共通ホスト管理・調整用コマンド・テンプレートはプラグインが持ちます。
 
+- [設計レビュー（2026-10-18）](DESIGN_REVIEW.md)と[実測結果と次の改善案](NEXT.md)
 - [参加・インストール手順](team/docs/ONBOARDING.md)
 - [teamスキル](skills/team/SKILL.md)と[共通規約](team/POLICY.md)
 - [運用ガイド](team/docs/OPERATIONS.md)と[当日の手順](team/docs/RUNBOOK.md)
