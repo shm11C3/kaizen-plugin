@@ -31,3 +31,5 @@ What real targets taught the plugin, one row per resolved friction group.
 | 2026-10-17T10:16:57Z | isucon12-qualify | bench.sh | isu12 is not ready for a sample (BENCH_PRECHECK_CMD failed: ! pgrep -f "/usr/bin | 4457e03 |
 | 2026-10-17T10:16:57Z | isucon12-qualify | bench.sh | isu12 is not ready for a sample (BENCH_PRECHECK_CMD failed: ! pgrep -f "/usr/bin | 4457e03 |
 | 2026-10-17T10:16:57Z | isucon12-qualify | deploy.sh | command failed with status 17 | project fix: go/Dockerfile builds from archive.debian.org with Debian's mysql client (bullseye left deb.debian.org, Oracle apt key changed); isucon12-practice de4926c |
+| 2026-10-17T10:26:55Z | isucon12-qualify | bench.sh | isu12 runs unknown but state says 684159b; deploy again | 4b306e7 |
+| 2026-10-17T10:26:55Z | isucon12-qualify | deploy.sh | command failed with status 1 | 4b306e7 |
