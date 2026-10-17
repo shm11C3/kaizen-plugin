@@ -41,6 +41,7 @@ mkdir -p "$P/go" "$P/sql" "$P/etc/mysql" "$P/.kaizen"
 cd "$P"
 git init -q -b main
 git config user.email test@example.com
+git config commit.gpgsign false   # the operator's signing helper must not be needed to run the suite
 git config user.name test
 echo 1000 > go/score
 echo 'CREATE TABLE t (id INT PRIMARY KEY);' > sql/1-schema.sql
