@@ -29,7 +29,7 @@
 ## 別のGit履歴で配布する
 
 1. toolingタスクに根拠と範囲を登録する。編集可能なプラグインcloneの
-   `tooling/<task>`等で作業し、インストールcacheを改変しない。
+   `<github-login>/tooling/<task-or-topic>`で作業し、インストールcacheを改変しない。
 2. 入出力・対象・失敗動作・戻し方を決め、fixtureと指定チェックで検証する。
 3. 同時に1人のプラグイン統合担当が、最新origin/mainとcleanなmainを確認し、
    コミットを統合、再検証して通常pushする。PR待ちとforce-pushは使わない。

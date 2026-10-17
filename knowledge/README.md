@@ -24,6 +24,9 @@ rather than folklore, three questions the hypothesize step needs:
   evidence resembles. A dump that matches nothing is still a dump with a
   bottleneck in it, and a problem may plant something no pattern names.
   Hypothesize from the observation first, then check the corpus.
+- **Records describe their original runs.** Rehearsal actor names and helpers
+  are historical evidence, not instructions for the current team's coordination.
+  Follow the installed team skill and `team/docs/DISCORD.md` for current work.
 
 ## Layout
 

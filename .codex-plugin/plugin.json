@@ -1,6 +1,6 @@
 {
   "name": "kaizen",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "ISUCON improvement loop and autonomous team operations for Claude and Codex.",
   "author": { "name": "shm11C3" },
   "repository": "https://github.com/shm11C3/kaizen-plugin",

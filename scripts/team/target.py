@@ -40,6 +40,7 @@ def main():
                 reservation(db, args.agent, args.token, args.environment)
                 validate_target(db, args.environment, config_path)
             environment = dict(os.environ, KAIZEN_PROJECT=str(project),
+                               KAIZEN_TEAM_MODE='1',
                                KAIZEN_PLUGIN_ROOT=str(Path(config['plugin_root']).resolve()))
             environment['KAIZEN_KNOWLEDGE_DIR'] = str(Path(config.get(
                 'knowledge_dir', str(Path(config['plugin_root']) / 'knowledge'))).resolve())

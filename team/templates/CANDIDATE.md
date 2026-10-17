@@ -1,6 +1,6 @@
 # T-0000: 候補名
 
-- 担当・セッション:
+- 担当GitHubユーザー名 / セッションID / Discordスレッド:
 - hypothesis key / 作業種別（implementation・investigation・comparison）:
 - 仮説（何が遅く、何を変えると、どの採点経路が改善するか）:
 - 観測根拠・共有artifact:

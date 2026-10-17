@@ -9,7 +9,7 @@ PLUGIN=$(cd "$(dirname "$0")/.." && pwd)
 # A session that exported KAIZEN_PROJECT for the real target must not leak it
 # into the tests: every script would then act on that project with the fake
 # remote (seen 2026-10-17: friction rows and a failed "deploy" in the live repo).
-unset KAIZEN_PROJECT KAIZEN_PLUGIN_ROOT
+unset KAIZEN_PROJECT KAIZEN_PLUGIN_ROOT KAIZEN_TEAM_MODE
 T=$(mktemp -d "${TMPDIR:-/tmp}/kaizen-test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 export KAIZEN_FAKE_REMOTE="$T/remote"
@@ -141,9 +141,13 @@ echo "a record changed" >> .kaizen/RULES.md             # tracked records never 
 
 echo "== experiment 1: promoted, with overlay change"
 expect_fail "$S/deploy.sh" HEAD~0 --dirty             # bad usage
-"$S/experiment.sh" new flush-log >/dev/null             # succeeds with the record modified above
+expect_fail env KAIZEN_TEAM_MODE=1 "$S/experiment.sh" new flush-log
+expect_fail env KAIZEN_TEAM_MODE=1 "$S/experiment.sh" new flush-log --github-user ../outside
+expect_fail "$S/experiment.sh" new flush-log --github-user
+[ ! -d .kaizen/experiments/001-flush-log ] || fail "invalid identity created an experiment"
+env KAIZEN_TEAM_MODE=1 "$S/experiment.sh" new flush-log --github-user Member-01 >/dev/null
 git restore .kaizen/RULES.md
-[ "$(git branch --show-current)" = "exp/001-flush-log" ] || fail "experiment branch"
+[ "$(git branch --show-current)" = "Member-01/exp/001-flush-log" ] || fail "GitHub user experiment branch"
 echo 2000 > go/score
 echo 'innodb_flush_log_at_trx_commit=2' > etc/mysql/my.cnf
 git commit -qam "candidate: flush log every second"
@@ -170,7 +174,7 @@ expect_fail "$S/bench.sh" baseline                     # candidate deployed, not
 "$S/evaluate.sh" >/dev/null
 [ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/001-flush-log/decision.json"))["decision"])')" = promote ] || fail "rule should promote"
 "$S/experiment.sh" record "indexes and flush setting, +100%" >/dev/null
-cand=$(git rev-parse exp/001-flush-log)
+cand=$(git rev-parse Member-01/exp/001-flush-log)
 [ "$(state STABLE_REV)" = "$cand" ] || fail "STABLE_REV promoted"
 [ "$(git rev-parse main)" = "$cand" ] || fail "main fast-forwarded"
 [ "$(git branch --show-current)" = main ] || fail "back on main"
@@ -288,7 +292,7 @@ hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop",
 "$S/experiment.sh" record "stop check" >/dev/null
 [ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/004-stop-check/record.json"))["finalDecision"])')" = promote ] || fail "exp 4 should promote"
 [ "$(git rev-parse main)" = "$(state STABLE_REV)" ] || fail "promote fast-forwarded main past the records commit"
-git merge-base --is-ancestor "$(git rev-parse exp/001-flush-log)" main || fail "promoted main keeps the earlier history"
+git merge-base --is-ancestor "$(git rev-parse Member-01/exp/001-flush-log)" main || fail "promoted main keeps the earlier history"
 git log --format=%s main | grep "records: experiment 1" >/dev/null || fail "promoted main keeps the records commit"   # no -q: pipefail + SIGPIPE
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop should be silent when clean"
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"SessionStart","cwd":sys.argv[1]}))' "$P")" | grep -q additionalContext || fail "SessionStart context"

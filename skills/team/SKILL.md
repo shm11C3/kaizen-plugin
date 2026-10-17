@@ -12,8 +12,12 @@ installation and the competition clone are separate directories.
 ## Join
 
 1. Read `$K/team/POLICY.md`, then `$K/team/docs/OPERATIONS.md` and
-   `$K/team/docs/RUNBOOK.md`. These are the shared operational source of truth.
-2. Pick a unique session ID, e.g. `a-codex-01`. Read the human's current
+   `$K/team/docs/RUNBOOK.md` and `$K/team/docs/DISCORD.md`.
+   Members use independent sessions on their own PCs and coordinate through
+   the configured private Discord. Read shared discussions yourself; another
+   session's context and local files are not automatically available.
+2. Identify the member's actual GitHub login and choose a unique session ID,
+   e.g. `<github-login>-codex-01` or `<github-login>-claude-01`. Read the human's current
    strategy, exclusions, time budget, and stop instructions.
    Record practice/competition mode and consult `../../team/docs/REGULATIONS.md`
    for permitted methods and operator handoffs. For recurring work use
@@ -28,6 +32,10 @@ installation and the competition clone are separate directories.
 4. Work autonomously through discovery, task creation/claim, local implementation,
    validation, candidate submission, and the next useful task. Keep source work
    isolated in a branch or worktree. Use the plugin's `team/templates/`.
+   Name worker branches `<github-login>/T-0001-summary`. Read current Discord
+   decisions and related threads before claims and at work boundaries; post
+   verified state changes and artifact references after updating the ledger.
+   Check Discord read/write access separately: join.py does not probe it.
    Read `$K/team/docs/STRATEGY.md`; choose work by score impact and evidence.
    Check `control.py queue` at work boundaries. If READY candidates accumulate,
    use investigation/comparison tasks to analyze existing evidence or unblock measurement.
@@ -52,6 +60,10 @@ python3 "$K/scripts/team/control.py" target --agent SESSION --token TOKEN ACTION
 The remote wrapper and ledger run from the control host's plugin installation;
 the competition clone contains no management implementation. Target operations
 are disabled until the day's source, rules, preset and recovery drill are ready.
+When opening an integration experiment, pass the current operator's login:
+`target --agent SESSION --token TOKEN experiment new SLUG --github-user GITHUB_LOGIN`.
+The generated branch is `<github-login>/exp/NNN-SLUG`; the shared host's account
+or Git commit author is not the member's identity.
 
 When using the existing setup, observe, hypothesize, experiment or recover skills
 as a team, apply this skill's ownership boundary first. Workers prepare candidate

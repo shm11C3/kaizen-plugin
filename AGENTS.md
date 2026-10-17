@@ -24,7 +24,10 @@ Codex: there is no hook adapter yet; follow the rules above by hand and run
 `tests/run.sh` after changing a script.
 
 For a shared competition, start with `skills/team/SKILL.md` and follow
-`team/POLICY.md`. Team procedures, coordination scripts, infrastructure and
+`team/POLICY.md` and `team/docs/DISCORD.md`. Each member uses an independent
+session, reads current Discord decisions and coordinates through the shared ledger.
+Use the member's GitHub login as the branch prefix; keep session IDs distinct.
+Team procedures, coordination scripts, infrastructure and
 templates belong to this plugin; the competition repository holds source and
 minimal bootstrap guidance only. Run
 `python3 -m unittest discover -s tests -p test_team.py -v` after changing team mechanics.

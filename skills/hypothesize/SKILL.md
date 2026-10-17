@@ -48,6 +48,12 @@ SQL/CPU. Read `.kaizen/RULES.md`; the change must stay within the rules.
 $K/scripts/experiment.sh new <slug>       # branch exp/NNN-<slug> from stable, manifest template
 ```
 
+In a team, only the reservation holder opens this experiment through
+`control.py target --agent SESSION --token TOKEN experiment new SLUG --github-user GITHUB_LOGIN`.
+Its branch is `<github-login>/exp/NNN-SLUG`. Workers prepare their submitted
+source on `<github-login>/T-0001-summary`; check the current Discord discussions
+and shared ledger before choosing the hypothesis.
+
 Fill `.kaizen/experiments/NNN-<slug>/manifest.json` completely:
 
 - `patternId`: the knowledge pattern id (`missing-secondary-index`), or a new

@@ -25,6 +25,7 @@ source repositories distinct. Never edit an installed plugin cache.
    reproducible improvements transferable to other problems. Prefer a small script
    for deterministic commands and a skill for procedures requiring judgment.
 5. Claim a tooling task and create a branch in the editable **plugin source**.
+   Use `<github-login>/tooling/<task-or-topic>` for the member preparing it.
    Define inputs, outputs, target identity, failures and rollback. Reuse the
    deploy/bench/recovery mechanisms and preserve quality and authority rules.
 6. Exercise the operation on representative local fixtures or an isolated test

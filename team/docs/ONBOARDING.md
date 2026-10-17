@@ -9,6 +9,22 @@ git clone https://github.com/shm11C3/isucon-competition.git
 cd isucon-competition
 ```
 
+## 自分の識別子とDiscord
+
+GitHubユーザー名をブランチの先頭に使います。GitHub CLIを利用する場合は
+次で確認できます。CLIを使わない場合は、自分の実際のloginを設定します。
+
+```bash
+export KAIZEN_GITHUB_USER="$(gh api user --jq .login)"
+export KAIZEN_SESSION="${KAIZEN_GITHUB_USER}-codex-01"
+# Claudeは末尾を -claude-01 にする。同じ人の並列セッションは番号を分ける。
+```
+
+`<github-login>/T-0001-query-index`が実装ブランチの形式です。
+[Discord連携手順](DISCORD.md)に従って非公開サーバーと接続を確認し、
+GitHubユーザー名・セッションID・Discord表示名の対応を共有します。
+各自の独立セッションが同じ方針と議論を読み、共有台帳で担当を取得します。
+
 ## Claude Code
 
 ```bash
@@ -27,23 +43,23 @@ codex plugin add kaizen@kaizen-plugin
 codex
 ```
 
-新しいセッションで「kaizenプラグインのteamスキルで参加。セッションIDはa-codex-01。課題発見・取得・実装・検証・候補提出・次の作業まで自走」と指示します。`.codex-plugin/plugin.json` と `.agents/plugins/marketplace.json` がClaudeと同じ `skills/` を参照します。現在のhook adapterはClaude用です。
+新しいセッションで実際のGitHubユーザー名とセッションIDを伝え、「kaizenプラグインのteamスキルで参加。Discordの方針・関連スレッドを確認し、課題発見・取得・実装・検証・候補提出・次の作業まで自走」と指示します。`.codex-plugin/plugin.json` と `.agents/plugins/marketplace.json` がClaudeと同じ `skills/` を参照します。現在のhook adapterはClaude用です。
 
 ## コマンドと接続
 
 teamスキルからプラグインの実パスを確認し、それを `K` とします。プラグインは競技用cloneとは別のインストール先にあります。
 
 ```bash
-python3 "$K/scripts/team/join.py" --project "$PWD" --agent a-codex-01 --provider codex
+python3 "$K/scripts/team/join.py" --project "$PWD" --agent "$KAIZEN_SESSION" --provider codex
 # Claude: --provider claude
 # 必要な場合だけ --model MODEL。global設定は変更しない。
 python3 "$K/scripts/team/control.py" status
 python3 "$K/scripts/team/control.py" queue
 ```
 
-`joined: true`が参加完了です。joinは空の一時ディレクトリで小さなモデル応答を検査し、ソースを送りません。認証・モデル・Git・SSM・共通ホストとのplugin版のどこで止まったかを返します。再ログインや設定の自動変更は行いません。`--offline`はファイル確認だけです。CLI版と既存cacheも含め、当日使う各人のPCで通常のjoinを通してください。
+`joined: true`は台帳への参加と基盤接続の確認です。Discordの読取・投稿確認も通して、協調作業への参加準備が完了します。joinは空の一時ディレクトリで小さなモデル応答を検査し、ソースを送りません。認証・モデル・Git・SSM・共通ホストとのplugin版のどこで止まったかを返します。再ログインや設定の自動変更は行いません。`--offline`はファイル確認だけです。Discord疎通はjoinの検査対象に含まれないため、[連携手順](DISCORD.md)で別に確認します。CLI版と既存cacheも含め、当日使う各人のPCで通常のjoinを通してください。
 
-0.4.0導入時はメンバーと共通ホストの版を揃えます。競技中の自動更新は行いません。共通ホスト管理者が占有なし・実行中なしを確認して固定releaseへ更新し、[復旧bundle](RECOVERY.md)を作り直します。
+plugin更新時はメンバーと共通ホストの版を揃えます。競技中の自動更新は行いません。共通ホスト管理者が占有なし・実行中なしを確認して固定releaseへ更新し、[復旧bundle](RECOVERY.md)を作り直します。
 
 `team/environments/competition/control-host.json`とAWS accountが異なれば止まります。別profileは各自の `AWS_PROFILE` で指定します。台帳と対象操作はSSM Run Commandなので、Session Manager pluginは不要です。対話shellにはSession Manager plugin、またはAWSコンソールを使います。
 

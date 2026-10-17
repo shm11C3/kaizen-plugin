@@ -202,7 +202,7 @@ class CoordinationTests(unittest.TestCase):
         (plugin / 'scripts').mkdir(parents=True)
         marker = Path(self.tmp.name) / 'invoked'
         (plugin / 'scripts/status.sh').write_text(
-            '#!/bin/bash\n' + sys.executable + ' - <<\'PY\'\n'
+            '#!/bin/bash\nset -eu\ntest "$KAIZEN_TEAM_MODE" = 1\n' + sys.executable + ' - <<\'PY\'\n'
             'import fcntl\nfrom pathlib import Path\n'
             'with open(' + repr(str(self.db) + '.operation.lock') + ', "a") as f:\n'
             '    try:\n        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)\n'

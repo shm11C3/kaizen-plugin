@@ -6,7 +6,7 @@
 
 - 3人がPrivateリポジトリをcloneでき、各自のAWS認証で共通ホストへ接続できる。
 - 各人の実PCで同じreleaseのjoinを通す。Claude/Codexの実モデル疎通まで確認し、cacheや他人の認証で代用しない。
-- 非公開Discordを作り、必要な連携を3人で確認する。
+- [Discord連携手順](DISCORD.md)で非公開サーバーの読取・投稿、現在の方針確認、GitHubユーザー名とセッションIDの対応を各人の接続で確認する。
 - 過去問でタスク同時取得、候補統合、計測、採用、復旧、接続切断、担当交代を試す。
 - 競技の当日ルールでAI・外部サービス・追加ホスト・問題情報の取り扱いを確認する。
 - 終了時刻・新規変更停止時刻・最終ベンチの時間枠を人間が決める。
@@ -24,8 +24,8 @@
 
 ## 改善ループ
 
-1. [戦略手順](STRATEGY.md)で採点への影響・総所要時間・反証条件を揃え、AIが根拠付きタスクを作成・取得し、独立ブランチで実装・検証する。
-2. 候補を提出し、他のタスクへ進む。
+1. Discordの最新方針・関連スレッドと台帳を確認し、[戦略手順](STRATEGY.md)で採点への影響・総所要時間・反証条件を揃え、AIが根拠付きタスクを作成・取得し、独立ブランチで実装・検証する。
+2. 候補と検証を台帳へ提出し、Discordの関連スレッドにbranch/SHA・根拠を共有して、他のタスクへ進む。
 3. 統合担当は効果見込み・計測時間・リスク・依存関係で候補を選ぶ。完成順に固定しない。
 4. 現在のstableへ取り込み、1候補ずつデプロイ・計測・評価する。
 5. 通常改善は採用、正しさ違反は復旧、計測・調査不足はNEEDS_MEASUREMENT。価値・リスクの具体的な選択をNEEDS_HUMANへ渡す。結果を記録して共有する。
@@ -37,8 +37,8 @@
 採用または復旧済みで、対象操作・ポータルベンチが終了した区切りを使う。`team/templates/HANDOFF.md`を埋め、後任が実状態を確認する。占有を保持したまま、前任が次を実行する。
 
 ```bash
-python3 "$K/scripts/team/control.py" env-handoff --agent a-codex-01 --token TOKEN \
-  --to b-claude-01 --reason 'stable確認済み、実行中処理なし'
+python3 "$K/scripts/team/control.py" env-handoff --agent FROM_SESSION --token TOKEN \
+  --to TO_SESSION --reason 'stable確認済み、実行中処理なし'
 ```
 
 後任用の新tokenが返る。古いtokenは無効になる。タスクの担当も移す必要があればtask-handoffで明示する。

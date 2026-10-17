@@ -13,7 +13,8 @@ contains source and minimal bootstrap files, not these rules or management tools
   atomically claim work, implement, validate locally, submit candidates, then
   continue with the next useful task. Do not wait for a new human prompt after
   every task.
-- Use a unique session identifier such as `a-codex-01` or `b-claude-01`.
+- Use the member's GitHub login for branch ownership and a unique session ID
+  such as `<github-login>-codex-01` or `<github-login>-claude-01` for task ownership.
 - Roles are dynamic. Any session may investigate or implement any area. Only
   the current integration owner may mutate the shared competition environment.
 - Prioritize measured bottlenecks and the scoring path. Do not perform unrelated
@@ -36,6 +37,11 @@ contains source and minimal bootstrap files, not these rules or management tools
 - A Discord claim announcement is a notification, not ownership. Proceed only
   after an atomic claim succeeds. Check for related tasks before creating one;
   ownership of different task IDs does not imply their changes are independent.
+- Follow `team/docs/DISCORD.md`: each independent session reads the current
+  human decisions and related discussions before claiming and at work boundaries.
+  Publish verified updates after recording canonical state. Use shared artifact
+  references and message links; another session's memory or local files are not
+  shared context. Check Discord access separately from the existing join probe.
 - Record hypothesis, evidence, base SHA, changed resources, dependencies, local
   validation, source SHA, risk, and rollback in the candidate template.
 - After another change is accepted, recheck assumptions for affected tasks.
@@ -68,7 +74,12 @@ contains source and minimal bootstrap files, not these rules or management tools
 - Each person uses their own clone. Separate concurrent sessions in one clone
   with worktrees. Preserve unrelated work.
 - Branch from the current `origin/main`, e.g.
-  `agent/a-codex-01/T-0001-query-index`. Workers never update `main` directly.
+  `<github-login>/T-0001-query-index`. Workers never update `main` directly.
+  Plugin tooling uses `<github-login>/tooling/<task-or-topic>`. Integration
+  experiments use `<github-login>/exp/NNN-summary`, created with
+  `experiment new SLUG --github-user GITHUB_LOGIN` under the target wrapper.
+  Existing branches keep their references during handoff. Naming identifies
+  the member; ledger claims and Git credentials still determine ownership/access.
 - Stage explicit files. Commit one coherent hypothesis, run appropriate local
   checks, push the branch, and submit its immutable full SHA.
 - Only the integration owner may update `main`, using the measured integrated

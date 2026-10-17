@@ -12,6 +12,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
+- [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
 - [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
 - [共通台帳での並列検証と品質保留の修正・再計測](team/docs/PARALLEL_QUALITY.md)
 - [繰り返し作業の改善](team/docs/WORKFLOW.md)と[improve-workflowスキル](skills/improve-workflow/SKILL.md)

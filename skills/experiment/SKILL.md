@@ -10,7 +10,8 @@ Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 
 ## 1. Change and commit
 
-On branch `exp/NNN-<slug>` (opened by hypothesize), make only the change the
+On the branch opened by hypothesize (`<github-login>/exp/NNN-<slug>` in a team,
+`exp/NNN-<slug>` in standalone practice), make only the change the
 manifest allows. Configuration changes go under `etc/` (every host) or
 `etc-<host>/` (one host) and deploy with the code. Commit with a message
 that states the mechanism. Uncommitted changes never deploy.

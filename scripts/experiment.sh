@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# experiment.sh new <slug>
+# experiment.sh new <slug> [--github-user <login>]
 # experiment.sh record [--override <promote|reject|inconclusive>] <reason...>
 # experiment.sh current
 #
-# One experiment = one hypothesis = one branch exp/NNN-<slug> = one directory
+# One experiment = one hypothesis = one branch [<github-user>/]exp/NNN-<slug> = one directory
 # .kaizen/experiments/NNN-<slug>/. `new` writes the manifest template (the
 # kaizen-agent Candidate Manifest fields) and opens the branch from stable.
 # `record` closes it: the rule's decision comes from decision.json; the agent
@@ -21,6 +21,27 @@ shift || true
 case "$cmd" in
   new)
     slug=${1:?experiment.sh new <slug>}
+    shift
+    github_user=
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --github-user)
+          [ "$#" -ge 2 ] || die "--github-user requires the current operator's GitHub login"
+          [ -n "$2" ] || die "--github-user cannot be empty"
+          [ -z "$github_user" ] || die "specify --github-user only once"
+          github_user=$2
+          shift 2
+          ;;
+        *) die "usage: experiment.sh new <slug> [--github-user <login>]" ;;
+      esac
+    done
+    if [ -n "$github_user" ]; then
+      [[ "$github_user" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?$ ]] \
+        || die "--github-user must be a GitHub login (1-39 alphanumeric/hyphen characters, alphanumeric ends)"
+      case "$github_user" in *--*) die "--github-user cannot contain consecutive hyphens" ;; esac
+    elif [ "${KAIZEN_TEAM_MODE:-0}" = 1 ]; then
+      die "team experiments require --github-user <current operator's GitHub login>"
+    fi
     case "$slug" in *[!A-Za-z0-9_-]*) die "slug must be [A-Za-z0-9_-]" ;; esac
     [ -z "$EXP" ] || die "experiment $EXP is still open; record its decision first"
     [ "$(state_get REVERT_PENDING)" != 1 ] || die "a failed candidate is still deployed; recover.sh first"
@@ -45,9 +66,10 @@ case "$cmd" in
     fi
     n=$(count_matches "$KAIZEN_DIR"/experiments/*/)
     name=$(printf '%03d-%s' "$((n + 1))" "$slug")
+    branch="${github_user:+$github_user/}exp/$name"
     dir="$KAIZEN_DIR/experiments/$name"
     mkdir -p "$dir"
-    git -C "$KAIZEN_PROJECT" switch -q -c "exp/$name" "$base"
+    git -C "$KAIZEN_PROJECT" switch -q -c "$branch" "$base"
     python3 - "$dir/manifest.json" "$name" "$stable" "$(now)" "$KAIZEN_DIR/stable-bundle.json" <<'EOF'
 import json, sys
 path, name, stable, started, bundle = sys.argv[1:]
@@ -78,7 +100,7 @@ EOF
     : > "$dir/timeline.tsv"
     state_set CURRENT_EXPERIMENT "$name"
     state_set BENCH_BUDGET_EXPERIMENT "$name"
-    echo "$name opened on branch exp/$name from $(short "$base"); fill $dir/manifest.json, commit the change, then deploy.sh and bench.sh"
+    echo "$name opened on branch $branch from $(short "$base"); fill $dir/manifest.json, commit the change, then deploy.sh and bench.sh"
     ;;
 
   current)

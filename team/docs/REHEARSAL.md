@@ -1,5 +1,8 @@
 # ISUCON14チーム検証からの反映（0.3.0）
 
+この文書は0.3.0開発時の検証履歴である。親Agentの補助はその試験での条件であり、
+本番手順の前提ではない。現行は各人の独立セッションが[Discord](DISCORD.md)で連携する。
+
 [2026-10-17の実測記録](https://github.com/shm11C3/isucon-team-rehearsal/blob/2de6f3fd6d0408d9249838997733fc48083b462a/reports/verification.md)では、3cloneでの調整・2候補・12回の実ベンチ・元環境復元を確認した。Claudeモデルの実作業、異なる3人の認証、Discordは未確認。
 
 | 気づき | plugin側の対応 |
@@ -12,7 +15,7 @@
 | experiment終了後に復旧benchが上限外になった | 永続する物理試行台帳、終了後も同じ実験へ帰属、総数/時間/復旧枠、portal開始前予約 |
 | 直列計測の前に候補が溜まり得る | queueの件数と助言、READY滞留時にログ解析・調査へ回る運用 |
 
-次は各人の実PC・native Claude/Codexでjoinを通し、親Agentの仲介なしで通常改善1件を自動採用しmainへ反映する。Discordを繋ぐ場合も通知の配送とAI起動は別々に検証する。このreleaseはBotや自動wakeを追加しない。
+次の実地確認は各人の実PC・native Claude/CodexでjoinとDiscord疎通を通し、各セッションが方針・関連スレッドを読み、通常改善1件を共有・自動採用してmainへ反映する。投稿の配送と新着でのAI起動は別々に検証する。Botや自動wakeが追加済みとは扱わない。
 
 ## この更新の検証
 
