@@ -26,7 +26,11 @@ RSYNC_PATH="sudo -u isucon rsync"
 # build as isucon.
 # Measured on isu12 (2 vCPU): build ~5 s, restart until the first HTTP
 # answer ~20-40 s; HEALTH_RETRIES covers a cold compile.
-BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp && docker compose -f docker-compose-go.yml build"'
+# unattended-upgrades replaced the docker CLI (docker.io 29.x) while the old
+# daemon (API 1.41) kept running; the new CLI refuses to negotiate that far
+# down, so every docker call pins DOCKER_API_VERSION.
+DOCKER_ENV='DOCKER_API_VERSION=1.41'
+BUILD_CMD="sudo -i -u isucon bash -c 'cd ~/webapp && $DOCKER_ENV docker compose -f docker-compose-go.yml build'"
 RESTART_CMD='sudo systemctl restart isuports.service'
 SERVICE_NAME=isuports.service
 # Any HTTP answer (401 without a cookie) means the process is up; the
@@ -57,8 +61,8 @@ PATH_ID_REGEX='/[0-9a-f]{8,}'
 # To see the SQLite statements themselves, set ISUCON_SQLITE_TRACE_FILE in
 # go/Dockerfile (ENV) for one observation run; it costs throughput, so not
 # in the baseline.
-OBSERVE_RESET_CMD='sudo truncate -s0 "$(sudo docker inspect --format={{.LogPath}} webapp-webapp-1)"'
-OBSERVE_EXTRA_CMD='sudo docker logs webapp-webapp-1 2>&1 | python3 -c "$(echo aW1wb3J0IHN5cyxqc29uLHJlLGNvbGxlY3Rpb25zCmFnZz1jb2xsZWN0aW9ucy5kZWZhdWx0ZGljdChsYW1iZGE6WzAsMC4wLDAuMF0pCmZvciBsIGluIHN5cy5zdGRpbjoKICAgIGlmIG5vdCBsLnN0YXJ0c3dpdGgoJ3sidGltZSInKTogY29udGludWUKICAgIHRyeTogZD1qc29uLmxvYWRzKGwpCiAgICBleGNlcHQgRXhjZXB0aW9uOiBjb250aW51ZQogICAgdT1yZS5zdWIocidcPy4qJywnJyxkLmdldCgndXJpJywnJykpOyB1PXJlLnN1YihyJy9bMC05YS1mXXs4LH0nLCcvOmlkJyx1KQogICAgYT1hZ2dbKGQuZ2V0KCdtZXRob2QnKSx1LGQuZ2V0KCdzdGF0dXMnKSldOyBtcz1kLmdldCgnbGF0ZW5jeScsMCkvMWU2CiAgICBhWzBdKz0xOyBhWzFdKz1tczsgYVsyXT1tYXgoYVsyXSxtcykKcHJpbnQoJ2NvdW50XHRzdW1fbXNcdGF2Z19tc1x0bWF4X21zXHRtZXRob2QgcGF0aCBzdGF0dXMnKQpmb3IgKG0sdSxzKSwobix0LG14KSBpbiBzb3J0ZWQoYWdnLml0ZW1zKCksa2V5PWxhbWJkYSBrdjota3ZbMV1bMV0pWzoyNV06CiAgICBwcmludChmJ3tufVx0e3Q6LjBmfVx0e3QvbjouMWZ9XHR7bXg6LjBmfVx0e219IHt1fSB7c30nKQo= | base64 -d)"'
+OBSERVE_RESET_CMD="sudo truncate -s0 \"\$(sudo $DOCKER_ENV docker inspect --format={{.LogPath}} webapp-webapp-1)\""
+OBSERVE_EXTRA_CMD="sudo $DOCKER_ENV docker logs webapp-webapp-1 2>&1 | python3 -c \"\$(echo aW1wb3J0IHN5cyxqc29uLHJlLGNvbGxlY3Rpb25zCmFnZz1jb2xsZWN0aW9ucy5kZWZhdWx0ZGljdChsYW1iZGE6WzAsMC4wLDAuMF0pCmZvciBsIGluIHN5cy5zdGRpbjoKICAgIGlmIG5vdCBsLnN0YXJ0c3dpdGgoJ3sidGltZSInKTogY29udGludWUKICAgIHRyeTogZD1qc29uLmxvYWRzKGwpCiAgICBleGNlcHQgRXhjZXB0aW9uOiBjb250aW51ZQogICAgdT1yZS5zdWIocidcPy4qJywnJyxkLmdldCgndXJpJywnJykpOyB1PXJlLnN1YihyJy9bMC05YS1mXXs4LH0nLCcvOmlkJyx1KQogICAgYT1hZ2dbKGQuZ2V0KCdtZXRob2QnKSx1LGQuZ2V0KCdzdGF0dXMnKSldOyBtcz1kLmdldCgnbGF0ZW5jeScsMCkvMWU2CiAgICBhWzBdKz0xOyBhWzFdKz1tczsgYVsyXT1tYXgoYVsyXSxtcykKcHJpbnQoJ2NvdW50XHRzdW1fbXNcdGF2Z19tc1x0bWF4X21zXHRtZXRob2QgcGF0aCBzdGF0dXMnKQpmb3IgKG0sdSxzKSwobix0LG14KSBpbiBzb3J0ZWQoYWdnLml0ZW1zKCksa2V5PWxhbWJkYSBrdjota3ZbMV1bMV0pWzoyNV06CiAgICBwcmludChmJ3tufVx0e3Q6LjBmfVx0e3QvbjouMWZ9XHR7bXg6LjBmfVx0e219IHt1fSB7c30nKQo= | base64 -d)\""
 
 # Practice: the benchmarker is a binary on BENCH_HOST (/home/isucon/bench).
 # It calls /initialize first (30 s timeout), runs 60 s of load, then the
