@@ -29,6 +29,8 @@ for p in sys.argv[1:]:
 EOF
 chmod +x "$T/bin/"*
 export PATH="$T/bin:$PATH"
+cp -R "$PLUGIN/knowledge" "$T/knowledge"
+export KAIZEN_KNOWLEDGE_DIR="$T/knowledge"
 
 P="$T/project"
 mkdir -p "$P/go" "$P/sql" "$P/etc/mysql" "$P/.kaizen"
@@ -55,6 +57,7 @@ RESTART_CMD='sudo systemctl restart app.service'
 HEALTH_CMD='true'
 bench_command() { echo "bash $PLUGIN/tests/fake-bench.sh"; }
 MAX_BENCH_PER_EXP=3
+PROBLEM=test
 EOF
 
 S="$PLUGIN/scripts"
@@ -90,7 +93,7 @@ python3 - <<'EOF'
 import json
 p = ".kaizen/experiments/001-flush-log/manifest.json"
 m = json.load(open(p))
-m.update(hypothesisId="flush-log", hypothesis="COMMIT waits on fsync", expectedEffect="score up",
+m.update(patternId="fsync-on-commit", hypothesisId="flush-log", hypothesis="COMMIT waits on fsync", expectedEffect="score up",
          observations=[{"summary": "COMMIT 60s total", "artifact": ".kaizen/observe-baseline.txt"}],
          allowedChanges=[{"path": "etc/mysql/my.cnf", "changeKind": "modify", "reason": "flush setting"}])
 json.dump(m, open(p, "w"), indent=2)
@@ -113,6 +116,10 @@ cand=$(git rev-parse exp/001-flush-log)
 ls .kaizen/baseline/"$cand"/*.json >/dev/null || fail "baseline reseeded"
 [ -f .kaizen/experiments/001-flush-log/record.json ] || fail "record.json"
 grep -q "001-flush-log" .kaizen/log.md || fail "log.md row"
+grep -q "| test | 001-flush-log |" "$T/knowledge/patterns/fsync-on-commit.md" || fail "ingest appended a measured row"
+[ -f "$T/knowledge/records/test/001-flush-log.json" ] || fail "record filed under records/<problem>"
+grep -q "001-flush-log" "$T/knowledge/problems/test.md" || fail "problem log row"
+"$S/knowledge.sh" ingest .kaizen/experiments/001-flush-log | grep -q "already ingested" || fail "ingest is idempotent"
 
 echo "== experiment 2: correctness failure, recovery, reject"
 "$S/experiment.sh" new break-it >/dev/null
@@ -202,6 +209,16 @@ hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop",
 "$S/experiment.sh" record "stop check" >/dev/null
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop should be silent when clean"
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"SessionStart","cwd":sys.argv[1]}))' "$P")" | grep -q additionalContext || fail "SessionStart context"
+
+echo "== knowledge: match, stats, stub"
+out=$("$S/knowledge.sh" match "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt")
+for pid in missing-secondary-index fsync-on-commit random-order-matching hot-polling-endpoint auth-lookup-per-request; do
+  printf '%s' "$out" | grep -q "\] $pid " || fail "matcher should report $pid"
+done
+printf '%s' "$out" | grep -q "1 measured, 1 promoted" || fail "measured summary from pattern file"
+"$S/knowledge.sh" stats | grep -q "^fsync-on-commit" || fail "stats lists patterns"
+[ -f "$T/knowledge/patterns/unclassified.md" ] || fail "stub pattern for an experiment without patternId"
+python3 "$PLUGIN/knowledge/match.py" "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r[0]["stage"]=="early", r[0]'
 
 echo "== status"
 "$S/status.sh" >/dev/null

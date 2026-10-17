@@ -40,6 +40,7 @@ path, name, stable, started = sys.argv[1:]
 json.dump({
     "schemaVersion": "v1",
     "experimentId": name,
+    "patternId": "",
     "hypothesisId": "",
     "hypothesis": "",
     "observations": [{"summary": "", "artifact": ""}],
@@ -139,6 +140,7 @@ EOF
     scores=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(str(d.get("baselineScores")) + " -> " + str(d.get("candidateScores")))' "$EXP_DIR/decision.json")
     printf '| %s | %s | %s | %s | %s | %s | %s |\n' "$(now)" "$EXP" "$(short "$head")" "$rule" "$final" "$scores" "$reason" >> "$KAIZEN_DIR/log.md"
     state_set CURRENT_EXPERIMENT ""
+    "$KAIZEN_PLUGIN_ROOT/scripts/knowledge.sh" ingest "$EXP_DIR" || log "knowledge ingest failed; run knowledge.sh ingest $EXP_DIR later"
     echo "$EXP closed: rule=$rule final=$final; stable is $(short "$(state_get STABLE_REV)"), deployed $(short "$(state_get DEPLOYED_REV)")"
     ;;
 

@@ -5,8 +5,9 @@ ISUCON の改善ループを Claude Code のプラグインとして回すため
 ## 構成
 
 ```
-skills/      setup, observe, hypothesize, experiment, recover, status（Claude が読む手順）
-scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, status（決定論的な部分）
+skills/      setup, observe, hypothesize, experiment, recover, status, knowledge（Claude が読む手順）
+scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, status, knowledge（決定論的な部分）
+knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める
 presets/     isucon14.sh（練習用）
 templates/   config.sh.example, preset.sh.example（本番用に当日マニュアルから起こす）
@@ -45,6 +46,12 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 ### 練習（ISUCON14）
 
 `templates/config.sh.example` をそのまま使い、`BENCH_HOST` とプライベート IP を書けば、ベンチも SSH で自動実行されます。
+
+## ナレッジ（`knowledge/`）
+
+計測つきのパターン集です。`knowledge.sh match <observe dump>` が観測ダンプに機械的なシグネチャ（`knowledge/signatures.py`、1 パターン 1 関数）を当て、該当するパターンを根拠行つきで並べます。各 `knowledge/patterns/<id>.md` には仮説と変更のテンプレート、壊れやすい点のチェックリスト、そして **Measured** 表があり、`experiment.sh record` のたびに `knowledge.sh ingest` が実験結果（baseline → candidate、差分、サンプル数、所要分、判定、エラー種別）を追記します。公式解説や write-up は `sources:` として種を蒔くだけで、証拠として数えるのは Measured の行だけです。
+
+`knowledge/problems/<problem>.md` は問題ごとに「公式解説が仕込んだボトルネックの順」と「実際に回した実験の順」を並べます。練習を重ねるほど、どのパターンを先にやると何分で何倍になるかが数字で残ります。
 
 ## 記録
 

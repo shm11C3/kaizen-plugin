@@ -3,6 +3,7 @@
 # Every value here can be overridden after the source line. For a new
 # contest copy templates/preset.sh.example instead and fill it from the manual.
 
+PROBLEM=isucon14
 REMOTE_APP_DIR=/home/isucon/webapp
 # Directories under the project root that deploy.sh pushes to REMOTE_APP_DIR.
 LOCAL_SYNC_PATHS="go sql"

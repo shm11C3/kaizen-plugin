@@ -1,0 +1,205 @@
+{
+  "experimentId": "exp-001-secondary-indexes",
+  "target": {
+    "appHost": "isu1",
+    "benchHost": "isubench",
+    "repo": "target/ (webapp go/ and sql/ mirrored from isu1)"
+  },
+  "stableRevisionBefore": "a4080173ad147f74a9eb1e84ab618135428acda1",
+  "candidateRevision": "b8feeb597bb7094148f53655198f9173b87038c4",
+  "manifest": {
+    "schemaVersion": "v1",
+    "hypothesisId": "hyp-isucon14-secondary-indexes",
+    "hypothesis": "Every table except users and owners has only its primary key, so the per-request lookups by chair_id, user_id, ride_id, owner_id, and access_token scan whole tables; adding secondary indexes on those columns removes the scans and lets the app answer more requests in the 60s load.",
+    "observations": [
+      {
+        "summary": "performance_schema digest after one benchmark: rides WHERE chair_id IS NULL examined 1,129,215 rows for 1,468 calls (49 rows sent); SHOW INDEX lists only PRIMARY on chairs, chair_locations, rides, ride_statuses; middlewares and handlers filter on chair_id, user_id, ride_id, owner_id, access_token",
+        "artifact": "observations/2026-10-17-mysql-digest-and-indexes.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "sql/1-schema.sql",
+        "changeKind": "modify",
+        "reason": "declare secondary indexes in the schema that POST /api/initialize reloads"
+      }
+    ],
+    "changeSummary": "add six secondary indexes in sql/1-schema.sql: chairs(owner_id), chairs(access_token), chair_locations(chair_id, created_at), rides(chair_id, updated_at), rides(user_id, created_at), ride_statuses(ride_id, created_at)",
+    "expectedEffect": "benchmark score rises because handler and matcher queries stop examining whole tables; initialize gets slightly slower from index builds",
+    "stableRevision": "a4080173ad147f74a9eb1e84ab618135428acda1",
+    "candidateRevision": "b8feeb597bb7094148f53655198f9173b87038c4"
+  },
+  "observations": [
+    "observations/2026-10-17-mysql-digest-and-indexes.txt",
+    "experiments/exp-001-secondary-indexes/observe-baseline.txt"
+  ],
+  "recoveryDrill": {
+    "status": "ok",
+    "detail": "deploy candidate 4s, verify, recover to main 4s, verify; 9s total, 0 interventions"
+  },
+  "baselineSamples": [
+    {
+      "label": "baseline",
+      "deployedRevision": "a4080173ad147f74a9eb1e84ab618135428acda1",
+      "exitCode": 0,
+      "durationSec": 69,
+      "errors": "",
+      "log": "bench-20261017T074519Z.log",
+      "result": {
+        "pass": true,
+        "score": 681,
+        "success": 0,
+        "fail": 0,
+        "messages": [
+          "bench-20261017T074519Z.log"
+        ]
+      }
+    },
+    {
+      "label": "baseline-2",
+      "deployedRevision": "a4080173ad147f74a9eb1e84ab618135428acda1",
+      "exitCode": 0,
+      "durationSec": 69,
+      "errors": "",
+      "log": "bench-20261017T074652Z.log",
+      "result": {
+        "pass": true,
+        "score": 902,
+        "success": 0,
+        "fail": 0,
+        "messages": [
+          "bench-20261017T074652Z.log"
+        ]
+      }
+    }
+  ],
+  "candidateSamples": [
+    {
+      "label": "candidate",
+      "deployedRevision": "b8feeb597bb7094148f53655198f9173b87038c4",
+      "exitCode": 0,
+      "durationSec": 69,
+      "errors": "",
+      "log": "bench-20261017T074915Z.log",
+      "result": {
+        "pass": true,
+        "score": 3286,
+        "success": 0,
+        "fail": 0,
+        "messages": [
+          "bench-20261017T074915Z.log"
+        ]
+      }
+    },
+    {
+      "label": "candidate-2",
+      "deployedRevision": "b8feeb597bb7094148f53655198f9173b87038c4",
+      "exitCode": 0,
+      "durationSec": 68,
+      "errors": "",
+      "log": "bench-20261017T075025Z.log",
+      "result": {
+        "pass": true,
+        "score": 2945,
+        "success": 0,
+        "fail": 0,
+        "messages": [
+          "bench-20261017T075025Z.log"
+        ]
+      }
+    }
+  ],
+  "decision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 29361 bp >= 300 bp and worst candidate 2945 > best baseline 902",
+    "improvementBasisPoints": 29361,
+    "baselineScores": [
+      681,
+      902
+    ],
+    "candidateScores": [
+      2945,
+      3286
+    ],
+    "baselineRevisions": [
+      "a4080173ad147f74a9eb1e84ab618135428acda1"
+    ],
+    "candidateRevisions": [
+      "b8feeb597bb7094148f53655198f9173b87038c4"
+    ]
+  },
+  "promotion": {
+    "status": "ok",
+    "stableRevisionAfter": "b8feeb597bb7094148f53655198f9173b87038c4",
+    "deployedOnAppHost": true,
+    "at": "2026-10-17T07:53:43+00:00"
+  },
+  "timeline": [
+    {
+      "at": "2026-10-17T07:45:19Z",
+      "step": "deploy",
+      "target": "main",
+      "seconds": "4s",
+      "result": "ok"
+    },
+    {
+      "at": "2026-10-17T07:46:29Z",
+      "step": "bench",
+      "target": "baseline",
+      "seconds": "69s",
+      "result": "exit=0"
+    },
+    {
+      "at": "2026-10-17T07:48:02Z",
+      "step": "bench",
+      "target": "baseline-2",
+      "seconds": "69s",
+      "result": "exit=0"
+    },
+    {
+      "at": "2026-10-17T07:48:50Z",
+      "step": "deploy",
+      "target": "candidate/secondary-indexes",
+      "seconds": "4s",
+      "result": "ok"
+    },
+    {
+      "at": "2026-10-17T07:48:55Z",
+      "step": "deploy",
+      "target": "main",
+      "seconds": "4s",
+      "result": "ok"
+    },
+    {
+      "at": "2026-10-17T07:48:55Z",
+      "step": "recover",
+      "target": "main",
+      "seconds": "4s",
+      "result": "ok"
+    },
+    {
+      "at": "2026-10-17T07:49:15Z",
+      "step": "deploy",
+      "target": "candidate/secondary-indexes",
+      "seconds": "4s",
+      "result": "ok"
+    },
+    {
+      "at": "2026-10-17T07:50:25Z",
+      "step": "bench",
+      "target": "candidate",
+      "seconds": "69s",
+      "result": "exit=0"
+    },
+    {
+      "at": "2026-10-17T07:51:34Z",
+      "step": "bench",
+      "target": "candidate-2",
+      "seconds": "68s",
+      "result": "exit=0"
+    }
+  ],
+  "humanInterventions": 0
+}

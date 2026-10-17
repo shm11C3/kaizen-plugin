@@ -12,9 +12,19 @@ One experiment tests one mechanism. "Add indexes" is one hypothesis;
 "add indexes and cache the user lookup" is two experiments, because a score
 change could not be attributed to either.
 
+## Match
+
+```bash
+$K/scripts/knowledge.sh match <observe-*.txt>     # patterns the evidence supports, ranked, with measured history
+```
+
+Read the matching pattern files (`$K/knowledge/patterns/<id>.md`): the
+Measured table says what the pattern paid before and how often it failed,
+the Checklist what to verify. The matcher proposes; the dump decides.
+
 ## Pick
 
-From the observation file, choose the single largest cost whose fix you can
+From the observation file and the match output, choose the single largest cost whose fix you can
 name in one sentence, in this order of preference: missing index; query
 inside a loop (N+1); work repeated on every request that a cache or a
 precomputed column removes; a configuration limit (fsync on every commit,
@@ -31,6 +41,8 @@ $K/scripts/experiment.sh new <slug>       # branch exp/NNN-<slug> from stable, m
 
 Fill `.kaizen/experiments/NNN-<slug>/manifest.json` completely:
 
+- `patternId`: the knowledge pattern id (`missing-secondary-index`), or a new
+  id when none fits; ingest files the result under it.
 - `hypothesisId`: short stable id (`idx-rides-chair`), reused if retried later.
 - `hypothesis`: what is slow, why, and what change removes it.
 - `observations[0]`: `summary` with the numbers, `artifact` = the

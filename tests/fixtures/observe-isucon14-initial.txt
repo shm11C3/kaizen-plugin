@@ -1,0 +1,41 @@
+# observation: baseline, taken 2026-10-17T07:38:51Z on isu1 (ISUCON14 initial Go implementation, after one 60s benchmark)
+# deployed revision: a4080173ad147f74a9eb1e84ab618135428acda1  hosts: isu1  db: isu1
+# bench_seconds: 60
+
+## MySQL statement digests by total time (performance_schema on isu1, since last reset)
+total_s	calls	avg_ms	rows_examined	rows_sent	query
+114.12	12897	8.85	0	0	COMMIT
+13.46	26487	0.51	0	0	START TRANSACTION
+8.31	13544	0.61	0	0	ROLLBACK
+3.05	1468	2.08	1129215	49	SELECT * FROM `rides` WHERE `chair_id` IS NULL ORDER BY `created_at` LIMIT ?
+1.16	62	18.72	32250	32250	SELECT * FROM `chairs`
+0.91	95	9.57	49628	95	SELECT * FROM `chairs` INNER JOIN ( SELECT `id` FROM `chairs` WHERE `is_active` = TRUE ORDER BY `RAND` ( ) LIMIT ? ) AS `tmp` ON `chairs` . `id` = `tmp` . `id`
+0.91	4	226.47	0	0	INSERT INTO `chair_locations` VALUES (...) /* , ... */
+0.52	2100	0.25	2100	2100	SELECT * FROM `users` WHERE `access_token` = ?
+0.32	2	159.62	0	0	INSERT INTO `ride_statuses` VALUES (...) /* , ... */
+0.17	2	84.86	0	0	INSERT INTO `users` VALUES (...) /* , ... */
+0.05	61	0.9	61	61	SELECT NOW (?)
+0.04	21	1.87	21	21	SELECT VALUE FROM `settings` WHERE NAME = ?
+
+## requests by method, path (ids normalized), status (isu1:/var/log/nginx/access.log)
+9595 GET /api/chair/notification 200
+1622 GET /api/app/notification 200
+420 POST /api/chair/coordinate 200
+120 GET /api/app/nearby-chairs 200
+61 POST /api/app/rides 202
+30 GET /api/owner/chairs 200
+12 POST /api/app/users 201
+
+## secondary indexes present
+chair_locations.PRIMARY(id)
+chair_models.PRIMARY(name)
+chairs.PRIMARY(id)
+coupons.PRIMARY(user_id,code)
+owners.PRIMARY(id)
+owners.access_token(access_token)
+payment_tokens.PRIMARY(user_id)
+ride_statuses.PRIMARY(id)
+rides.PRIMARY(id)
+settings.PRIMARY(name)
+users.PRIMARY(id)
+users.access_token(access_token)

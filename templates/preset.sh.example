@@ -3,6 +3,9 @@
 # .kaizen/config.sh), and keep the manual's URL in a comment next to each
 # value you took from it.
 
+# Name of the contest/problem; knowledge records are filed under it.
+PROBLEM=<contest>
+
 # Where the application lives on each server and what to push there.
 REMOTE_APP_DIR=/home/isucon/webapp
 LOCAL_SYNC_PATHS="go sql"            # directories under the repo root
