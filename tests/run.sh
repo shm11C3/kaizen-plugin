@@ -82,14 +82,49 @@ expect_fail "$S/bench.sh" candidate                   # no experiment open
 "$S/bench.sh" baseline-2 >/dev/null
 [ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples filed"
 
+echo "== precheck: a busy host refuses a sample; forget-baseline retires contaminated samples"
+echo "BENCH_PRECHECK_CMD='test ! -f busy.marker'" >> .kaizen/config.sh
+touch "$KAIZEN_FAKE_REMOTE/isu2/busy.marker"
+expect_fail "$S/bench.sh" baseline-pc1
+[ ! -e .kaizen/bench-baseline-pc1.json ] || fail "no sample recorded when the precheck fails"
+rm "$KAIZEN_FAKE_REMOTE/isu2/busy.marker"
+"$S/bench.sh" baseline-pc1 >/dev/null
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 3 ] || fail "third baseline sample filed"
+"$S/stable.sh" forget-baseline "test: upgrade ran during the samples" >/dev/null
+[ ! -d .kaizen/baseline/"$(git rev-parse main)" ] || fail "baseline directory retired"
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)".retired-*/*.json | wc -l | tr -d ' ')" = 3 ] || fail "retired samples kept as evidence"
+grep -q "upgrade ran" .kaizen/baseline/"$(git rev-parse main)".retired-*/REASON.txt || fail "reason kept"
+expect_fail "$S/stable.sh" forget-baseline "nothing left"
+"$S/bench.sh" baseline-pc2 >/dev/null
+"$S/bench.sh" baseline-pc3 >/dev/null
+
+echo "== repin: records committed on main move the branch, not the servers"
+echo "- no rule" > .kaizen/RULES.md && git add .kaizen/RULES.md && git commit -qm "records"
+"$S/stable.sh" repin >/dev/null
+[ "$(state STABLE_REV)" = "$(git rev-parse main)" ] || fail "STABLE_REV follows main after repin"
+[ "$(state DEPLOYED_REV)" = "$(git rev-parse main)" ] || fail "DEPLOYED_REV re-keyed"
+[ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/webapp/.deployed-revision")" = "$(git rev-parse main)" ] || fail "marker re-keyed"
+[ "$(ls .kaizen/baseline/"$(git rev-parse main)"/*.json | wc -l | tr -d ' ')" = 2 ] || fail "baseline samples re-keyed"
+grep -q repinnedFrom .kaizen/baseline/"$(git rev-parse main)"/*.json || fail "re-keyed sample notes its origin"
+"$S/verify.sh" main >/dev/null
+git switch -q -c tmp-code && echo 3000 > go/score && git commit -qam "code change"
+expect_fail "$S/stable.sh" repin tmp-code              # deployable tree differs: a candidate, not a repin
+git switch -q main && git branch -q -D tmp-code
+
+echo "a record changed" >> .kaizen/RULES.md             # tracked records never count as a dirty tree
+
 echo "== experiment 1: promoted, with overlay change"
 expect_fail "$S/deploy.sh" HEAD~0 --dirty             # bad usage
-"$S/experiment.sh" new flush-log >/dev/null
+"$S/experiment.sh" new flush-log >/dev/null             # succeeds with the record modified above
+git restore .kaizen/RULES.md
 [ "$(git branch --show-current)" = "exp/001-flush-log" ] || fail "experiment branch"
 echo 2000 > go/score
 echo 'innodb_flush_log_at_trx_commit=2' > etc/mysql/my.cnf
 git commit -qam "candidate: flush log every second"
 expect_fail "$S/deploy.sh" HEAD                        # manifest not filled
+git add -f .kaizen/experiments/001-flush-log/manifest.json && git commit -qm "oops: records in the candidate"
+expect_fail "$S/deploy.sh" HEAD                        # candidate carries .kaizen records
+git rm -q --cached .kaizen/experiments/001-flush-log/manifest.json && git commit -qm "records untracked"
 python3 - <<'EOF'
 import json
 p = ".kaizen/experiments/001-flush-log/manifest.json"
@@ -220,6 +255,10 @@ printf '%s' "$out" | grep -q "1 measured, 1 promoted" || fail "measured summary 
 "$S/knowledge.sh" stats | grep -q "^fsync-on-commit" || fail "stats lists patterns"
 [ -f "$T/knowledge/patterns/unclassified.md" ] || fail "stub pattern for an experiment without patternId"
 python3 "$PLUGIN/knowledge/match.py" "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" --json | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r[0]["stage"]=="early", r[0]'
+out=$("$S/knowledge.sh" match "$PLUGIN/tests/fixtures/observe-isucon12-initial.txt")
+printf '%s' "$out" | grep -q "prepared statements" || fail "matcher says when the MySQL digest is blind to the app"
+printf '%s' "$out" | grep -q "endpoint latency rows" || fail "matcher parses the extra section's latency table"
+printf '%s' "$out" | grep -q "GET /api/player/competition/:id/ranking 200: 472 calls" || fail "endpoint rows reported"
 
 echo "== retro: friction capture, resolve, stop block"
 [ -f .kaizen/friction.jsonl ] || fail "friction.jsonl written by refused calls"
@@ -248,6 +287,23 @@ touch -t 200001010000 .kaizen/plan.md
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")" | grep -q "plan.md" || fail "Stop asks for a plan update after a record"
 touch .kaizen/plan.md
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent once the plan is newer"
+echo "== observe: reset clears the extra source, dump appends the extra command"
+cat >> .kaizen/config.sh <<'EOF2'
+MYSQL_CMD=true
+DB_NAME=test
+ACCESS_LOG=access.log
+OBSERVE_RESET_CMD='echo cleared > reset.marker'
+OBSERVE_EXTRA_CMD='echo extra-evidence-line'
+PATH_ID_REGEX='/[0-9a-f]{8,}'
+EOF2
+printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0" 200 1 "-" "b"\n' > "$KAIZEN_FAKE_REMOTE/isu1/access.log"
+"$S/observe.sh" reset >/dev/null
+[ "$(cat "$KAIZEN_FAKE_REMOTE/isu1/reset.marker")" = cleared ] || fail "OBSERVE_RESET_CMD ran on the nginx host"
+[ ! -s "$KAIZEN_FAKE_REMOTE/isu1/access.log" ] || fail "access log truncated on reset"
+printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0" 200 1 "-" "b"\n' > "$KAIZEN_FAKE_REMOTE/isu1/access.log"
+dump=$("$S/observe.sh" dump test)
+grep -q "extra-evidence-line" "$dump" || fail "OBSERVE_EXTRA_CMD output appended to the dump"
+grep -q '/api/x/:id' "$dump" || fail "ids normalized in the request section"
 
 echo "== status"
 "$S/status.sh" >/dev/null

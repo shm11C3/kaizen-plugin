@@ -65,5 +65,9 @@ $K/scripts/bench.sh baseline-2
 ```
 
 Two samples show the noise; three when the two differ by more than
-`MIN_IMPROVEMENT_BP`. Report `$K/scripts/status.sh` to the human and stop:
+`MIN_IMPROVEMENT_BP`. Commit `.kaizen/` (config, RULES, samples, dump) on
+`main`, then `$K/scripts/stable.sh repin`: the commit moved `main` past
+STABLE_REV without changing what the servers run, and repin moves
+STABLE_REV (and the baseline samples' key) to it after verifying the
+hosts still match. Report `$K/scripts/status.sh` to the human and stop:
 the loop starts with the observe skill.

@@ -6,7 +6,7 @@ ISUCON の改善ループを Claude Code のプラグインとして回すため
 
 ```
 skills/      setup, observe, hypothesize, experiment, recover, status, knowledge（Claude が読む手順）
-scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, status, knowledge（決定論的な部分）
+scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める
 presets/     isucon14.sh（練習用）
@@ -19,7 +19,7 @@ tests/       偽リモートに対するループ全体のテスト
 | 誰が | 何を |
 |---|---|
 | Claude | 観測を読む、仮説を書く、コードを変える、判定結果を読んで次を決める |
-| scripts/ | 配備と検証、ベンチの実行と記録、固定ルールでの判定、stable への復旧、予算と排他 |
+| scripts/ | 配備と検証、ベンチの実行と記録、固定ルールでの判定、stable への復旧と再固定（記録を main にコミットした後の `stable.sh repin`）、予算と排他 |
 | hooks/ | scripts/ を通さないベンチ・配備・記録の書き換えを拒否、未記録のまま終わらせない |
 | 人間 | 設定、ルールの確認、いつでも停止、判定の上書き |
 

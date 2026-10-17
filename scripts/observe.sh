@@ -5,20 +5,25 @@
 # aggregates (on NGINX_HOST). A dump is the evidence a hypothesis cites
 # (observe-<name>.txt in the open experiment, or under .kaizen/ when none is
 # open); reset before the benchmark whose load the dump should describe.
-# Extra evidence (pprof, alp with a route pattern, slow log) goes through
-# OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output is appended.
+# Extra evidence (pprof, alp with a route pattern, slow log, an app log)
+# goes through OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output
+# is appended; OBSERVE_RESET_CMD, run on the same host by reset, clears that
+# source so the extra section covers exactly one benchmark.
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 load_config
 : "${ACCESS_LOG:=/var/log/nginx/access.log}" "${MYSQL_CMD:=sudo mysql}" "${PATH_ID_REGEX:=/[0-9A-Za-z]{20,}}"
-: "${DB_HOST:=$APP_HOST}" "${NGINX_HOST:=${APP_HOSTS%% *}}" "${OBSERVE_EXTRA_CMD:=}"
+: "${DB_HOST:=$APP_HOST}" "${NGINX_HOST:=${APP_HOSTS%% *}}" "${OBSERVE_EXTRA_CMD:=}" "${OBSERVE_RESET_CMD:=}"
 [ -n "${DB_NAME:-}" ] || die "config.sh does not set DB_NAME"
 
 case "${1:-}" in
   reset)
-    remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest'"
+    remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest; TRUNCATE performance_schema.events_statements_summary_global_by_event_name'"
     remote "$NGINX_HOST" "sudo truncate -s0 $ACCESS_LOG"
-    echo "observation counters reset (db: $DB_HOST, nginx: $NGINX_HOST)"
+    if [ -n "$OBSERVE_RESET_CMD" ]; then
+      remote "$NGINX_HOST" "$OBSERVE_RESET_CMD" || die "OBSERVE_RESET_CMD failed on $NGINX_HOST: $OBSERVE_RESET_CMD"
+    fi
+    echo "observation counters reset (db: $DB_HOST, nginx: $NGINX_HOST${OBSERVE_RESET_CMD:+, extra source})"
     ;;
   dump)
     name=${2:?observe.sh dump <name>}
@@ -29,6 +34,9 @@ case "${1:-}" in
       echo
       echo "## MySQL statement digests by total time (performance_schema on $DB_HOST, since last reset)"
       remote "$DB_HOST" "$MYSQL_CMD -e \"SELECT ROUND(SUM_TIMER_WAIT/1e12,2) total_s, COUNT_STAR calls, ROUND(AVG_TIMER_WAIT/1e9,2) avg_ms, SUM_ROWS_EXAMINED rows_examined, SUM_ROWS_SENT rows_sent, LEFT(DIGEST_TEXT,150) query FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME='$DB_NAME' ORDER BY SUM_TIMER_WAIT DESC LIMIT 25\""
+      echo
+      echo "## MySQL statement time by event name (global, since last reset; prepared statements show here as statement/com/Execute even when the digest table has no text for them)"
+      remote "$DB_HOST" "$MYSQL_CMD -e \"SELECT EVENT_NAME, COUNT_STAR calls, ROUND(SUM_TIMER_WAIT/1e12,2) total_s, ROUND(AVG_TIMER_WAIT/1e9,2) avg_ms FROM performance_schema.events_statements_summary_global_by_event_name WHERE COUNT_STAR > 0 ORDER BY SUM_TIMER_WAIT DESC LIMIT 8\"" || echo "(not available)"
       echo
       echo "## requests by method, path (ids normalized), status ($NGINX_HOST:$ACCESS_LOG)"
       remote "$NGINX_HOST" "sudo awk '{m=\$6; gsub(/\"/,\"\",m); p=\$7; sub(/\\?.*/,\"\",p); gsub(/${PATH_ID_REGEX//\//\\/}/,\"/:id\",p); k=m\" \"p\" \"\$9; c[k]++} END{for(k in c) print c[k], k}' $ACCESS_LOG | sort -rn | head -25"

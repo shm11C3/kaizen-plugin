@@ -17,7 +17,11 @@
 #   sample of the current stable revision;
 # - at most MAX_BENCH_PER_EXP samples and MAX_EXP_MINUTES per experiment;
 # - a candidate that fails correctness sets REVERT_PENDING, which blocks
-#   deploying anything but stable until recover.sh has run.
+#   deploying anything but stable until recover.sh has run;
+# - BENCH_PRECHECK_CMD (config.sh, optional) must succeed on every app host
+#   before a sample is taken: a host busy with something else (an
+#   unattended package upgrade, a leftover process) makes the sample noise,
+#   and a refusal here is an infrastructure fact, not a sample.
 # The benchmarker's exit code is never trusted; its result line is.
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -69,6 +73,11 @@ if [ -n "$EXP" ]; then
   fi
 fi
 [ ! -e "$EXP_DIR/bench-$label.json" ] || die "$EXP_DIR/bench-$label.json exists; use a new label"
+if [ -n "${BENCH_PRECHECK_CMD:-}" ]; then
+  for host in $APP_HOSTS; do
+    remote "$host" "$BENCH_PRECHECK_CMD" >/dev/null 2>&1 || die "$host is not ready for a sample (BENCH_PRECHECK_CMD failed: $BENCH_PRECHECK_CMD); wait or fix the host, nothing recorded"
+  done
+fi
 
 acquire_bench_lock
 logfile="$EXP_DIR/bench-$label.log"

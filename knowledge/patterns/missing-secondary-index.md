@@ -41,9 +41,17 @@ indexes: it is one mechanism.
   the digest shows being hit.
 - Confirm with `EXPLAIN` or the next observe dump that `rows_examined`
   dropped; otherwise the column order is wrong.
+- Per-tenant SQLite files (ISUCON12 qualify): the index must be created in
+  every file `/initialize` copies back, not only in the schema for new
+  tenants; apply the schema's CREATE INDEX lines to each file after the
+  copy and watch the initialize duration in the app log (exp 001: 100
+  files, the largest 1.67M rows, still well under the 30 s limit).
+- exp 001 (isucon12-qualify) was inconclusive for a reason outside the
+  change: an unattended package upgrade restarted mysqld during a sample.
+  Check the host is quiet (BENCH_PRECHECK_CMD) before trusting any sample.
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | exp-001-secondary-indexes | 681/902 | 2945/3286 | +293% | 2+2 | 6 | promote | promote | 6 indexes in sql/1-schema.sql; recorded by kaizen-isucon14/bin (pre-plugin) |
-
+| isucon12-qualify | 001-sqlite-player-score-index | 2018/2111 | - | - | 2+0 | 6 | reject | inconclusive | errors=3,critical=0 | candidate-2 passed at 2386 (+15.6% over the 2064.5 baseline median) but the candidate sample failed with 3 errors because unattended-upgrades replaced mysql-server 8.0.34->8.0.46 and restarted mysqld mid-run (apt history 09:14:30); the upgrade also ran at half a core during the baseline samples, so neither side is a clean measurement. Retry the same index change after the host is quiet and the baseline is retaken. candidateRevision is the records-untrack commit on top of the benchmarked bdc8527 (same code). |

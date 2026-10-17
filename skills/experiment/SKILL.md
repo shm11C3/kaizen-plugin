@@ -64,9 +64,12 @@ experiment directory holds manifest, samples, decision, record and timeline.
 ## 4. Report
 
 One line to the human: experiment id, scores (baseline -> candidate), rule
-decision, final decision, what is deployed now. Then observe again if a
-promotion changed the profile, or hypothesize the next item from the same
-observation.
+decision, final decision, what is deployed now. Commit the experiment
+directory and `.kaizen/log.md` on `main`, then `$K/scripts/stable.sh repin`
+so STABLE_REV follows the records commit (same deployable trees, hosts
+untouched; the next `experiment.sh new` branches from it). Then observe
+again if a promotion changed the profile, or hypothesize the next item from
+the same observation.
 
 If the human says stop: finish the running script, `recover.sh` unless the
 last decision was promote, record the experiment, and report the state.

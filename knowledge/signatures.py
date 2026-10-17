@@ -9,6 +9,8 @@ Observation fields (see match.py):
   digests:  list of dicts total_s, calls, avg_ms, rows_examined, rows_sent, query
   requests: list of dicts count, method, path, status
   indexes:  list of "table.index(cols)" strings
+  endpoints: list of dicts count, sum_ms, avg_ms, max_ms, method, path, status
+             (per-endpoint latency from the dump's extra section; may be empty)
   bench_seconds: int or None
 """
 
