@@ -1,0 +1,109 @@
+{
+  "experimentId": "004-drop-reader-flock",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "004-drop-reader-flock",
+    "patternId": "coarse-file-lock",
+    "hypothesisId": "no-flock-on-reads",
+    "hypothesis": "Every read of player_score (ranking 615 req/run avg 1412 ms with 33 more timing out at 8 s; player 561 req avg 1510 ms although it does 20 indexed PK lookups; billing) takes the per-tenant flock that the CSV upload holds for its whole handler (53 req avg 2785 ms) and that admin billing takes tenant by tenant, so reads of one tenant serialize behind writes and behind each other. Since 003 the upload writes DELETE+INSERT in one SQLite transaction, so readers get a consistent view from SQLite's isolation; dropping the flock on the read paths lets rankings and player pages of a tenant run in parallel and stop waiting behind uploads.",
+    "observations": [
+      {
+        "summary": "observe-after-003 (one run): ranking 615x avg 1412ms max 12.7s plus 33x 500 avg 8028ms; player 561x avg 1510ms; upload 53x avg 2785ms; admin billing 10x avg 11.8s; code: flockByTenantID in billingReportByCompetition, playerHandler, competitionRankingHandler, competitionScoreHandler.",
+        "artifact": ".kaizen/observe-after-003.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/isuports.go",
+        "changeKind": "modify",
+        "reason": "remove flockByTenantID from billingReportByCompetition, playerHandler and competitionRankingHandler; the upload keeps its lock"
+      }
+    ],
+    "changeSummary": "The three read paths no longer take the per-tenant flock; the CSV upload still takes it (writer-writer exclusion). No query changes.",
+    "expectedEffect": "Ranking and player latency on busy tenants drops from ~1.4 s to the query cost (tens to hundreds of ms), fewer 500s, more player workers stay; the upload also stops waiting behind reader-held locks. Score up beyond the +4% band (plan item 3). Risk: a reader during an upload's commit gets SQLITE_BUSY if the driver's busy timeout is exceeded (go-sqlite3 default 5 s).",
+    "stableRevision": "a0ef6f748b259f66ba19946c753922a10a7453be",
+    "candidateRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+    "startedAt": "2026-10-17T10:28:01Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 7326 bp >= 300 bp and worst candidate 4430 > best baseline 2716",
+    "improvementBasisPoints": 7326,
+    "baselineScores": [
+      2504,
+      2641,
+      2678,
+      2716
+    ],
+    "candidateScores": [
+      4430,
+      4608,
+      4778
+    ],
+    "baselineRevisions": [
+      "a0ef6f748b259f66ba19946c753922a10a7453be"
+    ],
+    "candidateRevisions": [
+      "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3"
+    ],
+    "observedSamplesIgnored": 0,
+    "decidedAt": "2026-10-17T10:32:42Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "rule promote: median 2660 -> 4608 (+7326 bp), worst candidate 4430 > best baseline 2716. The per-tenant flock on the read paths was the lever the plan's items 1 and 2 could not reach: reads of one tenant no longer serialize behind uploads and each other.",
+  "stableBefore": "a0ef6f748b259f66ba19946c753922a10a7453be",
+  "stableAfter": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+  "candidateRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "004-drop-reader-flock",
+      "deployedRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+      "pass": true,
+      "score": 4778,
+      "errors": "none",
+      "durationSec": 89,
+      "finishedAt": "2026-10-17T10:31:09Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/004-drop-reader-flock/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate-3",
+      "experiment": "004-drop-reader-flock",
+      "deployedRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+      "pass": true,
+      "score": 4608,
+      "errors": "none",
+      "durationSec": 91,
+      "finishedAt": "2026-10-17T10:32:42Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/004-drop-reader-flock/bench-candidate-3.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "004-drop-reader-flock",
+      "deployedRevision": "f79f1dd8ffb0330b63dc2d5139f4a661cfc863e3",
+      "pass": true,
+      "score": 4430,
+      "errors": "none",
+      "durationSec": 89,
+      "finishedAt": "2026-10-17T10:29:39Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon12-practice/.kaizen/experiments/004-drop-reader-flock/bench-candidate.log",
+      "observed": false
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T10:28:10Z\tdeploy\tHEAD\t7s\tok",
+    "2026-10-17T10:29:39Z\tbench\tcandidate\t89s\tpass=true score=4430",
+    "2026-10-17T10:31:09Z\tbench\tcandidate-2\t89s\tpass=true score=4778",
+    "2026-10-17T10:32:42Z\tbench\tcandidate-3\t91s\tpass=true score=4608"
+  ],
+  "closedAt": "2026-10-17T10:32:53Z"
+}

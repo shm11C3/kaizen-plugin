@@ -43,3 +43,4 @@ tenant run in parallel.
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
+| isucon12-qualify | 004-drop-reader-flock | 2504/2641/2678/2716 | 4430/4608/4778 | +73% | 4+3 | 5 | promote | promote | - |
