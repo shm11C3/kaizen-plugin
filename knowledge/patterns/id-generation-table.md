@@ -42,3 +42,4 @@ per request) removes N MySQL round trips and the shared row lock.
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
+| isucon12-qualify | 005-inprocess-id-generation | 4430/4608/4608/4778 | 8226/8230/8493 | +79% | 4+3 | 4 | promote | promote | - |
