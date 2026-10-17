@@ -4,6 +4,11 @@
 
 ## 現行の優先事項（0.6.0とその後のmain更新）
 
+0.7.1では所有レーンの操作ロック内でimmutable refをcrossbuildするGo remote checkerを追加。
+明示include・private env map・隔離schema fixtureを使い、失敗・skip・選択0件を区別する。
+誤ref・missing include・cleanup対象限定・native失敗保持・target排他はfakeで確認し、
+実DBでの旧版再現→修正版確認は実機検証に続ける。
+
 0. **EC2並列レーンを実機で検証する（0.7.0）**。app＋benchのplan/ensure/status/stopと
    起動前状態・client tokenの保存を追加した。誤account、資源重複・公式資源、応答喪失後の
    二重作成防止、停止対象の限定はfake AWSで確認済み。実機での並列deploy/bench、

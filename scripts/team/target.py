@@ -21,7 +21,7 @@ def main():
     p.add_argument('--db', default='/srv/isucon/state/team.sqlite3')
     p.add_argument('--config', default='/srv/isucon/state/target.json')
     p.add_argument('--environment', default=OFFICIAL, type=environment_name)
-    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy'))
+    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy', 'check-remote'))
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:

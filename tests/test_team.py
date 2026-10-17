@@ -220,6 +220,20 @@ class CoordinationTests(unittest.TestCase):
         correct = subprocess.run([*base, env['token'], 'status'], capture_output=True, text=True)
         self.assertEqual(correct.returncode, 0, correct.stderr)
         self.assertTrue(marker.exists())
+        # The remote test action uses exactly the same ownership and process lock.
+        (plugin / 'scripts/check-remote.sh').write_text((plugin / 'scripts/status.sh').read_text())
+        marker.unlink()
+        wrong = subprocess.run([*base, 'old-token', 'check-remote'], capture_output=True, text=True)
+        self.assertNotEqual(wrong.returncode, 0)
+        self.assertFalse(marker.exists())
+        with Path(str(self.db) + '.operation.lock').open('a') as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            busy = subprocess.run([*base, env['token'], 'check-remote'], capture_output=True, text=True)
+            self.assertNotEqual(busy.returncode, 0)
+            self.assertFalse(marker.exists())
+        correct = subprocess.run([*base, env['token'], 'check-remote'], capture_output=True, text=True)
+        self.assertEqual(correct.returncode, 0, correct.stderr)
+        self.assertTrue(marker.exists())
 
 
 if __name__ == '__main__':

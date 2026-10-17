@@ -101,6 +101,12 @@ target操作も同じhost-configを使う。各レーンは基準版と候補を
 候補の選別結果を共有する。有望な変更は現在の公式stableへ取り込み、公式で再計測する。
 sandboxの結果だけで`task-finish ACCEPTED`にすることはできない。
 
+実DBでの再現・修復テストも、所有レーンの`target.py check-remote`で実行する。
+deploy/benchと同じ操作ロックを保持し、他の環境のappには転送しない。
+[Go実DBテスト手順](PHASES.md#実dbを使うgoテスト)に従い、隔離schemaを守るfixtureと
+明示したsource/include/envを使う。失敗した再現版と修正版の記録を両方残し、
+再現失敗を期待どおりという理由でpassedに書き換えない。
+
 `competition`の従来の占有・ロック名は互換性のため維持する。ただし機能の混在を
 避け、全メンバーと共通ホストを同じリリースに揃えてから並列機能を有効にする。
 

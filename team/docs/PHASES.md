@@ -25,6 +25,35 @@ projectにはgo.mod／Cargo.tomlのあるディレクトリを指定する。`.k
 終了0でも`needs_review`になりうる。テスト内容の十分性や公式checker合格は別途必要。
 wrapper成功にskipを隠さない。成果物は追跡対象から除外し、到達可能なartifact参照で共有する。
 
+### 実DBを使うGoテスト
+
+実DBが必要なGo fixtureは環境を占有し、`target.py check-remote`を使える。
+取得済みの完全commit SHAから`--module go`と明示した`--include`だけをexportし、
+localでCGO無効・Linux/amd64向けに`go test -c`する。モジュールとincludeは対象presetの
+`LOCAL_SYNC_PATHS`内に限定する。test binaryとincludeだけを所有app hostの
+`/var/tmp/kaizen-check.*`へ転送し、テスト後にその一時ディレクトリだけを削除する。
+アプリの配備先・サービスを変更する操作ではない。Rustや別architectureには未対応。
+
+```bash
+python3 "$K/scripts/team/target.py" --db /path/team.sqlite3 --config /path/lane-a.json \
+  --environment lane-a --agent MEMBER --token TOKEN \
+  check-remote --ref FULL_COMMIT_SHA --label regression --module go \
+  --include sql/1-schema.sql --env-file /path/test-env.private.json --test 'TestContract'
+```
+
+env-fileは環境変数名→文字列値のJSON map。値はSSH commandへ埋め込まずstdinで渡し、
+記録はkey一覧とhashだけを持つ。env-fileと出力はprivateに保持する。接続DSNやSQLパス、
+対象問題の再現手順は練習ナレッジへ置き、共通pluginに問題固有の管理接続を固定しない。
+
+**fixture自体が隔離schemaの作成・削除とcleanupを守ることが前提**。実行前に対象refを読み、
+既存アプリDBへの書込・DROP・USE切替がなく、一意な一時schemaだけを操作することを確認する。
+このwrapperはテストコードのSQL安全性を自動証明しない。必要な管理権限はtest用host内に限定する。
+
+`.kaizen/checks-remote/`へsource commit/tree、binary/include hash、Go版、時間、native exit、
+ログとcleanup結果を残す。失敗した旧版はfailedのまま保持する。test無し・binary無し・
+選択0件は成功扱いにせず、skipも別記録にする。選択したテストの成功だけで公式ベンチの
+品質・性能や、テスト範囲外の正しさまで確認できたとは扱わない。
+
 ## 変更容易性を整える
 
 同じ密結合が候補修正を妨げているなら[refactor](../../skills/refactor/SKILL.md)を使う。
