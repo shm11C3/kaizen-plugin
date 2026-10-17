@@ -49,9 +49,18 @@ indexes: it is one mechanism.
 - exp 001 (isucon12-qualify) was inconclusive for a reason outside the
   change: an unattended package upgrade restarted mysqld during a sample.
   Check the host is quiet (BENCH_PRECHECK_CMD) before trusting any sample.
+- When `/initialize` only TRUNCATEs (ISUCON13: `sql/init.sql`, the CREATE
+  TABLEs live in `initdb.d/` and never run again), put the `ALTER TABLE ...
+  ADD INDEX` behind an information_schema existence check in the script
+  initialize runs, so the second initialize does not fail on a duplicate
+  index name (isucon13/001: 13 indexes, initialize stayed ~15s).
+- The app's own queries may be invisible in the performance_schema digest
+  table (server-side prepared statements); use the slow-log digest source
+  before concluding there is no scan (isucon13 baseline dump looked clean).
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
 | isucon14 | exp-001-secondary-indexes | 681/902 | 2945/3286 | +293% | 2+2 | 6 | promote | promote | 6 indexes in sql/1-schema.sql; recorded by kaizen-isucon14/bin (pre-plugin) |
 | isucon12-qualify | 001-sqlite-player-score-index | 2018/2111 | - | - | 2+0 | 6 | reject | inconclusive | errors=3,critical=0 | candidate-2 passed at 2386 (+15.6% over the 2064.5 baseline median) but the candidate sample failed with 3 errors because unattended-upgrades replaced mysql-server 8.0.34->8.0.46 and restarted mysqld mid-run (apt history 09:14:30); the upgrade also ran at half a core during the baseline samples, so neither side is a clean measurement. Retry the same index change after the host is quiet and the baseline is retaken. candidateRevision is the records-untrack commit on top of the benchmarked bdc8527 (same code). |
+| isucon13 | 001-add-secondary-indexes | 3601/3733/3867 | 6635/6815 | +80% | 3+2 | 3 | promote | promote | リクエストタイムアウト:GET:/api/tagx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx3; リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:GET:/api/livestream/:id/reportx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1 |

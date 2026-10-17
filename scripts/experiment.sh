@@ -32,11 +32,20 @@ case "$cmd" in
     # Records stay out of git: they change on every branch and the corpus
     # (knowledge/records) is their durable copy. Only config and rules are tracked.
     [ -f "$KAIZEN_DIR/.gitignore" ] || printf '*\n!.gitignore\n!config.sh\n!preset.sh\n!RULES.md\n' > "$KAIZEN_DIR/.gitignore"
+    # Records (.kaizen/) are committed on the stable branch between
+    # experiments, so its tip may sit above STABLE_REV; branch from the tip
+    # when the application files are the same, so a promote can fast-forward.
+    base=$(git_rev "$STABLE_BRANCH") || die "no branch $STABLE_BRANCH"
+    if [ "$base" != "$stable" ]; then
+      # shellcheck disable=SC2086
+      git -C "$KAIZEN_PROJECT" diff --quiet "$stable" "$base" -- $LOCAL_SYNC_PATHS "$OVERLAY_DIR" ":(glob)$OVERLAY_DIR-*" \
+        || die "$STABLE_BRANCH ($(short "$base")) changes deployed files relative to stable $(short "$stable"); re-pin STABLE_REV (setup) or move the branch back"
+    fi
     n=$(count_matches "$KAIZEN_DIR"/experiments/*/)
     name=$(printf '%03d-%s' "$((n + 1))" "$slug")
     dir="$KAIZEN_DIR/experiments/$name"
     mkdir -p "$dir"
-    git -C "$KAIZEN_PROJECT" switch -q -c "exp/$name" "$stable"
+    git -C "$KAIZEN_PROJECT" switch -q -c "exp/$name" "$base"
     python3 - "$dir/manifest.json" "$name" "$stable" "$(now)" <<'EOF'
 import json, sys
 path, name, stable, started = sys.argv[1:]
@@ -57,7 +66,7 @@ json.dump({
 EOF
     : > "$dir/timeline.tsv"
     state_set CURRENT_EXPERIMENT "$name"
-    echo "$name opened on branch exp/$name from $(short "$stable"); fill $dir/manifest.json, commit the change, then deploy.sh and bench.sh"
+    echo "$name opened on branch exp/$name from $(short "$base"); fill $dir/manifest.json, commit the change, then deploy.sh and bench.sh"
     ;;
 
   current)
@@ -97,13 +106,17 @@ d, rev = sys.argv[1:]
 ok = [s for s in (json.load(open(p)) for p in glob.glob(f"{d}/bench-candidate*.json")) if s["pass"] and s["deployedRevision"] == rev]
 sys.exit(0 if ok else 1)
 EOF
-      git -C "$KAIZEN_PROJECT" update-ref "refs/heads/$STABLE_BRANCH" "$head" "$stable" || die "stable branch $STABLE_BRANCH moved away from $(short "$stable"); resolve by hand"
+      mainrev=$(git_rev "$STABLE_BRANCH")
+      git -C "$KAIZEN_PROJECT" merge-base --is-ancestor "$mainrev" "$head" || die "$STABLE_BRANCH ($(short "$mainrev")) is not an ancestor of the candidate; rebase the experiment branch on it and deploy again"
+      git -C "$KAIZEN_PROJECT" update-ref "refs/heads/$STABLE_BRANCH" "$head" "$mainrev" || die "stable branch $STABLE_BRANCH moved while recording; resolve by hand"
       git -C "$KAIZEN_PROJECT" switch -q "$STABLE_BRANCH"
       state_set STABLE_REV "$head"
       state_set REVERT_PENDING 0
       mkdir -p "$KAIZEN_DIR/baseline/$head"
       for f in "$EXP_DIR"/bench-candidate*.json; do
-        [ -f "$f" ] && cp "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json"
+        [ -f "$f" ] || continue
+        python3 -c 'import json,sys; sys.exit(1 if json.load(open(sys.argv[1])).get("observed") else 0)' "$f" || continue
+        cp "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json"
       done
     else
       if [ "$deployed" != "$stable" ] || [ "$(state_get REVERT_PENDING)" = 1 ]; then

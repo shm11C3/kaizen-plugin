@@ -25,7 +25,9 @@ if [ "$(state_get REVERT_PENDING)" = 1 ] && [ "$rev" != "$stable" ]; then
 fi
 if [ "$rev" != "$stable" ]; then
   [ -n "$EXP" ] || die "no open experiment; a non-stable revision deploys only inside one (experiment.sh new <slug>)"
-  swept=$(git -C "$KAIZEN_PROJECT" diff --name-only "$stable" "$rev" -- .kaizen | head -3 | tr '\n' ' ')
+  # Config, rules, the plan and the ignore file may legitimately change in a
+  # candidate; records (experiments, baseline, timeline, friction, log) may not.
+  swept=$(git -C "$KAIZEN_PROJECT" diff --name-only "$stable" "$rev" -- .kaizen ':(exclude).kaizen/.gitignore' ':(exclude).kaizen/config.sh' ':(exclude).kaizen/preset.sh' ':(exclude).kaizen/RULES.md' ':(exclude).kaizen/plan.md' | head -3 | tr '\n' ' ')
   [ -z "$swept" ] || die "the candidate commit carries loop records ($swept...); commit code only (git rm --cached them), or closing the experiment cannot switch back to $STABLE_BRANCH"
   python3 - "$EXP_DIR/manifest.json" <<'EOF' || die "fill $EXP_DIR/manifest.json (hypothesis, observations[0].artifact, expectedEffect) before deploying a candidate"
 import json, sys

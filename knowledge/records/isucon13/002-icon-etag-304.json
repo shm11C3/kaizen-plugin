@@ -1,0 +1,103 @@
+{
+  "experimentId": "002-icon-etag-304",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "002-icon-etag-304",
+    "patternId": "static-assets-via-app",
+    "hypothesisId": "icon-etag-304",
+    "hypothesis": "GET /api/user/:name/icon is 46% of all requests and every one reads the icon blob from MySQL (SELECT image FROM icons: 9182 calls, 51s before indexes) and hashes it; the benchmarker sends If-None-Match with the sha256 it already holds on most of those calls (seen with tcpdump on :8080 during a run), and every user response recomputes icon_hash from the blob. Keeping the hash per user in memory (filled on upload, on first read, cleared on /initialize) lets the icon endpoint answer 304 without touching the blob and lets fillUserResponse skip the blob read.",
+    "observations": [
+      {
+        "summary": "request table: GET /api/user/:id/icon 1650 of 3616 requests (46%); digests: SELECT image FROM icons WHERE user_id=? 9182 calls 50.9s (pre-index); tcpdump sample during load: 417 icon GETs, ~400 carrying If-None-Match with a quoted sha256",
+        "artifact": ".kaizen/observe-baseline-2.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/icon_cache.go",
+        "changeKind": "add",
+        "reason": "in-memory user id -> icon hash map, ETag matching"
+      },
+      {
+        "path": "go/user_handler.go",
+        "changeKind": "modify",
+        "reason": "getIconHandler answers 304 on If-None-Match and sets ETag; postIconHandler updates the cache; fillUserResponse reads the hash from the cache"
+      },
+      {
+        "path": "go/main.go",
+        "changeKind": "modify",
+        "reason": "initialize clears the cache"
+      }
+    ],
+    "changeSummary": "icon hash cached in memory per user; 304 Not Modified when If-None-Match names it; icon_hash in user responses from the cache instead of hashing the blob",
+    "expectedEffect": "most icon GETs become 304 with one users lookup and no blob transfer; icons blob reads drop from ~9k to the number of uploads plus misses; score up well over 3% from the freed MySQL/app time (baseline median 6725)",
+    "stableRevision": "387ae156ecee15e7070d771b1274f82177fc886a",
+    "candidateRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+    "startedAt": "2026-10-17T09:20:48Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 1953 bp >= 300 bp and worst candidate 7907 > best baseline 6815",
+    "improvementBasisPoints": 1953,
+    "baselineScores": [
+      5077,
+      6635,
+      6815
+    ],
+    "candidateScores": [
+      7907,
+      7955
+    ],
+    "baselineRevisions": [
+      "387ae156ecee15e7070d771b1274f82177fc886a"
+    ],
+    "candidateRevisions": [
+      "6731b71058c8808686d51ac107f5cc69788d1b75"
+    ],
+    "observedSamplesIgnored": 0,
+    "decidedAt": "2026-10-17T09:26:22Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "icon hash cached in memory, 304 on If-None-Match: median 6725 -> 7931 (+18%); the 5077 baseline sample was taken under the slow log before the observed flag existed",
+  "stableBefore": "387ae156ecee15e7070d771b1274f82177fc886a",
+  "stableAfter": "6731b71058c8808686d51ac107f5cc69788d1b75",
+  "candidateRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "002-icon-etag-304",
+      "deployedRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+      "pass": true,
+      "score": 7955,
+      "errors": "一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1",
+      "durationSec": 102,
+      "finishedAt": "2026-10-17T09:26:22Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/002-icon-etag-304/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "002-icon-etag-304",
+      "deployedRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+      "pass": true,
+      "score": 7907,
+      "errors": "一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx2",
+      "durationSec": 100,
+      "finishedAt": "2026-10-17T09:24:39Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/002-icon-etag-304/bench-candidate.log",
+      "observed": false
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:22:58Z\tdeploy\tHEAD\t6s\tok",
+    "2026-10-17T09:24:39Z\tbench\tcandidate\t100s\tpass=true score=7907",
+    "2026-10-17T09:26:22Z\tbench\tcandidate-2\t102s\tpass=true score=7955"
+  ],
+  "closedAt": "2026-10-17T09:26:38Z"
+}

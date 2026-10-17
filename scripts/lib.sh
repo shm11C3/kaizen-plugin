@@ -34,7 +34,7 @@ LOCK_DIR="$KAIZEN_DIR/bench.lock"
 # what broke on real hosts into plugin fixes without anyone taking notes.
 friction_log() { # <kind> <message> [<command>]
   [ -d "${KAIZEN_DIR:-}" ] || return 0
-  python3 - "$KAIZEN_DIR/friction.jsonl" "$1" "$(basename "${BASH_SOURCE[$((${#BASH_SOURCE[@]} - 1))]:-$0}")" "${EXP:-}" "$2" "${3:-}" "$(now)" <<'PY' 2>/dev/null || true
+  python3 - "$KAIZEN_DIR/friction.jsonl" "$1" "$(basename "${BASH_SOURCE[$((${#BASH_SOURCE[@]} - 1))]:-$0}")" "${EXP:-}" "$2" "$(printf '%s' "${3:-}" | head -c 200)" "$(now)" <<'PY' 2>/dev/null || true
 import json, sys
 path, kind, script, exp, message, command, ts = sys.argv[1:]
 with open(path, "a") as f:

@@ -33,4 +33,4 @@ the map; the rare write paths update both the table and the map.
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
 |---|---|---|---|---|---|---|---|---|---|
-
+| isucon13 | 003-tags-in-memory | 7907/7955 | 9109 | +15% | 2+1 | 4 | promote | promote | リクエストタイムアウト:GET:/api/user/:name/iconx1,リクエストタイムアウト:GET:/api/user/:name/statisticsx3,リクエストタイムアウト:POST:/api/livestream/:id/livecommentx1,リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx4; リクエストタイムアウト:POST:/api/livestream/:id/livecomment/:id/reportx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1 |

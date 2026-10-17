@@ -1,0 +1,106 @@
+{
+  "experimentId": "003-tags-in-memory",
+  "manifest": {
+    "schemaVersion": "v1",
+    "experimentId": "003-tags-in-memory",
+    "patternId": "small-table-repeated-read",
+    "hypothesisId": "tags-in-memory",
+    "hypothesis": "tags is master data loaded by /initialize and never written by a handler, yet fillLivestreamResponse selects each tag by id per livestream tag (tens of thousands of SELECTs per run) and GET /api/tag scans the table in a transaction; serving tags from a process-local map loaded lazily after /initialize removes those queries with no response change.",
+    "observations": [
+      {
+        "summary": "observe dump after exp 002: SELECT * FROM tags WHERE id = ? among the most called statements; tags table is small and static",
+        "artifact": ".kaizen/experiments/002-icon-etag-304/observe-candidate.txt"
+      }
+    ],
+    "allowedChanges": [
+      {
+        "path": "go/tag_cache.go",
+        "changeKind": "add",
+        "reason": "in-memory tag list/byId/byName, reset on initialize"
+      },
+      {
+        "path": "go/top_handler.go",
+        "changeKind": "modify",
+        "reason": "GET /api/tag reads the cache"
+      },
+      {
+        "path": "go/livestream_handler.go",
+        "changeKind": "modify",
+        "reason": "tag lookups by id and name read the cache"
+      },
+      {
+        "path": "go/main.go",
+        "changeKind": "modify",
+        "reason": "resetTagCache() in /initialize"
+      }
+    ],
+    "changeSummary": "tags served from memory (loaded lazily after /initialize); handlers stop querying tags",
+    "expectedEffect": "per-livestream tag SELECTs disappear; small score gain unless livestream responses are on the tip path",
+    "stableRevision": "6731b71058c8808686d51ac107f5cc69788d1b75",
+    "candidateRevision": "ebb38249b81d5b19d6cece46965431448d673ec2",
+    "startedAt": "2026-10-17T09:27:00Z"
+  },
+  "ruleDecision": {
+    "ruleVersion": "plugin-rule-v1",
+    "minimumImprovementBasisPoints": 300,
+    "decision": "promote",
+    "reason": "median improved 1485 bp >= 300 bp and worst candidate 9109 > best baseline 7955",
+    "improvementBasisPoints": 1485,
+    "baselineScores": [
+      7907,
+      7955
+    ],
+    "candidateScores": [
+      9109
+    ],
+    "baselineRevisions": [
+      "6731b71058c8808686d51ac107f5cc69788d1b75"
+    ],
+    "candidateRevisions": [
+      "ebb38249b81d5b19d6cece46965431448d673ec2"
+    ],
+    "observedSamplesIgnored": 1,
+    "decidedAt": "2026-10-17T09:34:28Z"
+  },
+  "finalDecision": "promote",
+  "override": null,
+  "reason": "rule decision as evaluated (taken over from the subagent)",
+  "stableBefore": "6731b71058c8808686d51ac107f5cc69788d1b75",
+  "stableAfter": "ebb38249b81d5b19d6cece46965431448d673ec2",
+  "candidateRevision": "ebb38249b81d5b19d6cece46965431448d673ec2",
+  "samples": [
+    {
+      "label": "candidate-2",
+      "experiment": "003-tags-in-memory",
+      "deployedRevision": "ebb38249b81d5b19d6cece46965431448d673ec2",
+      "pass": true,
+      "score": 9109,
+      "errors": "リクエストタイムアウト:GET:/api/user/:name/iconx1,リクエストタイムアウト:GET:/api/user/:name/statisticsx3,リクエストタイムアウト:POST:/api/livestream/:id/livecommentx1,リクエストタイムアウト:POST:/api/livestream/reservationx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx4",
+      "durationSec": 106,
+      "finishedAt": "2026-10-17T09:34:28Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/003-tags-in-memory/bench-candidate-2.log",
+      "observed": false
+    },
+    {
+      "label": "candidate",
+      "experiment": "003-tags-in-memory",
+      "deployedRevision": "ebb38249b81d5b19d6cece46965431448d673ec2",
+      "pass": true,
+      "score": 9067,
+      "errors": "リクエストタイムアウト:POST:/api/livestream/:id/livecomment/:id/reportx1,一般エラー:POST:/api/iconx1,一般エラー:POST:/api/livestream/:id/livecomment/:id/reportx1",
+      "durationSec": 103,
+      "finishedAt": "2026-10-17T09:32:32Z",
+      "mode": "ssh",
+      "log": "/Users/shm11c3/Develop/ISUCON/isucon13-practice/.kaizen/experiments/003-tags-in-memory/bench-candidate.log",
+      "observed": true
+    }
+  ],
+  "recovery": "not-needed",
+  "timeline": [
+    "2026-10-17T09:30:47Z\tdeploy\tHEAD\t21s\tok",
+    "2026-10-17T09:32:32Z\tbench\tcandidate\t103s\tpass=true score=9067",
+    "2026-10-17T09:34:28Z\tbench\tcandidate-2\t106s\tpass=true score=9109"
+  ],
+  "closedAt": "2026-10-17T09:34:29Z"
+}

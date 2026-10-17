@@ -157,6 +157,11 @@ grep -q "| test | 001-flush-log |" "$T/knowledge/patterns/fsync-on-commit.md" ||
 grep -q "001-flush-log" "$T/knowledge/problems/test.md" || fail "problem log row"
 "$S/knowledge.sh" ingest .kaizen/experiments/001-flush-log | grep -q "already ingested" || fail "ingest is idempotent"
 
+# Records are committed on main between experiments; the next promote must still fast-forward.
+printf '.kaizen/bench.lock\n.kaizen/state.env\n.kaizen/friction.jsonl\n' > .gitignore
+git add .gitignore .kaizen && git commit -qm "records: experiment 1"
+[ "$(git rev-parse main)" != "$(state STABLE_REV)" ] || fail "test setup: main should be ahead of stable"
+
 echo "== experiment 2: correctness failure, recovery, reject"
 "$S/experiment.sh" new break-it >/dev/null
 echo fail > go/score
@@ -209,6 +214,9 @@ EOF
 expect_fail "$S/bench.sh" baseline-3                   # needs --result
 "$S/bench.sh" baseline-3 --result 'pass=true score=2100 errors=none' --seconds 65 >/dev/null
 python3 -c 'import json,glob; s=[json.load(open(p)) for p in glob.glob(".kaizen/baseline/*/bench-*baseline-3.json")]; assert s and s[0]["score"]==2100 and s[0]["mode"]=="manual"' || fail "manual sample"
+"$S/bench.sh" baseline --result 'pass=true score=2050 errors=none' >/dev/null   # a label used before the promotion is fine again
+[ "$(ls .kaizen/baseline/"$(state STABLE_REV)"/bench-*-baseline.json | wc -l | tr -d ' ')" = 1 ] || fail "stable baseline sample filed under the new stable"
+[ ! -e .kaizen/bench-baseline.json ] || fail "no top-level sample file outside an experiment"
 
 echo "== hook guard"
 G="$PLUGIN/hooks/guard.py"
@@ -243,6 +251,10 @@ hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop",
 "$S/bench.sh" candidate --result 'pass=true score=2600 errors=none' >/dev/null
 "$S/evaluate.sh" >/dev/null
 "$S/experiment.sh" record "stop check" >/dev/null
+[ "$(python3 -c 'import json; print(json.load(open(".kaizen/experiments/004-stop-check/record.json"))["finalDecision"])')" = promote ] || fail "exp 4 should promote"
+[ "$(git rev-parse main)" = "$(state STABLE_REV)" ] || fail "promote fast-forwarded main past the records commit"
+git merge-base --is-ancestor "$(git rev-parse exp/001-flush-log)" main || fail "promoted main keeps the earlier history"
+git log --format=%s main | grep "records: experiment 1" >/dev/null || fail "promoted main keeps the records commit"   # no -q: pipefail + SIGPIPE
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop should be silent when clean"
 hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"SessionStart","cwd":sys.argv[1]}))' "$P")" | grep -q additionalContext || fail "SessionStart context"
 
@@ -304,6 +316,34 @@ printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0"
 dump=$("$S/observe.sh" dump test)
 grep -q "extra-evidence-line" "$dump" || fail "OBSERVE_EXTRA_CMD output appended to the dump"
 grep -q '/api/x/:id' "$dump" || fail "ids normalized in the request section"
+echo "== observed samples are evidence, not measurements"
+"$S/experiment.sh" new observed >/dev/null
+echo 3000 > go/score; git commit -qam "candidate: observed"
+python3 - <<'EOF'
+import json
+p = ".kaizen/experiments/005-observed/manifest.json"
+m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observations=[{"summary": "s", "artifact": "a"}]); json.dump(m, open(p, "w"))
+EOF
+"$S/deploy.sh" HEAD >/dev/null
+printf 'OBSERVE_SLOWLOG=1\n' >> .kaizen/state.env          # what observe.sh reset does in slowlog mode
+"$S/bench.sh" candidate --result 'pass=true score=9000 errors=none' | grep -q "observed under the slow log" || fail "observed sample announced"
+printf 'OBSERVE_SLOWLOG=0\n' >> .kaizen/state.env
+"$S/evaluate.sh" | grep -q '"inconclusive"' || fail "an observed-only candidate cannot decide"
+"$S/evaluate.sh" | grep -q "1 observed under the slow log were left out" || fail "reason names the ignored sample"
+"$S/bench.sh" candidate-2 --result 'pass=true score=2700 errors=none' >/dev/null
+"$S/evaluate.sh" | grep -q '"promote"' || fail "measured sample decides"
+"$S/experiment.sh" record "observed check" >/dev/null
+ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "candidate-2-reseed" || fail "measured candidate reseeded"
+ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "bench-candidate-reseed" && fail "observed candidate must not reseed the baseline"
+
+echo "== observe: slow-log digest aggregator"
+out=$(python3 "$PLUGIN/scripts/slowlog_digest.py" "$PLUGIN/tests/fixtures/mysql-slow.log")
+printf '%s\n' "$out" | grep -q $'^0.00\t2\t0.60\t2000\t2\tSELECT \* FROM users WHERE name = ?$' || fail "slow-log rows aggregated by normalized text"
+printf '%s\n' "$out" | grep -q 'VALUES (...) /\* , ... \*/' || fail "multi-row insert collapsed like a performance_schema digest"
+printf '%s\n' "$out" | grep -q 'tag_id IN (...)' || fail "IN list collapsed"
+printf '%s\n' "$out" | grep -qv 'SET timestamp' || fail "SET timestamp lines dropped"
+printf '# observation: t\n\n## MySQL statement digests by total time (slow log)\n%s\n\n## requests by method, path\n900 GET /api/user/:id/icon 200\n\n## secondary indexes present\nusers.PRIMARY(id)\n' "$out" > "$T/observe-slow.txt"
+"$S/knowledge.sh" match "$T/observe-slow.txt" | grep -q "observation: 5 digests, 1 request rows" || fail "matcher parses a slow-log dump"
 
 echo "== status"
 "$S/status.sh" >/dev/null
