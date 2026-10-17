@@ -12,6 +12,7 @@ import tempfile
 
 from team import connect, operation_lock, reservation
 from environments import OFFICIAL, environment_name, state_path, validate_target
+from record_proof import sync_proof
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
     p.add_argument('--db', default='/srv/isucon/state/team.sqlite3')
     p.add_argument('--config', default='/srv/isucon/state/target.json')
     p.add_argument('--environment', default=OFFICIAL, type=environment_name)
-    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy', 'check-remote'))
+    p.add_argument('action', choices=('deploy', 'bench', 'observe', 'verify', 'evaluate', 'experiment', 'recover', 'stable', 'status', 'strategy', 'check-remote', 'stable-sync'))
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:
@@ -42,6 +43,23 @@ def main():
             environment = dict(os.environ, KAIZEN_PROJECT=str(project),
                                KAIZEN_TEAM_MODE='1',
                                KAIZEN_PLUGIN_ROOT=str(Path(config['plugin_root']).resolve()))
+            if args.action == 'stable-sync':
+                if args.environment == OFFICIAL:
+                    raise ValueError('stable-sync is restricted to a registered sandbox')
+                sync = argparse.ArgumentParser(prog='target stable-sync')
+                choice = sync.add_mutually_exclusive_group(required=True)
+                choice.add_argument('--record')
+                choice.add_argument('--rollback', action='store_true')
+                selected = sync.parse_args(args.arguments)
+                environment['KAIZEN_SANDBOX_SYNC'] = '1'
+                if selected.record:
+                    with operation_lock(args.db, OFFICIAL):
+                        with contextlib.closing(connect(args.db)) as db:
+                            official = db.execute('SELECT project FROM environments WHERE name=?', (OFFICIAL,)).fetchone()
+                            if not official:
+                                raise ValueError('register competition before syncing a sandbox')
+                            proof = sync_proof(official['project'], selected.record, project)
+                    environment['KAIZEN_SYNC_PROOF'] = json.dumps(proof)
             environment['KAIZEN_KNOWLEDGE_DIR'] = str(Path(config.get(
                 'knowledge_dir', str(Path(config['plugin_root']) / 'knowledge'))).resolve())
             if config.get('knowledge_dir'):

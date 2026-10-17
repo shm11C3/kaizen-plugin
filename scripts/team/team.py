@@ -14,6 +14,7 @@ import sys
 import uuid
 
 from environments import OFFICIAL, environment_name, register, schema, state_path
+from record_proof import promoted_record
 
 
 def now():
@@ -105,6 +106,7 @@ def resolve_quality_holds(db, args, row):
     record_bytes = record_path.read_bytes()
     record = json.loads(record_bytes)
     rule = record.get('ruleDecision', {})
+    promoted_record(record, args.tested_sha)
     try:
         closed = datetime.datetime.fromisoformat(record['closedAt'].replace('Z', '+00:00'))
         submitted = max(datetime.datetime.fromisoformat(h['repair_submitted_at']) for h in holds)

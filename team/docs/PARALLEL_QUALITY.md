@@ -101,6 +101,47 @@ target操作も同じhost-configを使う。各レーンは基準版と候補を
 候補の選別結果を共有する。有望な変更は現在の公式stableへ取り込み、公式で再計測する。
 sandboxの結果だけで`task-finish ACCEPTED`にすることはできない。
 
+### 公式の採用が進んだらsandbox stableを同期する
+
+初期stableを残したまま候補を比較すると、公式で採用済みの改善を含まない古い条件になる。
+`initialize`の再実行や、内容が異なるSHAへの`repin`、stateの直接編集、架空のpromoteで
+追い付かせない。sandboxの実験を閉じて復旧し、所有権を取得した操作ロック内で同期する。
+先に対象projectへ公式stableのGit objectをfetchする。workerのcloneは操作しない。
+
+```bash
+python3 "$K/scripts/team/target.py" --db /path/team.sqlite3 --config /path/lane-a.json \
+  --environment lane-a --agent MEMBER --token TOKEN \
+  stable-sync --record /path/competition/.kaizen/experiments/NNN-adoption/record.json
+# 成功後は同じ所有環境で、新しいbaselineを取得する。
+```
+
+受理する根拠は、共通台帳へ登録済みのcompetition project内の実promote記録だけ。
+record・manifest・decision・実sampleの内容、品質pass、candidate/stable SHA、比較bundleと
+source objectを読み取り照合する。評価器の再実行や公式側の変更はしない。
+公式の操作ロックは証拠の読取時だけ取得し、sandboxへのdeploy中には保持しない。
+公式stableが記録後のmetadata commitへ進んだ場合も、配備対象treeの一致を確認する。
+別の改善が含まれる場合は、その新しい採用記録を指定する。
+
+同期先のmainはfast-forwardだけ。sandbox独自のstableと分岐した場合は拒否するため、
+未統合候補を別branchへ保持した上で、内容と依存を調整する。新しい公式SHAの配備・
+設定したresource初期化・bundle再capture・復旧drill・ファイルとhealthの確認が完了してから
+mainを確定する。旧stable/bundleと公式記録のdigest、段階、時間、復旧ログは
+`.kaizen/stable-syncs/`へ残す。これはsandbox独自の採用件数には数えない。
+
+旧・同期先SHAの既存baselineはretireし、公式や他レーンのsampleを基準値へコピーしない。
+同期したレーンで新baselineを取ってから候補を比較する。
+同一SHAですでにhealthyなstableなら、bundle・ファイル・healthを確認するだけでbaselineを保持する。
+resource初期化は行わず、`verified-unchanged`の履歴を残す。
+
+失敗時は旧bundleと旧stableで自動復旧する。復旧を確認できなければpendingを保持し、
+bench/deploy/新実験等を拒否する。履歴とrollback.logを調べ、原因を解消してから次を実行する。
+stateやpendingファイルを手で消して先へ進めない。自動復旧後もretireしたbaselineは再利用しない。
+
+```bash
+python3 "$K/scripts/team/target.py" --db /path/team.sqlite3 --config /path/lane-a.json \
+  --environment lane-a --agent MEMBER --token TOKEN stable-sync --rollback
+```
+
 実DBでの再現・修復テストも、所有レーンの`target.py check-remote`で実行する。
 deploy/benchと同じ操作ロックを保持し、他の環境のappには転送しない。
 [Go実DBテスト手順](PHASES.md#実dbを使うgoテスト)に従い、隔離schemaを守るfixtureと

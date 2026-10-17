@@ -91,6 +91,9 @@ load_config() {
   mkdir -p "$KAIZEN_DIR/baseline" "$KAIZEN_DIR/experiments"
   EXP=$(state_get CURRENT_EXPERIMENT)
   if [ -n "$EXP" ]; then EXP_DIR="$KAIZEN_DIR/experiments/$EXP"; else EXP_DIR="$KAIZEN_DIR"; fi
+  if [ -f "$KAIZEN_DIR/stable-sync-pending.json" ] && [ "${KAIZEN_SYNC_ACTIVE:-0}" != 1 ]; then
+    die "sandbox stable sync is pending; use owned target stable-sync --rollback before other operations"
+  fi
 }
 
 state_get() {

@@ -20,6 +20,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
 - [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
 - [共通台帳での並列検証と品質保留の修正・再計測](team/docs/PARALLEL_QUALITY.md)
+- sandbox stableの追従は上記の`target.py stable-sync`で公式採用記録へ束縛し、レーン内で新baselineを取ります。
 - [EC2並列レーンの設定例](team/templates/ec2-lanes.example.json)（`scripts/team/ec2_lanes.py`で準備・状態確認・停止）
 - [繰り返し作業の改善](team/docs/WORKFLOW.md)と[improve-workflowスキル](skills/improve-workflow/SKILL.md)
 

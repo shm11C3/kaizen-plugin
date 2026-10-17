@@ -28,6 +28,11 @@ Prepare or stop sandbox EC2 lanes with `scripts/team/ec2_lanes.py` and
 state and the shared team ledger; exclude official/control resource IDs.
 Provisioning does not replace environment registration, target.py reservations,
 deployment scripts, recovery drills or lane-specific baseline measurements.
+To advance an idle sandbox to an adopted competition revision, use the owned
+`target.py stable-sync --record <official experiment record.json>` action.
+Never fake a sandbox promotion or edit stable state to import official code.
+If synchronization remains pending, use its owned `--rollback` action before
+other target operations. New source requires a new sandbox baseline.
 
 For a shared competition, start with `skills/team/SKILL.md` and follow
 `team/POLICY.md` and `team/docs/DISCORD.md`. Each member uses an independent

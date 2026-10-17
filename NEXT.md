@@ -4,6 +4,10 @@
 
 ## 現行の優先事項（0.6.0とその後のmain更新）
 
+0.7.2では公式の実promote記録に束縛したsandbox stable同期を追加。別環境のsampleを
+転用せずbaselineをretireし、同期後の新baselineを必須にする。FF制限、失敗時の旧stable
+復旧、復旧不能時のpendingと他操作拒否をfake remoteで検証する。実機は境界で更新後に確認する。
+
 0.7.1では所有レーンの操作ロック内でimmutable refをcrossbuildするGo remote checkerを追加。
 明示include・private env map・隔離schema fixtureを使い、失敗・skip・選択0件を区別する。
 誤ref・missing include・cleanup対象限定・native失敗保持・target排他はfakeで確認し、
