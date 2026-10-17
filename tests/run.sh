@@ -249,6 +249,26 @@ export KAIZEN_RETRO_LOG="$T/retro/log.md"; mkdir -p "$T/retro"
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent after resolve"
 grep -q "test: expected guards" "$KAIZEN_RETRO_LOG" || fail "retro log row"
 
+echo "== observed samples are evidence, not measurements"
+"$S/experiment.sh" new observed >/dev/null
+echo 3000 > go/score; git commit -qam "candidate: observed"
+python3 - <<'EOF'
+import json
+p = ".kaizen/experiments/005-observed/manifest.json"
+m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observations=[{"summary": "s", "artifact": "a"}]); json.dump(m, open(p, "w"))
+EOF
+"$S/deploy.sh" HEAD >/dev/null
+printf 'OBSERVE_SLOWLOG=1\n' >> .kaizen/state.env          # what observe.sh reset does in slowlog mode
+"$S/bench.sh" candidate --result 'pass=true score=9000 errors=none' | grep -q "observed under the slow log" || fail "observed sample announced"
+printf 'OBSERVE_SLOWLOG=0\n' >> .kaizen/state.env
+"$S/evaluate.sh" | grep -q '"inconclusive"' || fail "an observed-only candidate cannot decide"
+"$S/evaluate.sh" | grep -q "1 observed under the slow log were left out" || fail "reason names the ignored sample"
+"$S/bench.sh" candidate-2 --result 'pass=true score=2700 errors=none' >/dev/null
+"$S/evaluate.sh" | grep -q '"promote"' || fail "measured sample decides"
+"$S/experiment.sh" record "observed check" >/dev/null
+ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "candidate-2-reseed" || fail "measured candidate reseeded"
+ls .kaizen/baseline/"$(state STABLE_REV)"/ | grep -q "bench-candidate-reseed" && fail "observed candidate must not reseed the baseline"
+
 echo "== observe: slow-log digest aggregator"
 out=$(python3 "$PLUGIN/scripts/slowlog_digest.py" "$PLUGIN/tests/fixtures/mysql-slow.log")
 printf '%s\n' "$out" | grep -q $'^0.00\t2\t0.60\t2000\t2\tSELECT \* FROM users WHERE name = ?$' || fail "slow-log rows aggregated by normalized text"

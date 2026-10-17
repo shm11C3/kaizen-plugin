@@ -102,13 +102,18 @@ else
   read -r pass score errors <<<"$result"
 fi
 [ "$pass" = true ] && passed=true || passed=false
+# A sample taken while observe.sh has the slow log on carries the logging
+# cost; it is kept as evidence but evaluate.sh leaves it out of the rule.
+observed=$(state_get OBSERVE_SLOWLOG)
+[ "$observed" = 1 ] || observed=0
 
-python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-none}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" <<'EOF'
+python3 - "$out" "$label" "$deployed" "$EXP" "$passed" "$score" "${errors:-none}" "$secs" "$logfile" "$(now)" "$BENCH_MODE" "$observed" <<'EOF'
 import json, sys
-out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode = sys.argv[1:]
+out, label, rev, exp, passed, score, errors, secs, logfile, finished, mode, observed = sys.argv[1:]
 json.dump({"label": label, "experiment": exp or None, "deployedRevision": rev,
            "pass": passed == "true", "score": int(score), "errors": errors,
-           "durationSec": int(secs), "finishedAt": finished, "mode": mode, "log": logfile},
+           "durationSec": int(secs), "finishedAt": finished, "mode": mode, "log": logfile,
+           "observed": observed == "1"},
           open(out, "w"), indent=2, ensure_ascii=False)
 EOF
 record_step bench "$label" "$secs" "pass=$passed score=$score"
@@ -124,7 +129,7 @@ case "$label" in baseline*)
   ;;
 esac
 
-echo "$label: pass=$passed score=$score errors=${errors:-none} (${secs}s on $(short "$deployed"))"
+echo "$label: pass=$passed score=$score errors=${errors:-none} (${secs}s on $(short "$deployed"))$([ "$observed" = 1 ] && echo ' [observed under the slow log; not used by the rule]')"
 if [ "$passed" != true ]; then
   if [ "$deployed" != "$stable" ]; then
     state_set REVERT_PENDING 1

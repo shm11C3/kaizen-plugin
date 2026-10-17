@@ -35,6 +35,10 @@ def load(paths):
 baseline = load(args[:split])
 candidate = load(args[split + 1:])
 baseline = [s for s in baseline if s.get("deployedRevision") == stable]
+# Samples taken under observe.sh's slow log carry the logging cost: evidence, not a measurement.
+observed = sum(1 for s in baseline + candidate if s.get("observed"))
+baseline = [s for s in baseline if not s.get("observed")]
+candidate = [s for s in candidate if not s.get("observed")]
 
 def passed(samples):
     return all(s.get("pass") for s in samples)
@@ -44,7 +48,8 @@ def scores(samples):
 
 bp = None
 if not baseline or not candidate:
-    decision, reason = "inconclusive", f"need at least one baseline sample of stable {stable[:7]} and one candidate sample"
+    decision, reason = "inconclusive", (f"need at least one baseline sample of stable {stable[:7]} and one candidate sample"
+                                        + (f" ({observed} observed under the slow log were left out)" if observed else ""))
 elif not passed(baseline):
     decision, reason = "inconclusive", "a baseline sample did not pass; no comparison basis"
 elif not passed(candidate):
@@ -72,6 +77,7 @@ out = {
     "candidateScores": scores(candidate) if candidate and passed(candidate) else None,
     "baselineRevisions": sorted({s.get("deployedRevision") for s in baseline}),
     "candidateRevisions": sorted({s.get("deployedRevision") for s in candidate}),
+    "observedSamplesIgnored": observed,
     "decidedAt": decided,
 }
 json.dump(out, open(out_path, "w"), indent=2, ensure_ascii=False)

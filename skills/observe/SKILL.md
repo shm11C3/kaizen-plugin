@@ -34,9 +34,11 @@ the app is running its queries as server-side prepared statements, which
 performance_schema does not digest (the dump prints the
 statement/com/Execute count as a hint). Set `MYSQL_DIGEST_SOURCE=slowlog`
 in the preset: reset turns the slow log on at `long_query_time=0`, dump
-aggregates it (`scripts/slowlog_digest.py`) and turns it off. The sample
-taken under the slow log runs a little slower; take the baseline that
-later comparisons use after the dump.
+aggregates it (`scripts/slowlog_digest.py`) and turns it off. Logging every
+statement costs score (about a quarter on isucon13 once the scans were
+gone), so the sample taken between reset and dump is marked `observed`
+and evaluate.sh leaves it out; it still needs a passing run. Take the
+samples the rule uses after the dump.
 
 When the dump is thin, extend it instead of guessing: `OBSERVE_EXTRA_CMD`
 in config.sh runs one more command on the nginx host (alp with a route

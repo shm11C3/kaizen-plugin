@@ -32,6 +32,9 @@ case "${1:-}" in
       slowlog=$(remote "$DB_HOST" "$MYSQL_CMD -N -e 'SELECT @@slow_query_log_file'")
       # mysqld creates the file (as the mysql user) when logging turns on; truncate after that.
       remote "$DB_HOST" "$MYSQL_CMD -e \"SET GLOBAL log_output='FILE'; SET GLOBAL long_query_time=0; SET GLOBAL slow_query_log=1\"; sudo truncate -s0 $slowlog"
+      # Logging every statement costs score (a quarter on a query-heavy app);
+      # bench.sh marks samples taken now as observed and the rule skips them.
+      state_set OBSERVE_SLOWLOG 1
     fi
     remote "$NGINX_HOST" "sudo truncate -s0 $ACCESS_LOG"
     echo "observation counters reset (db: $DB_HOST, nginx: $NGINX_HOST, digests: $MYSQL_DIGEST_SOURCE)"
@@ -46,6 +49,7 @@ case "${1:-}" in
       if [ "$MYSQL_DIGEST_SOURCE" = slowlog ]; then
         slowlog=$(remote "$DB_HOST" "$MYSQL_CMD -N -e 'SELECT @@slow_query_log_file'")
         remote "$DB_HOST" "$MYSQL_CMD -e 'SET GLOBAL slow_query_log=0'"
+        state_set OBSERVE_SLOWLOG 0
         echo "## MySQL statement digests by total time (slow log with long_query_time=0 on $DB_HOST, every schema, since last reset)"
         remote "$DB_HOST" "sudo python3 - $slowlog" < "$KAIZEN_PLUGIN_ROOT/scripts/slowlog_digest.py"
         remote "$DB_HOST" "sudo truncate -s0 $slowlog" || true

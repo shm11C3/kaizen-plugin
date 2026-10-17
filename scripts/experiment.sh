@@ -111,7 +111,9 @@ EOF
       state_set REVERT_PENDING 0
       mkdir -p "$KAIZEN_DIR/baseline/$head"
       for f in "$EXP_DIR"/bench-candidate*.json; do
-        [ -f "$f" ] && cp "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json"
+        [ -f "$f" ] || continue
+        python3 -c 'import json,sys; sys.exit(1 if json.load(open(sys.argv[1])).get("observed") else 0)' "$f" || continue
+        cp "$f" "$KAIZEN_DIR/baseline/$head/$(basename "$f" .json)-reseed.json"
       done
     else
       if [ "$deployed" != "$stable" ] || [ "$(state_get REVERT_PENDING)" = 1 ]; then
