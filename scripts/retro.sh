@@ -66,6 +66,7 @@ PY
       esac
     done
     [ ${#ids[@]} -gt 0 ] && [ -n "$fix" ] || die "retro.sh resolve <id>... --fix <commit-or-note>"
+    load_config 2>/dev/null || true          # PROBLEM may come from the preset, not config.sh itself
     mkdir -p "$(dirname "$RETRO_LOG")"
     [ -f "$RETRO_LOG" ] || printf '# retro log\n\nWhat real targets taught the plugin, one row per resolved friction group.\n\n| when | problem | script | message | fix |\n|---|---|---|---|---|\n' > "$RETRO_LOG"
     python3 - "$FRICTION" "$RETRO_LOG" "$fix" "$(now)" "${PROBLEM:-$(sed -n 's/^PROBLEM=//p' "$KAIZEN_DIR/config.sh" 2>/dev/null | head -1)}" "${ids[@]}" <<'PY'
