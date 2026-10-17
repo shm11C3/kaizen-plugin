@@ -139,6 +139,10 @@ contains source and minimal bootstrap files, not these rules or management tools
 - Automatically adopt ordinary, bounded, reversible improvements only when
   correctness passes, measurement conditions are comparable, performance passes
   the configured evaluator, and no human-decision condition applies.
+- Small, localized correctness repairs, including row locking scoped to affected
+  records, can be ordinary improvements when recovery and measured quality and
+  performance are verified. A minor implementation tradeoff alone does not
+  require human judgment; assess whether its impact materially affects adoption.
 - Request human judgment for ambiguous adoption, broad changes with material
   risk, significant tradeoffs, or competing designs that affect architecture or
   strategy. Routine implementation details remain autonomous.

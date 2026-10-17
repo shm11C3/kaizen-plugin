@@ -75,6 +75,9 @@ The integrator reruns relevant checks when integration changes the tested source
 ## Decisions and interruption
 
 Ordinary measured, correct, reversible improvements may be adopted autonomously.
+Localized correctness repairs, including bounded row locking, do not require
+human judgment merely because they introduce a minor implementation tradeoff;
+use the material-impact threshold in `../../team/POLICY.md`.
 Escalate ambiguous adoption, broad risky changes, significant tradeoffs, or
 competing architectural/strategic options with evidence and a recommendation.
 Do safe comparison work first; ask before the risky shared action itself.
