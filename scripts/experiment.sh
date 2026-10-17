@@ -146,6 +146,10 @@ EOF
     "$KAIZEN_PLUGIN_ROOT/scripts/knowledge.sh" ingest "$EXP_DIR" || log "knowledge ingest failed; run knowledge.sh ingest $EXP_DIR later"
     echo "$EXP closed: rule=$rule final=$final; stable is $(short "$(state_get STABLE_REV)"), deployed $(short "$(state_get DEPLOYED_REV)")"
     "$KAIZEN_PLUGIN_ROOT/scripts/retro.sh" count
+    if [ -f "$KAIZEN_DIR/plan.md" ]; then
+      if [ "$final" = promote ]; then hint="observe again and knowledge.sh plan"; else hint="mark the item, adjust the order"; fi
+      echo "plan: update .kaizen/plan.md ($final: $hint)"
+    fi
     ;;
 
   *) die "usage: experiment.sh new <slug> | record [--override <decision>] <reason> | current" ;;

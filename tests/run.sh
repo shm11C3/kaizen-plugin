@@ -237,6 +237,18 @@ export KAIZEN_RETRO_LOG="$T/retro/log.md"; mkdir -p "$T/retro"
 [ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent after resolve"
 grep -q "test: expected guards" "$KAIZEN_RETRO_LOG" || fail "retro log row"
 
+echo "== plan: ranked candidates, stop hook asks for an update"
+"$S/knowledge.sh" plan "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" | grep -q "candidates ranked" || fail "plan written"
+grep -q "| 1 | " .kaizen/plan.md || fail "plan has a ranked row"
+grep -q "elapsed" .kaizen/plan.md || fail "plan shows the time budget"
+echo "- keep me" >> .kaizen/plan.md
+"$S/knowledge.sh" plan "$PLUGIN/tests/fixtures/observe-isucon14-initial.txt" >/dev/null
+grep -q "keep me" .kaizen/plan.md || fail "notes preserved on regenerate"
+touch -t 200001010000 .kaizen/plan.md
+hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")" | grep -q "plan.md" || fail "Stop asks for a plan update after a record"
+touch .kaizen/plan.md
+[ -z "$(hook "$(python3 -c 'import json,sys; print(json.dumps({"hook_event_name":"Stop","cwd":sys.argv[1],"stop_hook_active":False}))' "$P")")" ] || fail "Stop silent once the plan is newer"
+
 echo "== status"
 "$S/status.sh" >/dev/null
 echo "all tests passed"

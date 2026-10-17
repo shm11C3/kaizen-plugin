@@ -12,6 +12,11 @@ One experiment tests one mechanism. "Add indexes" is one hypothesis;
 "add indexes and cache the user lookup" is two experiments, because a score
 change could not be attributed to either.
 
+## Plan first
+
+If `.kaizen/plan.md` exists, take the top item not yet done and keep its
+reason; if it does not exist, run the plan skill before hypothesizing.
+
 ## Match
 
 ```bash

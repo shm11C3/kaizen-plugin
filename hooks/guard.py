@@ -140,6 +140,11 @@ def stop(event: dict, project: Path | None) -> None:
         if list(exp_dir.glob("bench-*.json")) and not (exp_dir / "record.json").is_file():
             reasons.append(f"experiment {exp} has samples but no recorded decision: scripts/evaluate.sh then "
                            "scripts/experiment.sh record <reason>")
+    plan = project / ".kaizen" / "plan.md"
+    records = sorted((project / ".kaizen" / "experiments").glob("*/record.json"), key=lambda p: p.stat().st_mtime)
+    if not reasons and plan.is_file() and records and plan.stat().st_mtime < records[-1].stat().st_mtime:
+        reasons.append(f"experiment {records[-1].parent.name} closed after the plan was last written: update "
+                       ".kaizen/plan.md (knowledge.sh plan after a promote, or edit the order and notes) before stopping")
     friction = unresolved_friction(project)
     if not reasons and friction >= retro_block_after(project):
         reasons.append(f"{friction} unresolved friction entries: run the retro skill "
