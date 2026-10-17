@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prepare regression tests"
+  short_description: "Protect ISUCON contracts before changes"
+  default_prompt: "Use $prepare-tests to build a bounded regression foundation from the current specification and measured risks."

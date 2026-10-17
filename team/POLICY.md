@@ -27,6 +27,18 @@ contains source and minimal bootstrap files, not these rules or management tools
   competition may also ship target-specific tools through private plugin main.
   Roll out pinned releases at an idle boundary; keep competition main separate.
 
+## Tests, tools and preparation phases
+
+- Go and Rust use native checks and existing tools under `team/docs/TOOLS.md`.
+  Retain raw and machine-readable evidence; missing data is not a pass.
+- Follow `team/docs/PHASES.md`: prepare specification-backed regression checks
+  in parallel with analysis, and repair quality holds using reproductions.
+- A bounded refactor can unblock a named optimization/repair. Timebox it,
+  preserve contracts, separate structural/performance commits and measure the
+  combined result and preparation cost. Unmeasured cleanup is not a score gain.
+- Mark costly collection with observe start/stop, verify actual deactivation,
+  and measure adoption under comparable normal builds/configuration.
+
 ## Shared state and task ownership
 
 - The authoritative task database and environment reservation live on the
@@ -142,6 +154,8 @@ contains source and minimal bootstrap files, not these rules or management tools
 - Follow `team/docs/PARALLEL_QUALITY.md` for independent validation lanes and
   quality holds. All lanes share task ownership; each environment has its own
   registered resources and persistent reservation. Sandbox results are advisory.
+  Use task-quality-hold for measured candidate quality problems; prose-only
+  NEEDS_MEASUREMENT does not preserve the immutable repair lineage.
   Preserve failed source/evidence, repair and retest; only a passing official
   promotion record resolves a quality hold. A failed run does not forbid fixing
   its candidate. Later recurrence creates a linked investigation.

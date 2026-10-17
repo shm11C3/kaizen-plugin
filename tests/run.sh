@@ -360,6 +360,10 @@ DB_NAME=test
 ACCESS_LOG=access.log
 OBSERVE_RESET_CMD='echo cleared > reset.marker'
 OBSERVE_EXTRA_CMD='echo extra-evidence-line'
+OBSERVE_START_CMD='test ! -f observation-start-fail'
+OBSERVE_STOP_CMD='test ! -f observation-stop-fail'
+OBSERVE_TOOLS=otel,pprof
+MAX_BENCH_PER_EXP=4
 PATH_ID_REGEX='/[0-9a-f]{8,}'
 EOF2
 printf '127.0.0.1 - - [x +0000] "GET /api/x/0123456789abcdef0123456789 HTTP/2.0" 200 1 "-" "b"\n' > "$KAIZEN_FAKE_REMOTE/isu1/access.log"
@@ -385,11 +389,32 @@ m = json.load(open(p)); m.update(hypothesis="x", expectedEffect="y", observation
 EOF
 "$S/deploy.sh" HEAD >/dev/null
 printf 'OBSERVE_SLOWLOG=1\n' >> .kaizen/state.env          # what observe.sh reset does in slowlog mode
+"$S/observe.sh" status | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["slowlogActive"] and r["observed"] and r["session"] is None'
 "$S/bench.sh" candidate --reserve >/dev/null
-"$S/bench.sh" candidate --result 'pass=true score=9000 errors=none' | grep -q "observed under the slow log" || fail "observed sample announced"
+"$S/bench.sh" candidate --result 'pass=true score=9000 errors=none' | grep -q "observed; not used by the rule" || fail "observed sample announced"
 printf 'OBSERVE_SLOWLOG=0\n' >> .kaizen/state.env
 "$S/evaluate.sh" | grep -q '"inconclusive"' || fail "an observed-only candidate cannot decide"
-"$S/evaluate.sh" | grep -q "1 observed under the slow log were left out" || fail "reason names the ignored sample"
+"$S/evaluate.sh" | grep -q "1 observation samples were left out" || fail "reason names the ignored sample"
+# Partial collector start/stop remains excluded from decisions.
+touch "$KAIZEN_FAKE_REMOTE/isu1/observation-start-fail" "$KAIZEN_FAKE_REMOTE/isu1/observation-stop-fail"
+"$S/observe.sh" start profile >"$T/start.log" 2>&1 && fail "failed start must fail"
+test -f .kaizen/observation-active.json || fail "failed start marker retained"
+"$S/observe.sh" status | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["session"]["tools"]==["otel","pprof"] and r["observed"]'
+"$S/observe.sh" stop >"$T/stop.log" 2>&1 && fail "failed stop must fail"
+test -f .kaizen/observation-active.json || fail "failed stop marker retained"
+"$S/bench.sh" candidate-profile --reserve >/dev/null
+"$S/bench.sh" candidate-profile --result 'pass=true score=9900 errors=none' >/dev/null
+python3 - <<'PY'
+import json
+r=json.load(open('.kaizen/experiments/005-observed/bench-candidate-profile.json'))
+assert r['observed'] and r['observationSession']['tools']==['otel','pprof'],r
+PY
+"$S/evaluate.sh" | grep -q '"inconclusive"' || fail "profile score cannot decide"
+rm "$KAIZEN_FAKE_REMOTE/isu1/observation-start-fail" "$KAIZEN_FAKE_REMOTE/isu1/observation-stop-fail"
+"$S/observe.sh" stop >/dev/null
+test ! -f .kaizen/observation-active.json || fail "successful stop archives marker"
+"$S/observe.sh" start successful >/dev/null
+"$S/observe.sh" stop >/dev/null
 "$S/bench.sh" candidate-2 --reserve >/dev/null
 "$S/bench.sh" candidate-2 --result 'pass=true score=2700 errors=none' >/dev/null
 "$S/evaluate.sh" | grep -q '"inconclusive"' || fail "one measured candidate is insufficient"

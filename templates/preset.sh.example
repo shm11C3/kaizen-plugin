@@ -8,12 +8,14 @@ PROBLEM=<contest>
 
 # Where the application lives on each server and what to push there.
 REMOTE_APP_DIR=/home/isucon/webapp
-LOCAL_SYNC_PATHS="go sql"            # directories under the repo root
+LOCAL_SYNC_PATHS="go sql"            # choose actual Go or Rust source directories
 SYNC_EXCLUDES="--exclude <binary>"   # build outputs that live next to sources
 RSYNC_PATH="sudo -u isucon rsync"
 
 # Build, restart, health. Run over SSH on every host in APP_HOSTS.
 BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/go && go build -o <binary> ."'
+# Rust example: set its real crate/binary/service paths and exclude target outputs.
+# BUILD_CMD='sudo -i -u isucon bash -c "cd ~/webapp/rust && cargo build --release --locked"'
 RESTART_CMD='sudo systemctl daemon-reload && sudo systemctl restart <service>'
 SERVICE_NAME=<service>
 HEALTH_CMD='curl -s -o /dev/null -m 3 http://127.0.0.1:8080/'
@@ -50,3 +52,8 @@ BENCH_MODE=manual
 #   ...
 # }
 # RESOURCE_FINGERPRINT_CMD and RECOVERY_CMD: see team/docs/RECOVERY.md.
+
+# Costly collectors use observe start NAME / stop; verify actual tool state.
+# OBSERVE_TOOLS=otel,pprof
+# OBSERVE_START_CMD='... enable private collector and restart observation build ...'
+# OBSERVE_STOP_CMD='... disable collector and restart normal build ...'

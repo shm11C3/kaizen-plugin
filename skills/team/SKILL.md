@@ -77,11 +77,29 @@ competing architectural/strategic options with evidence and a recommendation.
 Do safe comparison work first; ask before the risky shared action itself.
 Never waive correctness. Restore stable while waiting for human judgment.
 
-Missing samples, unexplained timeouts and incomplete validation are AI work:
-use NEEDS_MEASUREMENT, then the task owner uses task-resume to continue. Reserve
+Missing samples and incomplete validation are AI work: use NEEDS_MEASUREMENT,
+then task-resume. If a measured candidate has correctness errors, new warnings,
+timeouts or unknown quality, use task-quality-hold as described below instead of
+only task-finish NEEDS_MEASUREMENT or prose notes. Reserve
 NEEDS_HUMAN for a concrete value/risk/design choice; task-finish requires
 --question. Put the options, evidence and recommendation in --reason/the human
 decision template. Do not send unfinished investigation to the human queue.
+
+When evaluation blocks on candidate quality, the reservation holder records:
+
+```bash
+python3 "$K/scripts/team/control.py" task-quality-hold --id T-NNNN \
+  --agent SESSION --token TOKEN --category timeout \
+  --evidence /shared/experiment/decision.json --reason 'observed failure and next investigation'
+```
+
+Do this before overwriting the submitted source SHA. Preserve/recover the failed
+run through normal experiment scripts. The task owner resumes the held task,
+adds a reproducer, repairs and resubmits with task-ready; independent prerequisite
+tasks may link to it. Do not replace its immutable failure history with an unrelated
+new task. Resolve with task-finish ACCEPTED only after an official promotion,
+passing --record and --tested-sha. Sample shortage alone is remeasurement; known
+candidate quality problems require the hold ledger. No routine human approval.
 
 For isolated parallel validation or a quality-held candidate, read
 `../../team/docs/PARALLEL_QUALITY.md`. Keep one shared task DB, register the official
@@ -114,3 +132,11 @@ The plugin does not launch new AI sessions or a Discord Bot. Continue the loop
 inside the human-started session and use configured private Discord access for
 notifications. The current hook adapter targets Claude Code; do not claim a
 Codex hook adapter exists.
+
+## Preparation and tools
+
+Go and Rust use native checks and existing observation tools. Read
+`../../team/docs/TOOLS.md` and `../../team/docs/PHASES.md` when preparing tests,
+profiling or removing a concrete structural blocker. Tests and analysis run
+in independent clones in parallel; target collection still uses the reservation.
+Use prepare-tests/refactor skills and record cost and downstream payoff.

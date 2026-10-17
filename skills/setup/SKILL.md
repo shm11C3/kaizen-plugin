@@ -14,7 +14,7 @@ right repository. Run scripts as `$K/scripts/<name>.sh`.
 ## 1. The repository
 
 The project is a git repository that holds the application directories the
-servers run (for ISUCON: `go/`, `sql/`, and `etc/` for configuration). If
+servers run (e.g. `go/` or `rust/`, `sql/`, and `etc/` for configuration). If
 the servers hold the only copy, create it: `rsync` the application directory
 from the server into the repository, commit it on `main` as the first commit,
 and note the commit as the initial stable revision. Never edit on the server.
@@ -104,3 +104,10 @@ STABLE_REV without changing what the servers run, and repin moves
 STABLE_REV (and the baseline samples' key) to it after verifying the
 hosts still match. Report `$K/scripts/status.sh` to the human and stop:
 the loop starts with the observe skill.
+
+For the planned Go/Rust choice, fill LOCAL_SYNC_PATHS, BUILD_CMD, binary excludes
+and service paths from the actual source layout. Go examples use go build; Rust
+uses its application's cargo build --release --locked and correct binary path.
+Keep debug/race/instrumented builds out of adoption samples. Use native Go/Rust
+checks and the preparation/test procedure in `team/docs/PHASES.md`; do not assume
+the bundled ISUCON14 Go preset configures a different language automatically.

@@ -57,3 +57,9 @@ rsync の itemize（`<f`）、/etc の所有者、nginx ログの引用符、記
 ## 環境（記録時点のスナップショット。現在の稼働状態は別途確認）
 
 EC2 8 台（isu1〜3, isubench, isu13, isu13bench, isu12, isu12bench）が稼働中。stable: isu1=75a8032（isuride-practice）、isu13=ebb3824（isucon13-practice）、isu12=4be57e2（isucon12-practice）。
+
+## 0.6.0: Go／Rust、既存ツールと準備フェーズ
+
+prepare-tests/refactor、既存ツール選択、汎用観測セッションと採否用スコアの分離、
+実行時間・ソースに紐付くテスト記録を追加。Discord実接続は未検証。
+効果の主張は実測報告を参照し、Go/Rust smokeと競技実測を混同しない。

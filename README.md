@@ -12,6 +12,8 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [共通ホストの管理](team/infra/README.md)と[構築記録](team/infra/DEPLOYMENT.md)
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
+- [Go／Rustの既存ツール・観測モード](team/docs/TOOLS.md)
+- [初期テスト・整備フェーズ](team/docs/PHASES.md)、[prepare-tests](skills/prepare-tests/SKILL.md)・[refactor](skills/refactor/SKILL.md)
 - [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
 - [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
 - [共通台帳での並列検証と品質保留の修正・再計測](team/docs/PARALLEL_QUALITY.md)
@@ -22,7 +24,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 ## 構成
 
 ```
-skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, improve-workflow
+skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, improve-workflow, prepare-tests, refactor
 scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める

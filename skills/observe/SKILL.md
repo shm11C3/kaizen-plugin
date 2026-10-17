@@ -1,6 +1,6 @@
 ---
 name: observe
-description: "Collect the evidence a hypothesis must cite. Use before every hypothesis and after every promotion: resets the counters, runs or records one benchmark, dumps MySQL digests, request mix, and indexes into observe-<name>.txt, and summarizes the top three costs."
+description: "Collect the evidence a hypothesis must cite. Use before every hypothesis and after every promotion: resets the counters, runs or records one benchmark, dumps MySQL digests, request mix, and indexes into a named observation file, and summarizes the top three costs."
 ---
 
 # Observe
@@ -42,8 +42,7 @@ performance_schema does not digest (the dump prints the
 statement/com/Execute count as a hint). Set `MYSQL_DIGEST_SOURCE=slowlog`
 in the preset: reset turns the slow log on at `long_query_time=0`, dump
 aggregates it (`scripts/slowlog_digest.py`) and turns it off. Logging every
-statement costs score (about a quarter on isucon13 once the scans were
-gone), so the sample taken between reset and dump is marked `observed`
+statement changes measurement cost, so the sample taken between reset and dump is marked `observed`
 and evaluate.sh leaves it out; it still needs a passing run. Take the
 samples the rule uses after the dump.
 
@@ -53,3 +52,10 @@ pattern, pprof, slow log) and appends its output to the dump. Observation
 files are evidence; never edit them.
 
 Hand the file path and the three answers to the hypothesize skill.
+
+Read `../../team/docs/TOOLS.md` for existing tools and Go/Rust differences.
+Start costly collection with `observe.sh start NAME` (preset OBSERVE_START_CMD/
+OBSERVE_STOP_CMD), then `observe.sh stop`. Team calls use the target reservation.
+Failed start/stop retains the marker; investigate and retry stop. Confirm the
+actual tools stopped before score samples. bench records the session and excludes
+observed samples from adoption; collected profiles still need analysis.

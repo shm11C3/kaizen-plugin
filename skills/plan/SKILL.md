@@ -58,3 +58,8 @@ errors remain AI investigation; only concrete risk/tradeoff choices need humans.
 The existing Stop hook asks for an updated plan after a record. Do not add a new
 meeting, approval or extra model call for every task. Preserve the human's order,
 exclusions, deadline and stop instructions.
+
+When tests or coupling block a promising candidate, use prepare-tests/refactor
+and `team/docs/PHASES.md`. Include preparation in total time, name the dependent
+candidate and stop condition, and retain final verification time. Prefer existing
+tools under `team/docs/TOOLS.md` to custom instrumentation.

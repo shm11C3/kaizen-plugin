@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactor for the next improvement"
+  short_description: "Remove a concrete blocker within a budget"
+  default_prompt: "Use $refactor to assess and implement a bounded structural change that unblocks a named optimization or repair."

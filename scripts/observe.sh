@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # observe.sh reset
 # observe.sh dump <name>
+# observe.sh start <name> / stop / status: bound costly tool collection sessions
 # Reset or dump the MySQL statement digests (on DB_HOST) and the access-log
 # aggregates (on NGINX_HOST). A dump is the evidence a hypothesis cites
 # (observe-<name>.txt in the open experiment, or under .kaizen/ when none is
@@ -9,8 +10,6 @@
 # goes through OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output
 # is appended; OBSERVE_RESET_CMD, run on the same host by reset, clears that
 # source so the extra section covers exactly one benchmark.
-# Extra evidence (pprof, alp with a route pattern, slow log) goes through
-# OBSERVE_EXTRA_CMD, a command run on NGINX_HOST whose output is appended.
 #
 # MYSQL_DIGEST_SOURCE=performance_schema (default) reads
 # events_statements_summary_by_digest. That table only sees text-protocol
@@ -31,6 +30,41 @@ case "$MYSQL_DIGEST_SOURCE" in performance_schema|slowlog) ;; *) die "MYSQL_DIGE
 [ -n "${DB_NAME:-}" ] || die "config.sh does not set DB_NAME"
 
 case "${1:-}" in
+  start)
+    name=${2:?observe.sh start <name>}
+    case "$name" in *[!A-Za-z0-9_-]*) die "observation name must be [A-Za-z0-9_-]" ;; esac
+    acquire_bench_lock
+    [ ! -f "$KAIZEN_DIR/observation-active.json" ] || die "observation already active; stop and preserve its evidence first"
+    # Persist before activation: a partial start must keep later samples observed.
+    python3 - "$KAIZEN_DIR/observation-active.json" "$name" "$(now)" "$(state_get DEPLOYED_REV)" "${OBSERVE_TOOLS:-unspecified}" <<'PY'
+import json,sys
+p,name,at,revision,tools=sys.argv[1:]
+json.dump(dict(name=name,startedAt=at,deployedRevision=revision,tools=tools.split(',')),open(p,'w'),indent=2)
+PY
+    if [ -n "${OBSERVE_START_CMD:-}" ]; then
+      remote "$NGINX_HOST" "$OBSERVE_START_CMD" || die "observation activation failed; marker retained, inspect then stop"
+    fi
+    echo "observation active: $name; benchmark samples are evidence only"
+    ;;
+  stop)
+    acquire_bench_lock
+    [ -f "$KAIZEN_DIR/observation-active.json" ] || die "no active observation"
+    if [ -n "${OBSERVE_STOP_CMD:-}" ]; then
+      remote "$NGINX_HOST" "$OBSERVE_STOP_CMD" || die "observation stop failed; marker retained"
+    fi
+    mkdir -p "$KAIZEN_DIR/observations"
+    mv "$KAIZEN_DIR/observation-active.json" "$KAIZEN_DIR/observations/$(stamp)-$$.json"
+    echo "observation stopped; verify tool state before score samples"
+    ;;
+  status)
+    python3 - "$KAIZEN_DIR/observation-active.json" "$(state_get OBSERVE_SLOWLOG)" <<'PY'
+import json,sys
+from pathlib import Path
+p=Path(sys.argv[1]); session=json.loads(p.read_text()) if p.exists() else None
+slowlog=sys.argv[2]=='1'
+print(json.dumps(dict(session=session,slowlogActive=slowlog,observed=bool(session) or slowlog)))
+PY
+    ;;
   reset)
     remote "$DB_HOST" "$MYSQL_CMD -e 'TRUNCATE performance_schema.events_statements_summary_by_digest; TRUNCATE performance_schema.events_statements_summary_global_by_event_name'"
     if [ "$MYSQL_DIGEST_SOURCE" = slowlog ]; then
@@ -83,5 +117,5 @@ case "${1:-}" in
     } > "$out"
     echo "$out"
     ;;
-  *) die "usage: observe.sh reset | dump <name>" ;;
+  *) die "usage: observe.sh start <name> | stop | status | reset | dump <name>" ;;
 esac

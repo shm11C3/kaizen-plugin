@@ -113,7 +113,7 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
             else:
                 decision, reason, action = 'promote', f'median improved {bp} bp and worst candidate {c[0]} > best baseline {b[-1]}', 'promote'
     if ignored:
-        reason += f' ({ignored} observed under the slow log were left out)'
+        reason += f' ({ignored} observation samples were left out)'
     return {'ruleVersion': 'plugin-rule-v2', 'decision': decision, 'reason': reason, 'nextAction': action,
             'quality': q, 'qualityBlockPromotion': blocked, 'minimumImprovementBasisPoints': min_bp,
             'minimumSamples': minimum, 'improvementBasisPoints': bp, 'baselineScores': b, 'candidateScores': c,
