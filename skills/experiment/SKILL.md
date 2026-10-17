@@ -34,6 +34,13 @@ Take a second sample (`candidate-2`) when the first is within
 `MIN_IMPROVEMENT_BP` of the baseline median or the baseline samples spread
 more than that. `MAX_BENCH_PER_EXP` caps it.
 
+Run `evaluate.sh` before deciding whether to sample more. If it says
+`inconclusive ... noise not separated` and budget remains, take the extra
+candidate sample **while the candidate is still deployed**
+(`bench.sh candidate-3`), then `recover.sh` and `bench.sh baseline-3`,
+then evaluate again. Recording an inconclusive redeploys stable, so the
+other order costs an extra deploy.
+
 ## 3. Evaluate and record
 
 ```bash
