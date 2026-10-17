@@ -1,10 +1,17 @@
-# 2026-10-17 実機運転の結果と次の改善案
+# 実機運転の結果と次の改善案
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
-## 現行の優先事項（0.5.1）
+## 現行の優先事項（0.6.0とその後のmain更新）
 
-各人の実PCで独立したClaude/Codexセッションを起動し、[Discord連携](team/docs/DISCORD.md)の
+1. **品質保留から修正・採用まで通す**。基準版でも出る警告と候補の退行を区別し、
+   実DBで通知・可視性の再現→修正→公式再計測を行う。同じ内容の再試行には未解明の警告を引き継ぐ。
+2. **軽いLintを候補提出前へ組み込む**。Goのgofmt／vet、Rustのfmt／Clippyを既存の
+   check記録に接続し、指摘内容と所要時間を残す。導入・実測は下の未完了項目。
+3. **Go／Rustを改善サイクル全体で比較する**。ビルド・テスト・修正・復旧時間と、実行性能、
+   コンパイル時の安全性を比較する。[判断基準とキャッシュ保持](team/docs/RUST_BUILD.md)は反映済み、言語間の実測は未実施。
+
+Discordを用意できたら、各人の実PCで独立したClaude/Codexセッションを起動し、[Discord連携](team/docs/DISCORD.md)の
 読取・投稿と[参加手順](team/docs/ONBOARDING.md)を確認する。GitHubユーザー名をブランチの
 先頭に使い、セッションIDを区別する。実際の会話・候補提出・統合・結果共有を通す。
 過去の検証補助や同一PCでの試験を当日の連携手段として前提にしない。
@@ -15,7 +22,7 @@
 
 以下の練習は異なる問題・条件の事例で、プラグインやplanの因果効果を示す比較ではない。下の「次の改善案」は当時の候補一覧。追加の管理機能は、比較で分かった損失と得点への効果を見て選ぶ。
 
-## 測れたこと
+## 2026-10-17に測れたこと
 
 | 問題 | 実験 | promote | スコア（最初の baseline 中央値 → 最後の promote） | 最初の promote まで |
 |---|---|---|---|---|
@@ -58,7 +65,7 @@ rsync の itemize（`<f`）、/etc の所有者、nginx ログの引用符、記
 
 EC2 8 台（isu1〜3, isubench, isu13, isu13bench, isu12, isu12bench）が稼働中。stable: isu1=75a8032（isuride-practice）、isu13=ebb3824（isucon13-practice）、isu12=4be57e2（isucon12-practice）。
 
-## 0.6.0: Go／Rust、既存ツールと準備フェーズ
+## 0.6.0: Go／Rust、既存ツールと準備フェーズ（2026-10-18）
 
 prepare-tests/refactor、既存ツール選択、汎用観測セッションと採否用スコアの分離、
 実行時間・ソースに紐付くテスト記録を追加。Discord実接続は未検証。
@@ -68,3 +75,26 @@ prepare-tests/refactor、既存ツール選択、汎用観測セッションと�
 [知見](knowledge/lessons/20261018-isucon14-tools-tests-phases.md)に、同一内容の警告再発、
 保留台帳の未使用、clone内の並列操作混線、実DBテストの不足を記録した。
 入口手順を補強した。実験をまたぐ同一内容の品質判定は現在も統合担当による履歴確認が必要。
+
+候補最高は2,846点だが最終採用スコアではない。初期版に戻して3回測定したraw中央値は1,042点、
+pluginの品質判定はunknown。同じ警告が初期版でも出たため、候補が品質を悪化させたと断定できない。
+最終初期版のgo testは既存slog vet診断で失敗し、修正は候補branchに残った。
+独立したRust fixtureではテストの成功と意図的な不具合の検出を確認したが、Rust版ISUCONの
+性能・ビルド時間は未計測。以上は先の問題別練習と条件が異なり、得点を直接比較しない。
+
+## Lintを運用へ組み込む（未完了）
+
+- [ ] 開始時に対象toolchainで全体を確認し、既存の指摘と実行時間を記録する。
+  実装中は変更package／crate、候補提出前は関連範囲へ広げる。formatterは変更ファイルを中心に使う。
+- [ ] Goはgofmtとgo vet、Rustはcargo fmt --checkとcargo clippy --lockedを基本に、
+  [prepare-tests](skills/prepare-tests/SKILL.md)と[既存ツール手順](team/docs/TOOLS.md)へ反映する。
+  実行をscripts/check.pyで記録し、ツール版・対象・ソース・生ログ・時間を共有する。
+- [ ] 正しさに関わる指摘は原因確認・修正へ戻す。意図した実装なら根拠を残して限定的に扱う。
+  既存診断を黙って無効化せず、スタイル提案と区別する。Clippyの終了0でも警告内容を確認する。
+- [ ] 全警告の一律エラー化やpedantic／restrictionの一括導入は初期要件にしない。
+  性能の提案は仮説として扱い、公式ベンチで確認する。仕様・DB整合性は再現テストでも検証する。
+- [ ] 小さな正常／不具合入りfixtureで検出と修正後の解消を確認し、初回・修正後のLint時間を測る。
+  Rustはキャッシュと並列ビルドの資源競合も確認し、増えた待ち時間と避けられた手戻りを記録する。
+
+一次資料: [go vet](https://pkg.go.dev/cmd/vet)、
+[Clippyの実行](https://doc.rust-lang.org/clippy/usage.html)・[指摘の分類](https://doc.rust-lang.org/clippy/lints.html)。
