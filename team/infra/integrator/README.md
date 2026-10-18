@@ -21,8 +21,11 @@
 処理の流れ（1候補）: `env-acquire` → `git fetch` → 一時worktreeで `base..source` をstableへcherry-pick（dry run）
 → 契約レビュー → 必要ならbaseline補充 → `experiment new` → 本番cherry-pick → manifest記入 → `deploy`
 → `bench`/`evaluate` をルールの `nextAction` が `remeasure` の間、予算内で繰り返す → `experiment record`
-→ promoteなら `task-finish ACCEPTED --record --tested-sha` と `git push origin main`、rejectなら `REJECTED`、
-品質不明なら `task-quality-hold`、ノイズならNEEDS_MEASUREMENT → `env-release`。
+→ promoteなら `task-finish ACCEPTED --record --tested-sha` と `git push origin main`、正しさ失敗なら
+`task-quality-hold --category correctness`（失敗したソースに保留が残り、修正・再提出の導線になる）、
+スコア低下の reject なら `REJECTED`、品質不明なら `task-quality-hold`、ノイズならNEEDS_MEASUREMENT → `env-release`。
+候補の標本数は `MAX_BENCH_PER_EXP`（0 なら plugin 側の上限なし）と `integrator.json` の
+`max_candidate_samples`（既定 6）の小さい方で打ち切ります。
 各段階は `/srv/isucon/state/integrator/ledger.jsonl` に時刻・所要・結果・モデル費用付きで残り、
 担当者向けの短い結果票が `feedback/T-NNNN.md` に書かれます。
 
@@ -96,10 +99,15 @@ python3 "$K/scripts/team/control.py" dashboard --open           # http://localho
 時間切れでの自動abandonはしません。
 
 ```bash
-python3 "$K/scripts/team/control.py" integrator result --label candidate \
-  --result 'pass=true score=12345 errors=none' --requests 240000 --seconds 65
-python3 "$K/scripts/team/control.py" integrator abandon --label candidate-2 --reason 'ポータル側でキャンセル確認済み'
+python3 "$K/scripts/team/control.py" integrator result --experiment 003-T-0001-query-index --label candidate \
+  --result 'pass=true score=12345 errors=none' --requests 240000 --seconds 65 --sha 2efb015
+python3 "$K/scripts/team/control.py" integrator abandon --experiment 003-T-0001-query-index --label candidate-2 \
+  --reason 'ポータル側でキャンセル確認済み'
 ```
+
+`--experiment` と `--label` は待機状態の表示どおりに渡します（baseline 補充中は `--experiment baseline`）。
+予約より前に投稿された結果、別の実験・label の結果、`--sha` が配備版と違う結果は取り込まず、
+`inbox/*.stale-*` に退避して台帳に残します。遅延投稿や二重投稿が別の候補へ帰属することはありません。
 
 ## ダッシュボード
 

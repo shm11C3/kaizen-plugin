@@ -126,7 +126,10 @@ python3 "$K/scripts/team/control.py" env-release --agent "$KAIZEN_SESSION" --tok
 - 状態は `control.py integrator status` と[ダッシュボード](../infra/integrator/README.md#ダッシュボード)で見ます。
   人が統合したいときは先に `control.py integrator pause --reason ...`、終わったら `resume`。
 - ポータル方式では統合Agentが `--reserve` 後に待つので、人間がポータルで走らせ、終了確認後に
-  `control.py integrator result --label LABEL --result 'pass=.. score=.. errors=..'` で渡します。
+  `control.py integrator result --experiment EXP --label LABEL --result 'pass=.. score=.. errors=..'`
+  で渡します（EXP と LABEL は待機状態の表示どおり）。予約前・別実験・別SHAの結果は取り込みません。
+- 正しさ失敗は `task-quality-hold --category correctness` で失敗ソースに保留が残り、担当者が修正・再提出します。
+  スコア低下の却下だけが `REJECTED` です。
 - エラー時は復旧・記録・返却を試みてから `pause` で止まります。`journalctl -u kaizen-integrator` と
   `/srv/isucon/state/integrator/ledger.jsonl` を見て、対象の実状態を確認してから `resume` します。
 

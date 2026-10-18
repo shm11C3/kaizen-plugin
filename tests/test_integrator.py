@@ -246,11 +246,15 @@ class IntegratorLoop(IntegratorFixture):
         self.assertIn('レビュー: diff touches benchmark-facing checks', row['reason'])
         self.assertEqual([r['event'] for r in self.ledger(third) if r['event'] in ('open', 'bench', 'baseline', 'deploy')], [])
 
-        # 4. A correctness failure is rejected and stable is recovered.
+        # 4. A correctness failure recovers stable and leaves a hold on the failed source.
         fourth = self.submit('Break it', 'worker/T-0004-break', {'go/score': 'fail\n'})
         self.assertTrue(self.once()['processed'])
         row = self.tasks()[fourth]
-        self.assertEqual(row['status'], 'REJECTED', row)
+        self.assertEqual(row['status'], 'NEEDS_MEASUREMENT', row)
+        holds = self.team('status')['quality_holds']
+        self.assertEqual([(h['category'], h['state'], 'T-{:04d}'.format(h['task_id'])) for h in holds],
+                         [('correctness', 'OPEN', fourth)])
+        self.assertIn('correctness', [r for r in self.ledger(fourth) if r['event'] == 'hold'][0]['category'])
         self.assertEqual(self.state_env()['STABLE_REV'], adopted)
         self.assertEqual(self.state_env()['DEPLOYED_REV'], adopted)
         self.assertEqual(self.state_env()['REVERT_PENDING'], '0')
@@ -317,6 +321,27 @@ class IntegratorLoop(IntegratorFixture):
 
 
 class Helpers(unittest.TestCase):
+    def test_sample_limit_respects_plugin_cap_and_own_ceiling(self):
+        args = type('Args', (), {'db': '/nonexistent/db', 'config': '/nonexistent/target.json', 'state': None, 'settings': None})()
+        with tempfile.TemporaryDirectory() as directory:
+            args.db = str(Path(directory) / 'team.sqlite3')
+            engine = module.Integrator(args)
+            for cap, own, expected in ((0, 6, 6), (3, 6, 3), (8, 6, 6), (0, 0, 0), (4, 0, 4)):
+                engine.config = {'max_bench_per_exp': cap}
+                engine.settings['max_candidate_samples'] = own
+                self.assertEqual(engine.sample_limit(), expected, (cap, own))
+
+    def test_portal_result_must_match_the_reserved_run(self):
+        reserved = '2026-10-18T10:00:00+00:00'
+        good = {'experiment': '003-T-0001', 'label': 'candidate', 'at': '2026-10-18T10:05:00+00:00', 'result': 'pass=true score=1'}
+        self.assertTrue(module.portal_result_matches(good, '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertTrue(module.portal_result_matches(dict(good, sha='ABCDEF'), '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertFalse(module.portal_result_matches(dict(good, at='2026-10-18T09:59:59+00:00'), '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertFalse(module.portal_result_matches(dict(good, label='candidate-2'), '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertFalse(module.portal_result_matches(dict(good, experiment='002-T-0009'), '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertFalse(module.portal_result_matches(dict(good, sha='999999'), '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+        self.assertFalse(module.portal_result_matches({'at': good['at']}, '003-T-0001', 'candidate', reserved, 'abcdef0123'))
+
     def test_control_dispatches_integrator_and_dashboard_commands(self):
         import control
         config = {'remote_plugin_root': '/srv/isucon/kaizen-plugin'}

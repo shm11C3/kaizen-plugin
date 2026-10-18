@@ -20,9 +20,10 @@ Commands:
   once                     process at most one candidate, then exit
   status                   print the current status.json and pause state
   pause [--reason R] / resume
-  result --label L --result 'pass=.. score=.. errors=..' [--requests N] [--seconds N]
-                           hand a portal (BENCH_MODE=manual) result to the waiting integrator
-  abandon --label L --reason R
+  result --experiment E --label L --result 'pass=.. score=.. errors=..' [--requests N] [--seconds N] [--sha S]
+                           hand a portal (BENCH_MODE=manual) result to the waiting integrator; E and L
+                           are the ones the waiting status names (E is 'baseline' for baseline runs)
+  abandon --experiment E --label L --reason R
   dashboard                regenerate the static dashboard now
 """
 import argparse
@@ -53,6 +54,7 @@ DEFAULTS = {
     'remote': 'origin',
     'pause_on_error': True,
     'dashboard_dir': '',
+    'max_candidate_samples': 6,
     'llm': {
         'command': ['claude', '-p', '--output-format', 'json', '--no-session-persistence', '--tools', '',
                     '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--permission-mode', 'dontAsk',
@@ -117,6 +119,23 @@ def hold_category(decision):
     if any(word in reason for word in ('denominator', 'fresh', 'stale', 'comparable', 'bundle', 'condition')):
         return 'conditions'
     return 'unknown'
+
+
+def portal_result_matches(data, run, label, reserved, expected_sha):
+    """A portal result belongs to the waiting run only when experiment, label, time and SHA agree.
+
+    `at` is the ISO-8601 UTC time the result was posted (lexicographic order is time order);
+    a result posted before the reservation, for another experiment or label, or naming a
+    different deployed revision is never consumed.
+    """
+    if not isinstance(data, dict) or data.get('experiment') != run or data.get('label') != label:
+        return False
+    if not isinstance(data.get('at'), str) or data['at'] < reserved:
+        return False
+    sha = data.get('sha')
+    if sha and not (isinstance(sha, str) and expected_sha.lower().startswith(sha.lower())):
+        return False
+    return True
 
 
 class StepError(Exception):
@@ -254,7 +273,7 @@ class Integrator:
                 'resource_paths', 'overlay_dir', 'evaluation_rule')
         self.config = dict(zip(keys, values + [''] * (len(keys) - len(values))))
         self.config['min_samples'] = int(self.config['min_samples'] or 2)
-        self.config['max_bench_per_exp'] = int(self.config['max_bench_per_exp'] or 6)
+        self.config['max_bench_per_exp'] = int(self.config['max_bench_per_exp'] or 0)  # 0: no plugin cap
         self.config['baseline_max_age_minutes'] = int(self.config['baseline_max_age_minutes'] or 60)
         if not self.settings['github_user']:
             raise StepError('integrator.json に github_user（exp/ ブランチの所有者ログイン）が必要です')
@@ -560,15 +579,30 @@ class Integrator:
         """One sample through target bench; returns the sample's pass flag."""
         started = time.monotonic()
         if self.config['bench_mode'] == 'manual':
+            run = experiment or 'baseline'
+            key = run + '__' + label
+            inbox = self.state_dir / 'inbox' / (key + '.json')
+            if inbox.exists():
+                # Posted before this run was reserved: it cannot be this run's result.
+                inbox.rename(inbox.with_name(key + '.stale-' + stamp()))
+                self.ledger('inbox', task=tid, experiment=experiment, label=label, ignored='予約前に投稿された結果')
             self.target('bench', label, '--reserve')
-            self.status('waiting', 'ポータル: ' + label + ' の公式ベンチを開始し、終了を確認してから '
-                        '"integrator result --label ' + label + ' --result \'pass=.. score=.. errors=..\'" で結果を渡してください',
+            reserved = now()
+            expected = read_state(self.project).get('DEPLOYED_REV', '')
+            self.status('waiting', 'ポータル: ' + label + ' の公式ベンチ（配備 ' + expected[:7] + '）を開始し、終了を確認してから '
+                        '"integrator result --experiment ' + run + ' --label ' + label
+                        + ' --result \'pass=.. score=.. errors=..\'" で結果を渡してください',
                         task=tid, experiment=experiment, step='portal')
-            inbox = self.state_dir / 'inbox' / (label + '.json')
-            while not inbox.exists():
+            while True:
+                if inbox.exists():
+                    data = json.loads(inbox.read_text())
+                    if portal_result_matches(data, run, label, reserved, expected):
+                        break
+                    inbox.rename(inbox.with_name(key + '.stale-' + stamp()))
+                    self.ledger('inbox', task=tid, experiment=experiment, label=label,
+                                ignored='予約した実行と一致しない結果（実験・label・時刻・SHA を確認）')
                 time.sleep(5)
-            data = json.loads(inbox.read_text())
-            inbox.rename(self.state_dir / 'inbox' / (label + '.used-' + stamp()))
+            inbox.rename(inbox.with_name(key + '.used-' + stamp()))
             if data.get('abandon'):
                 self.target('bench', label, '--abandon', data['abandon'])
                 self.ledger('bench', task=tid, experiment=experiment, label=label, abandoned=data['abandon'])
@@ -600,10 +634,24 @@ class Integrator:
         self.target('evaluate')
         return json.loads((self.project / '.kaizen/experiments' / experiment / 'decision.json').read_text())
 
+    def sample_limit(self):
+        """Candidate samples per experiment: the plugin cap when set, else this integrator's own ceiling.
+
+        MAX_BENCH_PER_EXP=0 means the plugin enforces no per-experiment count; the rule's
+        remeasure loop still needs an end, so max_candidate_samples bounds it (0 = only the
+        plugin's time and physical budgets stop it).
+        """
+        cap = int(self.config.get('max_bench_per_exp') or 0)
+        own = int(self.settings.get('max_candidate_samples') or 0)
+        if cap > 0 and own > 0:
+            return min(cap, own)
+        return cap if cap > 0 else own
+
     def measure(self, tid, experiment):
+        limit = self.sample_limit()
         count = 0
         decision = None
-        while count < self.config['max_bench_per_exp']:
+        while limit <= 0 or count < limit:
             count += 1
             label = 'candidate' if count == 1 else 'candidate-' + str(count)
             try:
@@ -638,6 +686,9 @@ class Integrator:
         decision = record['ruleDecision']
         final = record['finalDecision']
         quality = (decision.get('quality') or {}).get('status', 'pass')
+        # The rule rejects a pass=false sample before it classifies quality; both are correctness failures.
+        correctness_failed = quality == 'failed' or any(
+            str(s.get('label', '')).startswith('candidate') and s.get('pass') is not True for s in record.get('samples', []))
         reason = (final + '（' + decision.get('ruleVersion', 'rule') + '）: ' + (record.get('reason') or ''))[:400]
         record_path = self.project / '.kaizen/experiments' / experiment / 'record.json'
         if final == 'promote':
@@ -654,9 +705,16 @@ class Integrator:
                     advice += '。push 失敗: ' + self.settings['remote'] + ' を手動で同期'
                     if self.settings['pause_on_error']:
                         self.pause('採用した ' + self.config['stable_branch'] + ' の push が失敗: ' + str(error)[-200:])
+        elif correctness_failed:
+            # A correctness failure keeps its hold on the failed source: the owner repairs and
+            # resubmits, and the same code cannot return under another task unnoticed.
+            self.team('task-quality-hold', '--id', tid, '--agent', self.agent, '--token', self.token, '--category', 'correctness',
+                      '--evidence', str(record_path.with_name('decision.json')), '--reason', reason)
+            self.ledger('hold', task=tid, experiment=experiment, category='correctness', reason=reason)
+            result, advice = 'NEEDS_MEASUREMENT', '正しさ失敗で品質保留（correctness）。stable は復旧済み。task-resume → 再現テストを添えて修正 → task-ready。同じソースの再提出は保留が追跡します'
         elif final == 'reject':
             self.team('task-finish', '--id', tid, '--agent', self.agent, '--result', 'REJECTED', '--reason', reason)
-            result, advice = 'REJECTED', 'stable を復旧済み。再試行には新しい根拠か別の機構が必要'
+            result, advice = 'REJECTED', 'スコアが stable を下回ったため却下。stable は復旧済み。再試行には新しい根拠か別の機構が必要'
         elif quality != 'pass':
             category = hold_category(decision)
             self.team('task-quality-hold', '--id', tid, '--agent', self.agent, '--token', self.token, '--category', category,
@@ -748,11 +806,14 @@ def main():
     pause = commands.add_parser('pause')
     pause.add_argument('--reason', default='paused by an operator')
     result = commands.add_parser('result')
+    result.add_argument('--experiment', required=True, help="the experiment named in the waiting status, or 'baseline'")
     result.add_argument('--label', required=True)
     result.add_argument('--result', required=True, help="'pass=<true|false> score=<n> errors=<text>' from the portal")
     result.add_argument('--requests', type=int)
     result.add_argument('--seconds', type=int)
+    result.add_argument('--sha', help='deployed revision the portal run measured (prefix ok); refused if it differs')
     abandon = commands.add_parser('abandon')
+    abandon.add_argument('--experiment', required=True)
     abandon.add_argument('--label', required=True)
     abandon.add_argument('--reason', required=True)
     args = p.parse_args()
@@ -779,13 +840,13 @@ def main():
             integrator.ledger('resume')
             print('再開')
         elif args.command in ('result', 'abandon'):
-            if not re.fullmatch(r'[A-Za-z0-9_-]+', args.label):
-                raise ValueError('label must be [A-Za-z0-9_-]')
+            if not re.fullmatch(r'[A-Za-z0-9_-]+', args.label) or not re.fullmatch(r'[A-Za-z0-9_-]+', args.experiment):
+                raise ValueError('experiment and label must be [A-Za-z0-9_-]')
             data = ({'abandon': args.reason} if args.command == 'abandon'
-                    else {'result': args.result, 'requests': args.requests, 'seconds': args.seconds})
-            data['at'] = now()
-            write_json(integrator.state_dir / 'inbox' / (args.label + '.json'), data)
-            print('待機中の統合Agentへ渡しました: ' + args.label)
+                    else {'result': args.result, 'requests': args.requests, 'seconds': args.seconds, 'sha': args.sha})
+            data.update(experiment=args.experiment, label=args.label, at=now())
+            write_json(integrator.state_dir / 'inbox' / (args.experiment + '__' + args.label + '.json'), data)
+            print('待機中の統合Agentへ渡しました: ' + args.experiment + ' ' + args.label)
         elif args.command == 'dashboard':
             integrator.load_target()
             integrator.dashboard()
