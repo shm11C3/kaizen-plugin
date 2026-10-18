@@ -17,7 +17,7 @@ install -d -o isucon -g isucon -m 0700 "$STATE" "$STATE/integrator" "$STATE/inte
 # Claude Code native binary for the isucon user; no Node needed. Pinned by DISABLE_UPDATES in integrator.env.
 # runuser -l: a login shell, so HOME is /home/isucon (plain runuser keeps root's HOME and would install under /root).
 if ! test -x /home/isucon/.local/bin/claude; then
-  runuser -l isucon -c 'curl -fsSL https://claude.ai/install.sh | bash -s "$0"' "${CLAUDE_VERSION:-latest}"
+  runuser -l isucon -c "curl -fsSL https://claude.ai/install.sh | bash -s ${CLAUDE_VERSION:-latest}"
 fi
 runuser -l isucon -c '~/.local/bin/claude --version'
 
