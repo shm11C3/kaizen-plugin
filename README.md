@@ -14,6 +14,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 - [Go／Rustの既存ツール・観測モード](team/docs/TOOLS.md)
+- [profileスキル：OTel・pprof・アクセスログ・SQLから改善仮説へ](skills/profile/SKILL.md)
 - [実ベンチと必要範囲の事前確認](team/docs/VALIDATION.md)
 - [候補提出前のLint・指摘の扱い](team/docs/LINT.md)
 - [Go／Rustの選択・ビルド時間・キャッシュ・終盤の予算](team/docs/RUST_BUILD.md)
@@ -44,7 +45,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 ## 構成
 
 ```
-skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, prepare-candidate, improve-workflow, prepare-tests, refactor
+skills/      setup, observe, profile, plan, hypothesize, experiment, recover, status, knowledge, retro, team, prepare-candidate, improve-workflow, prepare-tests, refactor
 scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める

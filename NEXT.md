@@ -2,6 +2,22 @@
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
+## 0.10.0: 観測結果を改善仮説へつなぐSkill
+
+[profile](skills/profile/SKILL.md)を追加した。問いに応じて既存のalp、pprof、SQL digest/
+EXPLAIN、OTelを選び、生データ・版・費用・coverageを確認して1つの仮説へ渡す。
+全ツールやCollectorの導入は必須にしない。Goテンプレートは公式SDK/otelhttpとotelsqlで
+HTTP→実SQLを関連付け、private pprof・起動時flag・正常終了/flush・秘匿を扱う。
+Go JSON用集計はDB区間のsum/unionと未知coverageを区別する。Rustは対応版・async・
+既存subscriber・build費用・console形式の違いをreferenceへ整理した。
+
+実ISUCON14 + 隔離MySQLでHTTP171件のDB接続、実CPU/heap解析、slowlog/EXPLAIN、停止を確認。
+独立Go実DB fixture、Rust実HTTP/mock DB fixture、alp人工ログでも検証した。
+全Python134 tests（70.306秒）、shell E2E（45.277秒）、Skill validatorがPASS。
+[知見と限界](knowledge/lessons/20261019-profile-tools.md)、
+[証拠票](knowledge/validation/profile-tools-20261019.json)を参照する。
+公式ベンチの新得点、Rust実アプリ/実DB・OTLP、Discord連携は今回の検証範囲外。
+
 ## 0.9.0: 必要な事前確認と実ベンチ、回数上限の見直し
 
 [検証方針](team/docs/VALIDATION.md)へ集約した。事前は必要なbuild/smoke、変更契約・

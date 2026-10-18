@@ -2,6 +2,8 @@
 
 Go／Rustを対象とする。現在のボトルネックを区別する最小構成を選び、既存ツールの生データを使う。
 全ツールの導入を参加条件にしない。
+[profile Skill](../../skills/profile/SKILL.md)で、問いに合う道具の選択から出力確認・解析・
+仮説への引き渡しまで行う。[既存ツールの実行例](../../skills/profile/references/tools.md)を使う。
 Rustは[ビルド時間の運用](RUST_BUILD.md)も適用し、キャッシュ保持と実際の配備・復旧時間を確認する。
 
 | 問い | Go | Rust | 保存する証拠 |
@@ -40,9 +42,12 @@ DBテストを合格扱いにせず、純粋関数やSQLiteでの比較だけで
 5. 収集済みデータはローカルで既存ツールに渡せる。`OBSERVE_EXTRA_CMD`でdumpへ結果を追加できる。
    標準slowlog parserは簡易集計なので、詳細なSQL分析にはpt-query-digest等も使う。
 
-`templates/go-observation/observe.go`は専用候補にコピーするGo HTTP span＋loopback限定pprofの例。
-handlerを包み、互換性のある公式SDKを固定する。flag削除後の再起動で無効化する。traceの存在も検証する。
-SQL自動計装や可視化サーバーは含まない。RustではそのアプリのHTTP・DBライブラリに対応した計装を選ぶ。
+Goは[計装テンプレート](../../templates/go-observation/README.md)でHTTPとdatabase/sqlを対応付け、
+loopback限定pprofを使う。公式SDK・対応するHTTP/SQL計装の検証済み依存を固定し、既存driverと
+request contextを保つ。flag削除後の再起動とshutdown/flushで実際に無効化する。
+private JSONは`scripts/trace_summary.py`で親子関係・DBのsum/union・欠落を解析できる。
+可視化サーバーは必須にしない。Rustは[対応版と実行例](../../skills/profile/references/rust.md)を参照し、
+利用中のHTTP・DBライブラリの実計装とmock検証を区別する。Rust stdoutとGo JSONは同じ形式ではない。
 認証情報、Cookie、本文、ユーザーID、SQL引数を記録せず、export先は規約で許可された私設経路に限定する。
 
 一次資料: [Go diagnostics](https://go.dev/doc/diagnostics)、[race](https://go.dev/doc/articles/race_detector)、

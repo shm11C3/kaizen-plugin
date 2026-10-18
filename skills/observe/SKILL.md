@@ -51,6 +51,11 @@ in config.sh runs one more command on the nginx host (alp with a route
 pattern, pprof, slow log) and appends its output to the dump. Observation
 files are evidence; never edit them.
 
+When route ownership, CPU/allocation cost or HTTP-to-DB waits remain unclear,
+use [profile](../profile/SKILL.md). It selects existing tools for the missing
+question, verifies a bounded collection, and returns source-bound evidence and
+one falsifiable mechanism. It does not require every tool or a new backend.
+
 Hand the file path and the three answers to the hypothesize skill.
 
 Read `../../team/docs/TOOLS.md` for existing tools and Go/Rust differences.

@@ -78,6 +78,8 @@ failures and open quality holds still require repair; a benchmark pass cannot
 waive them. Scope cheap native lint under `team/docs/LINT.md`, retain diagnostic
 dispositions and untested scope, and do not block submission on advisory style.
 Go and Rust use existing tools under `team/docs/TOOLS.md`.
+Use `skills/profile/SKILL.md` when a measured cost needs route, CPU/allocation or
+HTTP-to-DB attribution; retain actual tool output and its coverage limitations.
 Optional contract tests and bounded preparation/refactor phases follow
 `team/docs/PHASES.md`, `skills/prepare-tests/SKILL.md` and `skills/refactor/SKILL.md`.
 Record preparation time and the dependent improvement. Costly collection uses

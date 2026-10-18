@@ -1,0 +1,906 @@
+{
+  "mode": "practice",
+  "scope": "Reusable profiling Skill validation; no official score or adoption claim",
+  "pluginBase": "9f2dc848349c70c7bf5ffc6968515afd8de4a821",
+  "version": "0.10.0",
+  "goApplication": {
+    "proof": {
+      "sourceSha": "53f8b627e040c30ebec600457c6c97da008b84b0",
+      "localChanges": [
+        "HTTP/SQL observation integration",
+        "loopback server and graceful shutdown",
+        "preexisting slog key/value vet correction"
+      ],
+      "toolchain": "go version go1.24.4 darwin/arm64",
+      "traceSummary": {
+        "traceCount": 1023,
+        "spanCount": 17007,
+        "errorSpanCount": 0,
+        "orphanSpanCount": 0,
+        "redactedNameCount": 5610,
+        "unknownStatusCount": 0,
+        "httpWithoutObservedDbCount": 0
+      },
+      "httpSpanCount": 171,
+      "nearbyHttpSpanCount": 170,
+      "nearbyDbSpanCounts": [
+        94
+      ],
+      "medianObservedDbUnionFraction": 0.7749981994912987,
+      "rawSpanNames": {
+        "sql.conn.begin_tx": 171,
+        "sql.conn.exec": 2,
+        "sql.stmt.exec": 2,
+        "sql.tx.commit": 1,
+        "HTTP POST /api/app/users": 1,
+        "sql.conn.query": 5610,
+        "sql.stmt.query": 5270,
+        "sql.rows": 5610,
+        "sql.tx.rollback": 170,
+        "HTTP GET /api/app/nearby-chairs": 170
+      },
+      "slowLog": {
+        "queryCount": 595,
+        "timeSumSeconds": 0.18888,
+        "classes": [
+          {
+            "fingerprint": "select * from chair_locations where chair_id = ? order by created_at desc limit ?",
+            "count": 48,
+            "queryTimeSumSeconds": 0.123025,
+            "rowsExamined": 1018080
+          },
+          {
+            "fingerprint": "select status from ride_statuses where ride_id = ? order by created_at desc limit ?",
+            "count": 84,
+            "queryTimeSumSeconds": 0.043868,
+            "rowsExamined": 377748
+          },
+          {
+            "fingerprint": "select * from rides where chair_id = ? order by created_at desc",
+            "count": 48,
+            "queryTimeSumSeconds": 0.008419,
+            "rowsExamined": 36084
+          },
+          {
+            "fingerprint": "administrator command: Prepare",
+            "count": 188,
+            "queryTimeSumSeconds": 0.004771,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "show global variables where variable_name in(?+)",
+            "count": 1,
+            "queryTimeSumSeconds": 0.003406,
+            "rowsExamined": 4
+          },
+          {
+            "fingerprint": "select * from chairs",
+            "count": 6,
+            "queryTimeSumSeconds": 0.001915,
+            "rowsExamined": 3000
+          },
+          {
+            "fingerprint": "insert into users (id, username, firstname, lastname, date_of_birth, access_token, invitation_code) values(?+)",
+            "count": 1,
+            "queryTimeSumSeconds": 0.000663,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "start transaction",
+            "count": 7,
+            "queryTimeSumSeconds": 0.00066,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "select * from users where access_token = ?",
+            "count": 6,
+            "queryTimeSumSeconds": 0.000399,
+            "rowsExamined": 6
+          },
+          {
+            "fingerprint": "commit",
+            "count": 1,
+            "queryTimeSumSeconds": 0.000391,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "administrator command: Close stmt",
+            "count": 186,
+            "queryTimeSumSeconds": 0.000355,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "explain select * from chair_locations where chair_id = ? order by created_at desc limit ?",
+            "count": 1,
+            "queryTimeSumSeconds": 0.000298,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "select @@version_comment limit ?",
+            "count": 2,
+            "queryTimeSumSeconds": 0.000235,
+            "rowsExamined": 2
+          },
+          {
+            "fingerprint": "select current_timestamp(?)",
+            "count": 6,
+            "queryTimeSumSeconds": 0.000144,
+            "rowsExamined": 6
+          },
+          {
+            "fingerprint": "rollback",
+            "count": 6,
+            "queryTimeSumSeconds": 0.00012,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "insert into coupons (user_id, code, discount) values(?+)",
+            "count": 1,
+            "queryTimeSumSeconds": 0.000117,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "administrator command: Ping",
+            "count": 1,
+            "queryTimeSumSeconds": 9.2e-05,
+            "rowsExamined": 0
+          },
+          {
+            "fingerprint": "administrator command: Quit",
+            "count": 2,
+            "queryTimeSumSeconds": 2e-06,
+            "rowsExamined": 0
+          }
+        ]
+      },
+      "limitations": [
+        "local diagnostic workload only; no official benchmark or score",
+        "8 active chairs rather than official load distribution",
+        "middleware authentication and Beginx transactions may be separate root traces",
+        "94 DB spans per request are not 94 SQL queries; nested stmt/rows spans overlap",
+        "slowlog includes user creation/startup and metadata probe; not a pure HTTP sample",
+        "macOS Docker/localhost and sequential off->1%->100% order; overhead not a randomized estimate",
+        "CPU profile and allocation output include 100% observation/exporter cost"
+      ],
+      "localSourceHashes": {
+        "main.go": "488bbb375a5eb234e159e4901ab098d6805e609d2074955f8f9f27ccaca139e7",
+        "kaizen_observe.go": "0935c754ca71e6fd11087a0b2b76d81081a4cd917e6e68a92afee754b4fbc5a4",
+        "kaizen_observe_sql.go": "ec16bef33d2df5079085cb130b1e75ee339d72cd8ae1f2b58fb6d0b4cabaa783",
+        "go.mod": "27b44a289b23a46d69c40acaf8618666abd7e95c2287fdfd67e237ddfd305012",
+        "go.sum": "742f3b2168c150f5bdc4aecf7b4c6bf5f821542be0d444d7d6ca0cc92447caf5"
+      }
+    },
+    "runtime": [
+      {
+        "mode": "off",
+        "ratio": "0.01",
+        "workload": "ISUCON14 nearby-chairs; 8 active chairs; 20 sequential requests per trial; 3 trials",
+        "trialWallMs": [
+          853.0328330234624,
+          840.9294160082936,
+          831.4139999856707
+        ],
+        "medianWallMs": 840.9294160082936,
+        "profilerListening": false,
+        "traceBytesBeforeShutdown": 0,
+        "exitCode": 0,
+        "traceBytes": 0,
+        "traceSha256": null,
+        "profilerClosed": true
+      },
+      {
+        "mode": "sampled",
+        "ratio": "0.01",
+        "workload": "ISUCON14 nearby-chairs; 8 active chairs; 20 sequential requests per trial; 3 trials",
+        "trialWallMs": [
+          875.7064579986036,
+          857.6844159979373,
+          858.6457910132594
+        ],
+        "medianWallMs": 858.6457910132594,
+        "profilerListening": true,
+        "traceBytesBeforeShutdown": 96049,
+        "exitCode": 0,
+        "traceBytes": 96049,
+        "traceSha256": "b8ef06f3b26390e12d83309931606b6ce9413c09c4f051f9264f27dbc875b6c6",
+        "profilerClosed": true
+      },
+      {
+        "mode": "all",
+        "ratio": "1",
+        "workload": "ISUCON14 nearby-chairs; 8 active chairs; 20 sequential requests per trial; 3 trials",
+        "trialWallMs": [
+          935.3223750076722,
+          949.9055000196677,
+          932.0210830192082
+        ],
+        "medianWallMs": 935.3223750076722,
+        "profilerListening": true,
+        "cpuWindowRequests": 109,
+        "traceBytesBeforeShutdown": 16668745,
+        "exitCode": 0,
+        "traceBytes": 16668745,
+        "traceSha256": "9fa0209f05a188fb7d62cbd93ca619cf5a64b4af160a049495e7bc68461dcc86",
+        "profilerClosed": true
+      }
+    ],
+    "build": [
+      {
+        "label": "test-before",
+        "command": [
+          "go",
+          "test",
+          "./..."
+        ],
+        "seconds": 0.249,
+        "returncode": 1
+      },
+      {
+        "label": "vet-before",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "seconds": 0.153,
+        "returncode": 1
+      },
+      {
+        "label": "format",
+        "command": [
+          "gofmt",
+          "-w",
+          "main.go",
+          "kaizen_observe.go",
+          "kaizen_observe_sql.go"
+        ],
+        "seconds": 0.009,
+        "returncode": 0
+      },
+      {
+        "label": "test",
+        "command": [
+          "go",
+          "test",
+          "./..."
+        ],
+        "seconds": 0.202,
+        "returncode": 0
+      },
+      {
+        "label": "vet",
+        "command": [
+          "go",
+          "vet",
+          "./..."
+        ],
+        "seconds": 0.141,
+        "returncode": 0
+      },
+      {
+        "label": "build",
+        "command": [
+          "go",
+          "build",
+          "-o",
+          ".local/tools-validation/isuride-observed",
+          "."
+        ],
+        "seconds": 0.393,
+        "returncode": 0
+      }
+    ],
+    "pprof": [
+      {
+        "label": "cpu-top",
+        "command": [
+          "go",
+          "tool",
+          "pprof",
+          "-top",
+          "-nodecount=15",
+          ".local/tools-validation/isuride-observed",
+          ".local/tools-validation/cpu.pprof"
+        ],
+        "seconds": 0.068,
+        "returncode": 0
+      },
+      {
+        "label": "cpu-cumulative",
+        "command": [
+          "go",
+          "tool",
+          "pprof",
+          "-top",
+          "-cum",
+          "-nodecount=15",
+          ".local/tools-validation/isuride-observed",
+          ".local/tools-validation/cpu.pprof"
+        ],
+        "seconds": 0.012,
+        "returncode": 0
+      },
+      {
+        "label": "heap-alloc",
+        "command": [
+          "go",
+          "tool",
+          "pprof",
+          "-top",
+          "-alloc_space",
+          "-nodecount=15",
+          ".local/tools-validation/isuride-observed",
+          ".local/tools-validation/heap.pprof"
+        ],
+        "seconds": 0.015,
+        "returncode": 0
+      }
+    ],
+    "cleanup": {
+      "ownedContainerRemoved": true,
+      "ports": {
+        "18086": "closed",
+        "16060": "closed",
+        "33316": "closed"
+      },
+      "sharedDockerDesktopStopped": false
+    }
+  },
+  "goFixture": {
+    "scope": "Template runtime correctness and local instrumentation cost only; no application performance score or contest environment claim",
+    "goVersion": "go1.24.4 darwin/arm64",
+    "mysqlVersion": "8.0.43",
+    "templateSha256": {
+      "README.md": "e82e105860c5c017ca49f623fe59d9cabdbb30b1c04e0bc0f185f20588f525b1",
+      "observe.go": "0935c754ca71e6fd11087a0b2b76d81081a4cd917e6e68a92afee754b4fbc5a4",
+      "observe_sql.go": "ec16bef33d2df5079085cb130b1e75ee339d72cd8ae1f2b58fb6d0b4cabaa783"
+    },
+    "tests": {
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-v",
+        "."
+      ],
+      "returncode": 0,
+      "durationSeconds": 1.1003380409965757,
+      "realMySQL": true,
+      "dsnProvenance": "private local fixture file; value omitted",
+      "goVersion": "go version go1.24.4 darwin/arm64",
+      "log": "evidence-test-real.log"
+    },
+    "additionalObservedChecks": [
+      {
+        "command": [
+          "go",
+          "vet",
+          "."
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "go",
+          "build",
+          "-o",
+          "observation-fixture",
+          "."
+        ],
+        "returncode": 0
+      },
+      {
+        "command": [
+          "go",
+          "tool",
+          "pprof",
+          "-top",
+          "evidence/heap.pprof"
+        ],
+        "returncode": 0,
+        "log": "evidence-heap-top.log"
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check",
+          "--",
+          "templates/go-observation"
+        ],
+        "returncode": 0,
+        "cwd": "/Users/shm11c3/Develop/ISUCON/kaizen-plugin-observe-tools"
+      }
+    ],
+    "traceChecks": {
+      "http": {
+        "total": 1,
+        "http": 1,
+        "db": 0,
+        "dbWithDirectHTTPParent": 0,
+        "spanNames": [
+          "HTTP GET /rides/{id}"
+        ],
+        "trace": "evidence/http/traces.jsonl"
+      },
+      "mysql-context": {
+        "total": 5,
+        "http": 1,
+        "db": 4,
+        "dbWithDirectHTTPParent": 4,
+        "spanNames": [
+          "HTTP GET /database/{id}",
+          "sql.conn.query",
+          "sql.rows",
+          "sql.stmt.query"
+        ],
+        "trace": "evidence/mysql-context/traces.jsonl"
+      },
+      "mysql-broken-context": {
+        "total": 5,
+        "http": 1,
+        "db": 4,
+        "dbWithDirectHTTPParent": 0,
+        "spanNames": [
+          "HTTP GET /database/{id}",
+          "sql.conn.query",
+          "sql.rows",
+          "sql.stmt.query"
+        ],
+        "trace": "evidence/mysql-broken-context/traces.jsonl"
+      }
+    },
+    "benchmark": {
+      "command": [
+        "go",
+        "test",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkObservationHandler$",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=3",
+        "."
+      ],
+      "returncode": 0,
+      "log": "evidence-benchmark.log",
+      "nativeDurationSeconds": 3.282,
+      "normal": {
+        "nsPerOp": [
+          259.0,
+          78.17,
+          83.84
+        ],
+        "bytesPerOp": [
+          208,
+          208,
+          208
+        ],
+        "allocsPerOp": [
+          4,
+          4,
+          4
+        ]
+      },
+      "off": {
+        "nsPerOp": [
+          70.34,
+          60.62,
+          60.88
+        ],
+        "bytesPerOp": [
+          208,
+          208,
+          208
+        ],
+        "allocsPerOp": [
+          4,
+          4,
+          4
+        ]
+      },
+      "ratio0.01": {
+        "nsPerOp": [
+          1242,
+          1201,
+          1207
+        ],
+        "bytesPerOp": [
+          3235,
+          3230,
+          3229
+        ],
+        "allocsPerOp": [
+          35,
+          35,
+          35
+        ]
+      },
+      "ratio1": {
+        "nsPerOp": [
+          8596,
+          8647,
+          8709
+        ],
+        "bytesPerOp": [
+          8339,
+          8339,
+          8340
+        ],
+        "allocsPerOp": [
+          97,
+          97,
+          97
+        ]
+      },
+      "limitations": [
+        "No database operations in this microbenchmark",
+        "Normal first run outlier; do not infer off is faster",
+        "Warm local toolchain/cache",
+        "Sync sampled JSON file export cost included; not app throughput"
+      ]
+    },
+    "dependencies": "go.mod and go.sum in this directory preserve actual resolved dependency pins",
+    "limitations": [
+      "CPU profile endpoint implemented but not exercised in this fixture; heap binary parsed by actual go tool pprof",
+      "Real MySQL query fixtures do not exercise all driver/transaction methods",
+      "Low sampling ratio can legitimately yield no spans on a short run; validate output under an explicit diagnostic sampling configuration",
+      "Static route contract is caller supplied; no URL or IDs may be passed as route"
+    ]
+  },
+  "rustFixture": {
+    "metadata": {
+      "versions": {
+        "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+        "rustfmt": "rustfmt 1.9.0-stable (48a229ceae 2026-09-01)",
+        "clippy": "clippy 0.1.98 (48a229ceae 2026-09-01)"
+      },
+      "host": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "sourceSha256": "0bdef01a91ca17e22fb16a0cec429fdeb6fe9c412ae7487606992c2129509ab0",
+      "cargoLockSha256": "1b0c7f9e77be6d96e87e7d819e8afc5b61c239d292321dd8769d24dd7cbd70a3",
+      "cacheMethod": "Fetched public dependencies first, then offline builds with separate initially-empty task target/intermediate dirs; no global cache deletion. RUSTC_WRAPPER disabled for fixture only because inherited sccache was unavailable under sandbox. CARGO_BUILD_BUILD_DIR fixed to task directories rather than global shared path.",
+      "scope": "Real loopback HTTP with deterministic mock DB work; official stdout batch exporter only. No production Rust app, MySQL, OTLP endpoint, Linux perf or competition score verification.",
+      "clippyCompilerMessages": [],
+      "setupFailures": [
+        "Default sccache invocation was sandbox-disallowed before compilation.",
+        "Initial sandbox network fetch failed DNS; allowed network retry fetched pinned crates.",
+        "API pin0.33.0 conflicted with SDK0.33.1; corrected API to0.33.1 before compiling.",
+        "First base build blocked on inherited global intermediate build-dir; final measurements use dedicated task intermediate dirs.",
+        "First validate.py run had duplicate Python keyword aggregation error; fixed helper, Rust binary unchanged."
+      ],
+      "binaryBytes": {
+        "base": 568232,
+        "otel": 1396488
+      }
+    },
+    "buildAndChecks": [
+      {
+        "label": "build-base-empty-target",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--offline",
+          "--release",
+          "--target-dir",
+          "target-base"
+        ],
+        "startedAt": "2026-10-18T15:51:08.699759+00:00",
+        "seconds": 0.07247166699380614,
+        "returncode": 101
+      },
+      {
+        "label": "build-base-initial",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--offline",
+          "--release",
+          "--target-dir",
+          "target-base"
+        ],
+        "startedAt": "2026-10-18T15:51:36.972334+00:00",
+        "seconds": 1.0898315829981584,
+        "returncode": 0
+      },
+      {
+        "label": "build-otel-initial",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--offline",
+          "--release",
+          "--features",
+          "otel",
+          "--target-dir",
+          "target-otel"
+        ],
+        "startedAt": "2026-10-18T15:51:38.062640+00:00",
+        "seconds": 5.577704833005555,
+        "returncode": 0
+      },
+      {
+        "label": "build-otel-warm-nochange",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--offline",
+          "--release",
+          "--features",
+          "otel",
+          "--target-dir",
+          "target-otel"
+        ],
+        "startedAt": "2026-10-18T15:51:43.640706+00:00",
+        "seconds": 0.09609491701121442,
+        "returncode": 0
+      },
+      {
+        "label": "fmt-check",
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "startedAt": "2026-10-18T15:52:46.942925+00:00",
+        "seconds": 0.23447879101149738,
+        "returncode": 0
+      },
+      {
+        "label": "tests-workspace",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "--workspace",
+          "--features",
+          "otel",
+          "--target-dir",
+          "target-otel"
+        ],
+        "startedAt": "2026-10-18T15:52:47.177894+00:00",
+        "seconds": 5.904603833012516,
+        "returncode": 0
+      },
+      {
+        "label": "clippy-workspace-targets",
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--offline",
+          "--workspace",
+          "--all-targets",
+          "--features",
+          "otel",
+          "--target-dir",
+          "target-otel",
+          "--message-format=json",
+          "--",
+          "--no-deps"
+        ],
+        "startedAt": "2026-10-18T15:52:53.083667+00:00",
+        "seconds": 1.9175890000187792,
+        "returncode": 0
+      },
+      {
+        "label": "build-base-warm-nochange",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--offline",
+          "--release",
+          "--target-dir",
+          "target-base"
+        ],
+        "startedAt": "2026-10-18T15:52:55.001757+00:00",
+        "seconds": 0.08556408301228657,
+        "returncode": 0
+      }
+    ],
+    "runtimeMedians": {
+      "base": {
+        "requestSeconds": 0.047630542,
+        "processSeconds": 0.05028550000861287,
+        "childCpuSeconds": 0.032640999999999976,
+        "flushShutdownSeconds": 4.17e-07
+      },
+      "compiled-runtime-off": {
+        "requestSeconds": 0.042175375,
+        "processSeconds": 0.04442166700027883,
+        "childCpuSeconds": 0.030119000000000062,
+        "flushShutdownSeconds": 4.16e-07
+      },
+      "otel-on": {
+        "requestSeconds": 0.044918625,
+        "processSeconds": 0.05347037501633167,
+        "childCpuSeconds": 0.053919999999999996,
+        "flushShutdownSeconds": 0.004126375
+      }
+    },
+    "scope": "real loopback HTTP, mocked DB; no Rust competition application/MySQL/OTLP/perf"
+  },
+  "existingTools": {
+    "scope": "Existing native tools on timestamped/synthetic fixture only, not an app score or performance improvement proof.",
+    "tools": {
+      "alp": {
+        "path": ".local/bin/alp",
+        "sha256": "3f2ddcc0fb200b8053a58979a927e44d85432d36d9fe44bb0e5bf053c562dbc7"
+      },
+      "pt-query-digest": {
+        "path": ".local/bin/pt-query-digest",
+        "sha256": "291f73796972c52038e2a8650afd9f7988af48e8bdd67f118d67d5e8ff61f8d1"
+      }
+    },
+    "runs": [
+      {
+        "tool": "alp",
+        "version": "1.0.22",
+        "command": [
+          ".local/bin/alp",
+          "json",
+          "--file",
+          ".local/validation/observe-tools/access.jsonl",
+          "--sort",
+          "sum",
+          "-r",
+          "--format",
+          "json",
+          "-o",
+          "count,method,uri,sum,avg",
+          "--nosave-pos"
+        ],
+        "startedAt": "2026-10-18T15:49:36.112369+00:00",
+        "durationSeconds": 0.00786370798596181,
+        "exitCode": 0,
+        "sort": "sum",
+        "ranking": [
+          "/freq",
+          "/slow",
+          "/many-fast"
+        ],
+        "artifact": ".local/validation/observe-tools/alp-sum.json"
+      },
+      {
+        "tool": "alp",
+        "version": "1.0.22",
+        "command": [
+          ".local/bin/alp",
+          "json",
+          "--file",
+          ".local/validation/observe-tools/access.jsonl",
+          "--sort",
+          "avg",
+          "-r",
+          "--format",
+          "json",
+          "-o",
+          "count,method,uri,sum,avg",
+          "--nosave-pos"
+        ],
+        "startedAt": "2026-10-18T15:49:36.120316+00:00",
+        "durationSeconds": 0.007472583994967863,
+        "exitCode": 0,
+        "sort": "avg",
+        "ranking": [
+          "/slow",
+          "/freq",
+          "/many-fast"
+        ],
+        "artifact": ".local/validation/observe-tools/alp-avg.json"
+      },
+      {
+        "tool": "alp",
+        "version": "1.0.22",
+        "command": [
+          ".local/bin/alp",
+          "json",
+          "--file",
+          ".local/validation/observe-tools/access.jsonl",
+          "--sort",
+          "count",
+          "-r",
+          "--format",
+          "json",
+          "-o",
+          "count,method,uri,sum,avg",
+          "--nosave-pos"
+        ],
+        "startedAt": "2026-10-18T15:49:36.127817+00:00",
+        "durationSeconds": 0.006842375005362555,
+        "exitCode": 0,
+        "sort": "count",
+        "ranking": [
+          "/many-fast",
+          "/freq",
+          "/slow"
+        ],
+        "artifact": ".local/validation/observe-tools/alp-count.json"
+      },
+      {
+        "tool": "pt-query-digest",
+        "version": "3.7.0",
+        "command": [
+          ".local/bin/pt-query-digest",
+          "--output=json",
+          "--limit",
+          "100%",
+          "tests/fixtures/mysql-slow.log"
+        ],
+        "startedAt": "2026-10-18T15:49:36.134688+00:00",
+        "durationSeconds": 0.0834649580065161,
+        "exitCode": 0,
+        "artifact": ".local/validation/observe-tools/pt-query-digest.json",
+        "topLevelKeys": [
+          "classes",
+          "global"
+        ],
+        "parsedSummary": {
+          "queryCount": 6,
+          "queryClassCount": 5,
+          "queryTimeSumSeconds": 0.0136
+        }
+      }
+    ],
+    "inputArtifacts": {
+      ".local/validation/observe-tools/access.jsonl": "ce6b9509913c0c8b73ad4e14de98ee5d6eb2478630422c0babb9cb5fb72274f9",
+      "tests/fixtures/mysql-slow.log": "496e237d85ab7aacbedbf9c9b004978721e02b5279d6d91def1157ef5401e615"
+    }
+  },
+  "pluginChecks": [
+    {
+      "label": "python-full",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "seconds": 70.306,
+      "returncode": 0
+    },
+    {
+      "label": "shell-e2e",
+      "command": [
+        "bash",
+        "tests/run.sh"
+      ],
+      "seconds": 45.277,
+      "returncode": 0
+    }
+  ],
+  "privateArtifacts": "Raw and problem source stay in ignored .local; this file retains aggregate evidence and hashes only",
+  "testedFileSha256": {
+    "skills/profile/SKILL.md": "bea6b80ecfe52df56aba3926a69917231afaf4cfb93c44b4aabed89943058f4a",
+    "skills/profile/references/tools.md": "9211091662228cf845dcd2a68c6d88e20364d340745fdba3404f2bf132465faf",
+    "skills/profile/references/rust.md": "a7c969f93f1933e47bcb50edbfee029df5a09b6c97948c08adc544a3fe8621b8",
+    "scripts/trace_summary.py": "36118e9a3693c3084da960207f0182665ab315c7282fa4c5cd373d2fe2e9aa0f",
+    "tests/test_trace_summary.py": "0dce26ac404920862cabcfee68d7ef1c6ab966c1f5a3824ec52dd2cc6be4632e",
+    "templates/go-observation/observe.go": "0935c754ca71e6fd11087a0b2b76d81081a4cd917e6e68a92afee754b4fbc5a4",
+    "templates/go-observation/observe_sql.go": "ec16bef33d2df5079085cb130b1e75ee339d72cd8ae1f2b58fb6d0b4cabaa783"
+  },
+  "privateArtifactSha256": {
+    ".local/tools-validation/all-traces.json": "9fa0209f05a188fb7d62cbd93ca619cf5a64b4af160a049495e7bc68461dcc86",
+    ".local/tools-validation/all-summary.json": "a6cf490c3d34f611836247043ccf4eb5d1c039aca81a787d5dc948a7f1d11c28",
+    ".local/tools-validation/cpu.pprof": "7124320793393d989c57246cf01251926f416449644e6ea505394c522e29136c",
+    ".local/tools-validation/heap.pprof": "da36b1f75038ae3d1923f872d4e2fe4dac409fa10f0207158a435adc648a820a",
+    ".local/tools-validation/actual-slow.log": "1bb33473043f7e49555ab9fe8a25a9206fb1294bf22e9ef9360af7c0f1f0aae7",
+    ".local/tools-validation/actual-slow-digest.json": "f66a14431edb30438fa07fa30c1879dabc631b3ed227046bc72efe43779bc1b9",
+    ".local/tools-validation/explain.txt": "9537daaede57a4e52c9a5a778c1ca9260a450f76e85ee9a1b5c59bb0b91e9b18",
+    ".local/validation/observe-tools/FORWARD_TEST.md": "a247f80b6e538654d068182c388d62694ba5b699e4c09631621c17f841db8a34"
+  }
+}
