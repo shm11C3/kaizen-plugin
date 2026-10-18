@@ -70,10 +70,15 @@ Integrate tested tools into private plugin main and roll out at an idle boundary
 Keep competition main separate. Read `team/docs/REGULATIONS.md`
 before choosing manual operations or isolated parallel validation environments.
 
-Go and Rust use native tests and existing profilers under `team/docs/TOOLS.md`.
-Run native lint before candidate submission under `team/docs/LINT.md`; inspect
-zero-exit diagnostics, retain AI dispositions and measure the check cost.
-Initial contract tests and bounded preparation/refactor phases follow
+Follow `team/docs/VALIDATION.md`: use the real official benchmark for performance
+and checker correctness, with only necessary build/smoke and focused local checks
+before it. Broad regression, race, all-target lint, new coverage and independent
+or LLM contract review are not universal candidate gates. Known correctness
+failures and open quality holds still require repair; a benchmark pass cannot
+waive them. Scope cheap native lint under `team/docs/LINT.md`, retain diagnostic
+dispositions and untested scope, and do not block submission on advisory style.
+Go and Rust use existing tools under `team/docs/TOOLS.md`.
+Optional contract tests and bounded preparation/refactor phases follow
 `team/docs/PHASES.md`, `skills/prepare-tests/SKILL.md` and `skills/refactor/SKILL.md`.
 Record preparation time and the dependent improvement. Costly collection uses
 observe start/stop; observed samples never establish adoption.

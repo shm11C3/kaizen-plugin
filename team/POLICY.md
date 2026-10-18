@@ -31,12 +31,22 @@ contains source and minimal bootstrap files, not these rules or management tools
 
 - Go and Rust use native checks and existing tools under `team/docs/TOOLS.md`.
   Retain raw and machine-readable evidence; missing data is not a pass.
-- Follow `team/docs/LINT.md` before candidate submission and after integration
-  changes tested source. Resolve correctness diagnostics, explicitly triage
-  advisory findings, and retain versions, source-bound records and duration.
-  A native exit0 alone does not clear gofmt output or Clippy warnings.
-- Follow `team/docs/PHASES.md`: prepare specification-backed regression checks
-  in parallel with analysis, and repair quality holds using reproductions.
+- Follow `team/docs/VALIDATION.md`: the real official benchmark supplies both
+  performance and checker correctness evidence for adoption. Pre-benchmark
+  checks are necessary build/smoke and focused regression for the changed
+  contract or observed defect. Add DB/concurrency checks only for a concrete
+  risk; broad regression, race, all-target lint and new coverage are not gates
+  for every candidate. Record actual scope and honest skips.
+- Select cheap related lint under `team/docs/LINT.md`. Resolve correctness
+  diagnostics, retain source-bound results and duration, and explicitly triage
+  advisory findings. Native exit0 does not erase diagnostics; advisory formatting
+  or style alone does not block submission.
+- Independent or LLM contract review is optional for a specific unresolved
+  semantic risk. All-case LLM review is off by default; do not make it a normal
+  candidate gate. Conduct review outside the shared target reservation.
+- `team/docs/PHASES.md` allows bounded focused test preparation in parallel;
+  repair known failures and quality holds using reproductions. A benchmark pass
+  does not waive known local defects/open holds or prove the whole specification.
 - A bounded refactor can unblock a named optimization/repair. Timebox it,
   preserve contracts, separate structural/performance commits and measure the
   combined result and preparation cost. Unmeasured cleanup is not a score gain.

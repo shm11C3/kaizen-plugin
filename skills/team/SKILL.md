@@ -77,9 +77,14 @@ or Git commit author is not the member's identity.
 When using the existing setup, observe, hypothesize, experiment or recover skills
 as a team, apply this skill's ownership boundary first. Workers prepare candidate
 changes locally; only the reservation holder operates the control-host experiment.
-Before task-ready, follow `../../team/docs/LINT.md` on the submitted commit:
-attach lint/test records, durations, tool versions and AI diagnostic dispositions.
-The integrator reruns relevant checks when integration changes the tested source.
+Before task-ready, select necessary focused checks under
+`../../team/docs/VALIDATION.md` and scoped cheap lint under `../../team/docs/LINT.md`.
+Attach actual records, duration, tool versions, diagnostic dispositions and
+untested scope; advisory style does not block submission. Broad regression,
+race, new coverage and independent/LLM review are not default gates. The
+integrator checks relevant scope when integration changes the tested source.
+Adoption still uses the real official benchmark's performance and correctness,
+and a pass never clears known defects or unresolved quality holds.
 
 ## Decisions and interruption
 

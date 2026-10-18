@@ -1,29 +1,32 @@
 # テスト・観測・整備へ時間を使う
 
 最終有効スコアのために準備フェーズを置ける。全員一斉停止の固定日程や定期的な全面リファクタは設けない。
-Go／Rustで同じ判断基準を使い、準備費用も8時間に含める。最終検証枠を先に残す。
+Go／Rustで同じ判断基準を使い、準備費用も競技時間に含める。最終検証枠を先に残す。
 Rustでは[ビルド時間](RUST_BUILD.md)も準備予算に含め、実際のdeploy／recover時間から終盤の枠を残す。
 
 ## 初期テスト
 
-独立した担当が、契約テスト、既存ツールと計測、採点経路の調査を並列で行う。
+必要な担当が、具体的な変更の確認、既存ツールと計測、採点経路の調査を並列で行う。
 共有環境の変更・観測・ベンチは単一予約を守る。テスト完成まで実装を全面停止しない。
-[prepare-tests](../../skills/prepare-tests/SKILL.md)で、仕様・checkerから初期化・権限・集計・
-状態遷移・永続性・並行実行など予定する改善が壊しうる契約を守る。現実装の誤りを正解にしない。
+[検証方針](VALIDATION.md)に従い、ベンチ前は必要なbuild/smokeと変更契約・観測済み不具合の
+既存focused regressionを選ぶ。包括テスト・新coverage・独立/LLMレビューは毎候補のゲートにしない。
+具体的な不足がある場合に[prepare-tests](../../skills/prepare-tests/SKILL.md)で仕様・checkerに
+沿う再現を追加する。現実装の誤りを正解にせず、DB・並行実行検証も必要範囲に限る。
 実DBが必要なもの、未実行、skip、依存不足を区別する。品質保留は再現→修正→再計測へ戻す。
-[Lint手順](LINT.md)も同じ準備予算に含め、開始時の既存診断と候補提出前の関連検査を記録する。
+[Lint手順](LINT.md)も同じ予算に含め、安価な関連検査と残した未確認範囲を記録する。
 
 既存の言語ツールを使う。`scripts/check.py`は実行証拠を残す補助:
 
 ```bash
-python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT" --label regression --timeout 120 -- go test ./...
-python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT" --label regression --timeout 120 -- cargo test
+python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/go" --label focused --timeout 120 -- go test -count=1 -run '^TestChangedContract$' .
+python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/rust" --label focused --timeout 120 -- cargo test --locked -p PACKAGE changed_contract
 ```
 
 projectにはgo.mod／Cargo.tomlのあるディレクトリを指定する。`.kaizen/checks/`にログとJSONを保存する。
 通常checkは終了0かつ実行中のソース変化なしが`passed`。Lint用parserを指定した場合は指摘も判定し、
 終了0でも`needs_review`になりうる。テスト内容の十分性や公式checker合格は別途必要。
-wrapper成功にskipを隠さない。成果物は追跡対象から除外し、到達可能なartifact参照で共有する。
+テスト名・package/crateは実在する変更範囲に合わせ、wrapper成功にskipを隠さない。
+実施しなかった検査も理由と範囲を残す。成果物は追跡対象から除外し、到達可能なartifact参照で共有する。
 
 ### 実DBを使うGoテスト
 

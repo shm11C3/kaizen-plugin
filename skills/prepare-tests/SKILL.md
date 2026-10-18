@@ -1,36 +1,40 @@
 ---
 name: prepare-tests
-description: "Build a fast, specification-backed regression foundation before aggressive ISUCON changes, and turn observed quality failures into reproductions. Use during initial preparation, before risky optimization/refactoring, or when a held candidate needs a repair."
+description: "Select or add focused, specification-backed checks for a concrete ISUCON change or observed quality failure. Use when existing checks cannot answer that risk or a held candidate needs a reproducer; broad preparation is optional rather than a gate before every benchmark."
 ---
 
 # Prepare tests
 
-Read `../../team/docs/PHASES.md`. Use existing language test tools and the
-provided official checker; the plugin records execution, not a replacement test framework.
-Run the native formatting/lint procedure in `../../team/docs/LINT.md` alongside
-these checks. Establish existing diagnostics, inspect zero-exit warnings, and
-attach source-bound records and AI dispositions before candidate submission.
+Read `../../team/docs/VALIDATION.md` and `../../team/docs/PHASES.md`. The official
+real benchmark checks performance and checker correctness for adoption. Local
+checks cheaply catch concrete defects before it; use native tools rather than
+a replacement test framework. Scope lint under `../../team/docs/LINT.md` and
+retain source-bound results, diagnostics and untested scope.
 
 1. Read the actual specification, checker and current scoring paths. List the
    invariants affected by the current high-priority candidates: authorization/ownership, state transitions,
    amounts/aggregation, initialization, persistence, visibility and concurrency.
    Current output is a characterization, not automatically the correct contract.
-   Prioritize a reproducer for existing baseline warnings/correctness defects
-   before unrelated coverage; preserve an explicit gap if reproduction is unavailable.
+   Prioritize a reproducer for observed warnings/correctness defects relevant to
+   the planned change before unrelated coverage; preserve an explicit gap if
+   reproduction is unavailable.
    Name which near-term candidate each check protects. Do not spend the whole
    budget on easy pure helpers while the planned SQL/concurrency change remains
    untested; record that gap. A human may deliberately choose broader preparation.
 2. Claim a scoped test task. Other members continue source analysis and observation
    in independent clones; do not block all implementation until coverage is complete.
    Set a time budget and the improvements these checks will unblock in the plan.
-3. Start with fast API/DB integration checks for those contracts and critical edge
-   cases. Use the real database when its transaction semantics matter; mocks alone
-   cannot prove visibility, ordering or SQL equivalence. Isolate/reset test data.
-4. Use native tools (Go: go test ./...; Rust: cargo test); optionally run:
-   `python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT" --label regression --timeout 120 -- go test ./...`.
-   For Rust use cargo test through the same wrapper. Select the module/crate
-   directory as --project when needed. The wrapper retains command, source fingerprint, time and logs. A timeout, changed
-   source during the run, missing dependencies or skipped integration is not a pass.
+3. Prefer existing focused regression for the changed contract or observed
+   failure. Add a reproducer or API/DB/concurrency check only when it answers a
+   concrete risk not covered by the benchmark/cheap existing checks. Use a real
+   database when transaction semantics matter; mocks alone cannot prove that
+   behavior. Isolate/reset test data. New broad coverage is not a submission gate.
+4. Freeze an immutable commit before source-bound execution. Select the relevant
+   package/crate and named tests, e.g. Go `go test -count=1 -run '^TestChangedContract$' .`
+   or Rust `cargo test --locked -p PACKAGE changed_contract`. Optionally wrap the
+   chosen command with `python3 "$K/scripts/check.py" --project MODULE_PATH --label focused --timeout 120 -- ...`.
+   The wrapper retains command, source fingerprint, time and logs. A timeout,
+   changed source during the run, missing dependencies or skipped test is not a pass.
 5. Verify sensitive tests reject an actually broken case or the original held SHA.
    Keep failure evidence, then verify the repaired version passes. Do not weaken
    expectations to make an optimization green; resolve specification ambiguity first.
@@ -38,9 +42,11 @@ attach source-bound records and AI dispositions before candidate submission.
    remaining gaps and stop at the budget. Expand coverage when a new risk/failure
    justifies it, not to reach a percentage.
 
-Run fast relevant checks before source submission, broader regression before
-integration, and the official benchmark for adoption. Race-enabled builds and
+Do not require broad regression, race or a separate review on every integration.
+Use those only for a named risk with a time budget. Race-enabled builds and
 profilers are diagnostic runs; do not use their throughput as score evidence.
+Known local correctness failures still need repair/hold even if a benchmark
+passes; new broad test preparation is not required merely to reach READY.
 A later quality hold gains a linked reproducer and repair rather than discarding
 its candidate or sending unfinished investigation to the human.
 

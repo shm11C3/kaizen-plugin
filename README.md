@@ -14,6 +14,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [実験選択・停滞時の再検討](team/docs/STRATEGY.md)と[効果の比較手順](team/docs/COMPARISON.md)
 - [資源を含む復旧](team/docs/RECOVERY.md)と[0.3.0のリハーサル反映](team/docs/REHEARSAL.md)
 - [Go／Rustの既存ツール・観測モード](team/docs/TOOLS.md)
+- [実ベンチと必要範囲の事前確認](team/docs/VALIDATION.md)
 - [候補提出前のLint・指摘の扱い](team/docs/LINT.md)
 - [Go／Rustの選択・ビルド時間・キャッシュ・終盤の予算](team/docs/RUST_BUILD.md)
 - [初期テスト・整備フェーズ](team/docs/PHASES.md)、[prepare-tests](skills/prepare-tests/SKILL.md)・[refactor](skills/refactor/SKILL.md)
@@ -65,6 +66,11 @@ tests/       偽リモートに対するループ全体のテスト
 
 品質・比較・得点改善・変更資源の復旧を確認し、合意した目的と制約を守る候補は、規模が大きくてもAIが採用します。構造変更や副指標の悪化だけで承認待ちを作らず、合意を超える具体的な選択を[人間判断の基準](team/POLICY.md#adoption-and-human-judgment)へ渡します。
 
+候補前は必要なbuild/smoke、変更契約・観測済み不具合のfocused regression、安価な関連Lintへ
+絞り、実際の公式ベンチで性能とcheckerの正しさを確認します。全回帰・race・Clippy全target・
+新coverage・独立/LLM契約レビューは毎候補のゲートにしません。既知欠陥や未解消holdは
+ベンチPASSでも免除せず、省略範囲は記録します。[検証方針](team/docs/VALIDATION.md)を参照してください。
+
 ## 実験の選択と停滞時の再検討（0.4.0）
 
 `plan`は現在の採点への影響・観測根拠・不確実性・計測と復旧までの総所要時間で実験順を決めます。過去の採用率は参考情報です。保存した判断や独自の案を残しつつ、基準版の変更後に見直します。
@@ -86,9 +92,9 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 ### 本番（2026）
 
 1. チームの repo（サーバーのアプリ一式を `go/` `sql/` などに置いたもの）を用意する
-2. `/kaizen:setup`：`templates/preset.sh.example` を当日マニュアルから埋め、`.kaizen/config.sh` に `APP_HOSTS`（3 台）と `BENCH_MODE=manual` を書く。マニュアルで禁止されていることを `.kaizen/RULES.md` に書く
+2. `/kaizen:setup`：`templates/preset.sh.example` を当日マニュアルから埋め、`.kaizen/config.sh` に対象の `APP_HOSTS` と許可された `BENCH_MODE` を書く。ポータル結果を受け渡す場合は `manual`。禁止事項と操作方法を `.kaizen/RULES.md` に書く
 3. stable を固定して配備し、復旧ドリルを通す
-4. `bench.sh baseline --reserve`で枠を確保してからポータルでベンチを回し、`bench.sh baseline --result 'pass=true score=... errors=...'`で記録する
+4. manualの場合は`bench.sh baseline --reserve`で枠を確保してから許可されたポータル操作でベンチを回し、`bench.sh baseline --result 'pass=true score=... errors=...'`で記録する。SSH実行が許可された環境では通常の`bench.sh baseline`を使う
 5. `/kaizen:observe` → `/kaizen:hypothesize` → `/kaizen:experiment` を回す
 
 ### 練習（ISUCON14）
@@ -122,6 +128,12 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | `MAX_EXP_PER_HOUR` | 0 | 0はpluginの回数上限なし。正数なら1時間に開ける実験数の明示上限 |
 
 stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘルスチェック・復旧・ベンチのコマンド、資源の指紋）だけで決まります。予算や閾値、観測の設定、plugin 自体の更新では bundle は無効になりません。本番中に plugin を直す前提なので、どの plugin 版で測ったかは bundle と各サンプルの `pluginRevision` に記録します。
+
+plugin独自のベンチ/実験回数capは既定`0`（当該scopeの上限なし）です。正の明示quotaと
+公式の制限は維持し、既存configの有限値を自動変更しません。`RECOVERY_BENCH_RESERVE`は
+適用される有限枠にだけ作用します。時間予算・30分の実験上限・v2の最低2サンプル・品質条件は
+継続し、進行中の計測coreは差し替えません。チーム登録済みconfigの変更はidle時の既存再登録手順を
+使います。詳しくは[検証方針](team/docs/VALIDATION.md)を参照してください。
 
 分母の取得コマンド・ホスト・解析関数も比較条件です。変更したら安定状態で`stable.sh capture`し直し、
 新しいbaselineを取得します。manualの`--reserve`はカウンターと条件を保存し、`--result`で差分を記録します。
