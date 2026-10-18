@@ -15,7 +15,7 @@
 # - what every host runs is what state.env says is deployed (marker check);
 # - a candidate label needs an open experiment and at least one baseline
 #   sample of the current stable revision;
-# - at most MAX_BENCH_PER_EXP samples and MAX_EXP_MINUTES per experiment;
+# - explicitly configured count caps (0=off), and MAX_EXP_MINUTES per experiment;
 # - a candidate that fails correctness sets REVERT_PENDING, which blocks
 #   deploying anything but stable until recover.sh has run;
 # - BENCH_PRECHECK_CMD (config.sh, optional) must succeed on every app host
@@ -142,7 +142,7 @@ PY
 else
   no_manual_bench
   reservation=$(python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" reserve "$KAIZEN_DIR/bench-attempts.jsonl" \
-    "$budget_exp" "$label" "$deployed" "$MAX_BENCH_PER_EXP" "$MAX_BENCH_TOTAL" "$MAX_BENCH_PER_HOUR" "$RECOVERY_BENCH_RESERVE" "$candidate_run") || die "physical benchmark budget exhausted"
+    "$budget_exp" "$label" "$deployed" "$MAX_BENCH_PER_EXP" "$MAX_BENCH_TOTAL" "$MAX_BENCH_PER_HOUR" "$RECOVERY_BENCH_RESERVE" "$candidate_run") || die "explicit physical benchmark quota exhausted or invalid"
   attempt=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$reservation")
 fi
 if [ "$reserve_only" = 1 ]; then

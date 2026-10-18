@@ -8,6 +8,8 @@ description: "Prepare a claimed ISUCON team candidate from an evidence-backed hy
 Set `K` to this skill's base directory `/../..` and `KAIZEN_PROJECT` to the
 competition clone. Apply `../team/SKILL.md` for shared ownership and read
 `../../team/docs/PIPELINE.md` for delegation, backpressure and time accounting.
+Choose necessary pre-benchmark checks under `../../team/docs/VALIDATION.md`;
+full regression, new coverage and independent/LLM review are not default gates.
 
 Take a claimed task with a current base, scoring hypothesis, allowed files and
 resources, observable completion criteria, time budget and stop/repair conditions.
@@ -24,11 +26,14 @@ coordinates with other members through Discord.
    the specification, prior failures or test cases; it must not edit the writer's
    worktree. Use `../prepare-tests/SKILL.md` or `../refactor/SKILL.md` only for a
    concrete blocker with its own time limit and dependent improvement.
-3. Commit and freeze the source at an immutable full SHA before running
-   source-bound native lint and regression checks under
-   `../../team/docs/LINT.md`. Use actual database/runtime checks when the change
-   depends on them. Preserve failures and diagnostic dispositions. Add a focused
-   reproducer for an observed defect; keep specification-backed assertions.
+3. Commit and freeze the source at an immutable full SHA before source-bound
+   checks. Use a necessary build/load smoke and existing focused regression for
+   the changed contract or observed failure; select cheap related lint under
+   `../../team/docs/LINT.md`. Add real DB/concurrency checks or a focused
+   reproducer when a concrete risk needs them, not as a universal gate. Preserve
+   failures, diagnostic dispositions and explicitly skipped scope. Advisory
+   formatting/style findings alone do not block READY. Keep assertions grounded
+   in the specification.
    If a repair is needed, finish pending checks, make a new commit and rerun
    the affected scope against its full SHA. Never move HEAD during a running
    check/build or bind a pre-commit result to a later untested commit.

@@ -51,7 +51,8 @@ case "$cmd" in
     stable=$(state_get STABLE_REV)
     [ -n "$stable" ] || die "STABLE_REV is not set; run /kaizen:setup"
     recent=$(experiments_started_since $(( $(epoch) - 3600 )))
-    [ "$recent" -lt "$MAX_EXP_PER_HOUR" ] || die "budget: $recent experiments started in the last hour (MAX_EXP_PER_HOUR=$MAX_EXP_PER_HOUR)"
+    [ "$MAX_EXP_PER_HOUR" -eq 0 ] || [ "$recent" -lt "$MAX_EXP_PER_HOUR" ] \
+      || die "budget: $recent experiments started in the last hour (MAX_EXP_PER_HOUR=$MAX_EXP_PER_HOUR)"
     # Records stay out of git: they change on every branch and the corpus
     # (knowledge/records) is their durable copy. Only config and rules are tracked.
     [ -f "$KAIZEN_DIR/.gitignore" ] || printf '*\n!.gitignore\n!config.sh\n!preset.sh\n!RULES.md\n' > "$KAIZEN_DIR/.gitignore"

@@ -71,6 +71,10 @@ source-bound QA・commit・READY条件も変わらない。
 テスト観点・fixture設計は実装と重ねる。PASSの証拠は実行したsource SHAへ結び付ける。
 統合で関連するsourceが変わったら実際の統合SHAを検証する。変更のない範囲の証拠は
 scope・条件を確認して再利用し、全回帰・race・レビューを小修正ごとに一律追加しない。
+[検証方針](VALIDATION.md)に沿って必要なbuild/smoke・focused regression・安価なLintを選ぶ。
+新coverageや全ケースのLLM契約レビューをREADYの既定条件にしない。具体的な疑義に対する
+レビューは共有targetの占有外で行い、実ベンチを性能とcheckerの正しさの共通判断に使う。
+省略範囲を記録し、既知の欠陥・未解消holdはベンチPASSでも免除しない。
 最終版の必要な確認は時間予算へ含める。
 
 品質保留は元SHA・失敗・分類・修正を結び付ける。[品質保留](PARALLEL_QUALITY.md)の

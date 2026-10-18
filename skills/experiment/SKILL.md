@@ -23,9 +23,11 @@ On the branch opened by hypothesize (`<github-login>/exp/NNN-<slug>` in a team,
 manifest allows. Configuration changes go under `etc/` (every host) or
 `etc-<host>/` (one host) and deploy with the code. Commit with a message
 that states the mechanism. Uncommitted changes never deploy.
-Before deploying that commit, run relevant native lint and regression checks
-under `team/docs/LINT.md` and the prepare-tests skill. Resolve correctness
-diagnostics; retain explicit dispositions for advisory/style findings. Recheck
+Before deploying that commit, select only necessary build/smoke and focused
+checks under `../../team/docs/VALIDATION.md` and `../../team/docs/LINT.md`.
+Do not add broad regression, race, new coverage or independent/LLM review to
+every candidate. Resolve known correctness diagnostics; retain advisory/style
+dispositions without making them a submission gate. Recheck relevant scope on
 the integrated source if composition changed it; no routine human approval.
 Reuse recorded results only when their source, scope and conditions still apply.
 Designing a test in parallel does not establish that the integrated SHA passed it.
@@ -49,10 +51,16 @@ record and open a new one.
 Take as many candidate samples as the plan header says the baseline spread
 needs (two, three or four). Take a second sample (`candidate-2`) when the first is within
 `MIN_IMPROVEMENT_BP` of the baseline median or the baseline samples spread
-more than that. Physical attempts (including no result and final recovery)
-consume MAX_BENCH_PER_EXP, MAX_BENCH_TOTAL and MAX_BENCH_PER_HOUR. The default
-RECOVERY_BENCH_RESERVE=1 saves the last slot for stable. Closing an experiment
-does not reset its recovery budget. Choose the complete measurement plan first.
+more than that. The real official benchmark supplies both performance and
+checker correctness evidence; local microbenchmarks are auxiliary. Passing it
+does not clear a known local defect or open quality hold, or prove all behavior.
+All physical attempts (including no result and final recovery) remain counted.
+MAX_BENCH_PER_EXP, MAX_BENCH_TOTAL, MAX_BENCH_PER_HOUR and MAX_EXP_PER_HOUR default
+to 0 (no plugin count cap for that scope); positive explicit quotas still apply.
+RECOVERY_BENCH_RESERVE=1 reserves recovery room only against applicable finite
+caps, across their scopes. It creates no official quota or unlimited-scope cap.
+Closing an experiment does not reset its consumed budgets. Preserve official
+limits, MAX_EXP_MINUTES and final recovery time; plan informative samples first.
 
 Run `evaluate.sh` before deciding whether to sample more. If it says
 `inconclusive ... noise not separated` and budget remains, take the extra

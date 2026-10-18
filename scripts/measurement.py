@@ -217,15 +217,20 @@ def attempts(path):
 
 
 def reserve(path, experiment, label, revision, per_exp, total, per_hour, recovery_reserve, candidate):
+    budgets = (per_exp, total, per_hour, recovery_reserve)
+    if any(not isinstance(n, int) or isinstance(n, bool) or n < 0 for n in budgets):
+        raise ValueError('budgets and RECOVERY_BENCH_RESERVE must be nonnegative integers; 0 disables count caps')
     rows = attempts(path)
-    if min(per_exp, total, per_hour) <= 0 or not 0 <= recovery_reserve < per_exp:
-        raise ValueError('budgets must be positive and 0 <= RECOVERY_BENCH_RESERVE < MAX_BENCH_PER_EXP')
     recent = sum((now() - datetime.datetime.fromisoformat(r['startedAt'])).total_seconds() < 3600 for r in rows)
     count = sum(r['experiment'] == experiment for r in rows) if experiment else 0
-    if len(rows) >= total or recent >= per_hour:
-        raise ValueError('physical-run total/hour budget exhausted, including baseline, recovery and no-result attempts')
-    if experiment and count >= per_exp - (recovery_reserve if candidate else 0):
-        raise ValueError('experiment physical-run budget exhausted or final recovery slot reserved')
+    # Positive caps are explicit team/target quotas. Reserve stable/recovery
+    # capacity on every finite axis; an unlimited axis imposes no restriction.
+    reserve_slots = recovery_reserve if candidate else 0
+    for used, limit, scope in ((len(rows), total, 'total'), (recent, per_hour, 'hour'),
+                               (count, per_exp if experiment else 0, 'experiment')):
+        if limit and used >= max(0, limit - reserve_slots):
+            raise ValueError(f'physical-run {scope} budget exhausted or stable/recovery slots reserved; '
+                             'baseline, recovery and no-result attempts remain counted')
     row = {'id': uuid.uuid4().hex, 'experiment': experiment or None, 'label': label,
            'revision': revision, 'startedAt': now().isoformat()}
     path.parent.mkdir(parents=True, exist_ok=True)

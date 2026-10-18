@@ -28,7 +28,8 @@ and note the commit as the initial stable revision. Never edit on the server.
   servers (application path, build command, service name, health URL,
   database name, how ids look in URLs), then source it from
   `.kaizen/config.sh` and set `APP_HOSTS` to every server, `DB_HOST`, and
-  `BENCH_MODE=manual` (the portal runs the benchmark). Keep the manual's URL
+  the allowed `BENCH_MODE` from the day's manual (`manual` when portal result
+  handoff is required). Keep the manual's URL
   in a comment next to each value taken from it.
 - Everything under `.kaizen/` except `config.sh`, `preset.sh` and `RULES.md`
   stays out of git (`experiment.sh new` writes `.kaizen/.gitignore`); the
@@ -40,6 +41,18 @@ Read the manual once for the rules the loop must not break and list them in
 services that must not change, what `/initialize` must restore, whether
 external services or AI APIs may be called from the servers, and the time
 limit of the initialize endpoint. The hypothesize skill reads this file.
+
+Plugin count caps default to 0 for MAX_BENCH_PER_EXP, MAX_BENCH_TOTAL,
+MAX_BENCH_PER_HOUR and MAX_EXP_PER_HOUR. Positive configured quotas remain
+explicit limits and count every physical attempt, including missing results
+and recovery. Existing configs are not silently migrated to 0. Choose changes
+only at an idle boundary, keep official limits and the deadline, and finish
+active commands/experiments with their original pinned core. The default
+RECOVERY_BENCH_RESERVE=1 applies only to finite applicable caps; MAX_EXP_MINUTES=30
+and quality/sample rules remain. A quota-only change leaves stable-bundle
+comparison identity intact, but registered team environments hash raw config.sh:
+re-register through the existing path while idle rather than weakening identity
+guards. See `../../team/docs/VALIDATION.md`.
 
 ## 2b. Quiet hosts
 
@@ -100,7 +113,8 @@ $K/scripts/bench.sh baseline-2
 ```
 
 Manual mode also reserves baseline-2 before the portal starts. All attempts,
-including missing results and recovery, count against physical-run budgets.
+including missing results and recovery, count toward any applicable finite
+physical-run budgets and the actual time budget.
 
 Two samples show the noise; three when the two differ by more than
 `MIN_IMPROVEMENT_BP`. Commit `.kaizen/` (config, RULES, samples, dump) on
@@ -114,7 +128,8 @@ For the planned Go/Rust choice, fill LOCAL_SYNC_PATHS, BUILD_CMD, binary exclude
 and service paths from the actual source layout. Go examples use go build; Rust
 uses its application's cargo build --release --locked and correct binary path.
 Keep debug/race/instrumented builds out of adoption samples. Use native Go/Rust
-checks and the preparation/test procedure in `team/docs/PHASES.md`; do not assume
+checks selected under `../../team/docs/VALIDATION.md`; optional targeted test
+preparation follows `../../team/docs/PHASES.md`. Do not assume
 the bundled ISUCON14 Go preset configures a different language automatically.
 Choose Go/Rust using the tradeoff in `team/docs/RUST_BUILD.md`: measured build/test
 and repair cycle time, runtime score, compile-time safety and setup/implementation
