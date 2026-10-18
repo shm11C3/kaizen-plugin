@@ -36,7 +36,7 @@
 
 | 項目 | 内容 | 確認方法 |
 |---|---|---|
-| Bedrockのモデル利用申請 | AWSアカウントごとに1回、Model catalogでAnthropicモデルのuse caseを送る | コンソールでアクセス付与を確認 |
+| Bedrockのモデル利用申請 | AWSアカウントごとに1回、Model catalogでAnthropicモデルのuse caseを送る（authorization）。**加えてモデルごとに Marketplace の利用規約（agreement）の受諾が要る**。2026-10-19 の実測: 申請後も 5.5 系は `agreementAvailability: NOT_AVAILABLE` で `not available for this account`、Sonnet 4.6 だけ利用可。`aws bedrock list-foundation-model-agreement-offers --model-id anthropic.claude-opus-5-5` の offerToken で `aws bedrock create-foundation-model-agreement` を実行すると PENDING → AVAILABLE になる（Opus/Sonnet/Haiku 5.5 の3件） | `aws bedrock get-foundation-model-availability --model-id anthropic.claude-opus-5-5 --region ap-northeast-1` の4項目が全て AVAILABLE/AUTHORIZED |
 | IAM | EC2 role `isucon-competition-control-ssm` に [bedrock-policy.json](bedrock-policy.json) をinline policyとして付与 | 下のコマンド |
 | 推論プロファイルID | `ap-northeast-1` には `jp.`（国内のみ）と `global.` のプロファイルがあり、5.5 系に `apac.` は無い（2026-10-18 実測）。Opus 5.5 `jp.anthropic.claude-opus-5-5`、Haiku 5.5 `jp.anthropic.claude-haiku-5-5`、Sonnet 5.5 は `global.` のみ。Claude Code の既定は `ap-*` を `apac.` に解決するので、全エイリアスを固定し `ANTHROPIC_BEDROCK_REGION_PREFIX=jp` を置く | `aws bedrock list-inference-profiles --region ap-northeast-1` |
 | クォータ | Bedrockのモデル別TPM/RPMは新規アカウントで低い。当日前に引き上げ申請し、模擬運転で429が出ないことを見る | Service Quotas / 模擬運転 |
@@ -140,7 +140,7 @@ python3 "$K/scripts/team/control.py" integrator abandon --experiment 003-T-0001-
 |---|---|
 | Claude Code 導入 | ネイティブインストーラで 2.1.302 が AL2023 に入った（文書の対応 OS 一覧に無いが動作）。`install.sh` 経由、isucon ユーザーの `~/.local/bin` |
 | Bedrock 疎通 | インスタンスロール＋inline policy で `claude -p` が応答。`jp.anthropic.claude-sonnet-4-6`: 2 秒、`total_cost_usd` 0.024（system prompt 約 6.3k トークンの cache 作成分が主） |
-| 5.5 系モデル | 利用申請フォーム提出後も `anthropic.claude-{opus,sonnet,haiku}-5-5 is not available for this account`（Converse API で確認）。Sonnet 4.6 は提出直後から利用可。本番までに 5.5 の可否を再確認し、`integrator.env` の ID を合わせる |
+| 5.5 系モデル | 利用申請フォーム提出後も `anthropic.claude-{opus,sonnet,haiku}-5-5 is not available for this account`。原因はモデルごとの Marketplace agreement 未受諾（上の前提表）。2026-10-19 01:08 JST に 3 件の agreement を受諾し `agreementAvailability: AVAILABLE` になったが、直後の Converse は東京・us-east-1・us-west-2 とも同じ拒否（反映待ちか、アカウント側のゲート）。利用不可のモデルを `ANTHROPIC_MODEL` に置くと `claude -p` は内部で再試行して約 4.5 分後に失敗する（`llm.timeout_seconds` 300 で打ち切られ、レビューは `unavailable` として進む）。Sonnet 4.6 は提出直後から利用可 |
 | メモリ | 2 GiB のうち統合 Agent 常駐 10 MB、`claude -p` 実行中も空き 800 MB 以上。t3.small で足りた |
 | 統合の流れ | READY → `env-acquire` → fetch → 合成 dry run → Bedrock 契約レビュー（proceed、日本語の理由・リスク、6.6 秒、$0.035）→ baseline 計測まで無人で到達 |
 | エラー経路 | 再起動直後の app1 で unattended-upgrades がアプリを停止し、baseline ベンチが 502 で失敗。統合 Agent は復旧確認→タスクを NEEDS_MEASUREMENT で返却→`pause`→占有解放まで設計どおり。原因はホスト側（setup スキルの「Quiet hosts」未適用）で、`BENCH_PRECHECK_CMD` を preset に追加して再提出 |
