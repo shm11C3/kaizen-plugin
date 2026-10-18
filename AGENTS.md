@@ -45,6 +45,18 @@ templates belong to this plugin; the competition repository holds source and
 minimal bootstrap guidance only. Run
 `python3 -m unittest discover -s tests -p test_team.py -v` after changing team mechanics.
 
+Within each Discord-facing main session, follow `team/docs/PIPELINE.md`.
+Use native subagents when independent preparation can overlap: initially one
+implementation plus one next-candidate investigation per main session, with
+dynamic roles and existing shared READY backpressure. The candidate writer
+owns implementation through related checks and READY artifacts under
+`skills/prepare-candidate/SKILL.md`; keep one mutable owner per worktree.
+The main session owns task identity and Discord coordination. Optional
+`task-stage` observations and read-only `pipeline-status` expose recorded
+boundaries without adding approvals, scheduling or quality proof. Include
+preparation, handoff, measurement, repair, final verification and cleanup in
+the remaining budget; an early source-freeze estimate alone is not a stop rule.
+
 Experiment selection follows `team/docs/STRATEGY.md` and the plan skill.
 Optimize the final valid score, not experiment count. Strategy notifications
 are advisory AI investigation triggers; they never waive correctness or add

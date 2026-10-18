@@ -2,6 +2,28 @@
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
+## 0.8.0: 各主Agentの候補準備パイプライン
+
+各Discordの主Agentが判断と共有を持ち、native SubAgentへ実装から関連QA・READY資料までを
+一括委譲する。初期の目安は実装1件＋次候補調査1件。小修正の独立レビューや新規Agentを
+必須化せず、役割は動的にする。詳細は[PIPELINE](team/docs/PIPELINE.md)と
+[prepare-candidate](skills/prepare-candidate/SKILL.md)。同じ環境の排他・単一公式統合・品質保留・
+actual sourceの検証は維持する。
+
+任意の`task-stage`と読み取り専用`pipeline-status`を既存eventへ追加した。未計測の工程は
+unknownとし、記録区間の和とunionを区別する。submittedAgeは統合待ち時間ではなく、
+実統合開始の厳密markerが無い場合のqueue待ちはunknownのまま。
+
+前回の追加試験は15候補9採用、最終固定31306/30373だが、実機は2h24m44sで終了して
+約35分を使い切らなかった。候補の検討・実装・QA・待ち・比較・修正/復旧・final/cleanupを
+総予算へ含め、source固定の時刻目安だけで探索を終えない。clean不採用はprior recordと
+変わった負荷・機構・識別根拠から再検討する。登録名衝突のH1は未解消のまま保持し、
+後のclean pairや別タスクで免除しない。問題固有の施策はpractice knowledgeへ保存する。
+
+検証結果は作業中。実SubAgent＋実ISUCON14 Goコードで工程重なりとactual integratedSHAの
+再検証を確認し、別fixtureで既存排他/品質保留回帰を実行する。Discordの実接続、各PCの
+Claude/Codex install/reload、実EC2での得点・時間短縮の因果効果は別の検証項目として残す。
+
 ## 0.7.6: 実証済み改善の自律採用
 
 大きい構造変更でも、品質・比較・固定ルールの得点改善・変更資源の復旧を確認し、

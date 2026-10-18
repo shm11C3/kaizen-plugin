@@ -16,6 +16,7 @@ import uuid
 from environments import OFFICIAL, environment_name, register, schema, state_path
 from record_proof import promoted_record
 from source_proof import SourceProof, fresh_retest_samples, guard_holds
+from pipeline import read_status as pipeline_status
 
 
 def now():
@@ -233,6 +234,19 @@ def dispatch(db, args):
         db.execute("UPDATE tasks SET status='CLAIMED',owner=?,updated_at=? WHERE id=?",
                    (args.agent, now(), row['id']))
         return public_task(db.execute('SELECT * FROM tasks WHERE id=?', (row['id'],)).fetchone())
+    if command == 'task-stage':
+        row = task(db, args.id)
+        if row['owner'] != args.agent or row['status'] != 'CLAIMED':
+            raise ValueError('only the current owner of CLAIMED work may record a stage')
+        if not args.reason.strip() or (args.evidence is not None and not args.evidence.strip()):
+            raise ValueError('stage observations need a reason and nonempty evidence when supplied')
+        if args.sha is not None and not re.fullmatch(r'[a-fA-F0-9]{40}', args.sha):
+            raise ValueError('stage source must be a full 40-character SHA')
+        # An observation is not a task/source update or a proof of passing quality.
+        return {'id': public_task(row)['id'], 'phase': args.phase,
+                'source_sha': args.sha.lower() if args.sha else None,
+                'evidence': args.evidence, 'reason': args.reason,
+                'observational': True}
     if command.startswith('task-'):
         row = task(db, args.id)
         if command == 'task-quality-hold':
@@ -342,6 +356,15 @@ def parser():
     commands = p.add_subparsers(dest='command', required=True)
     commands.add_parser('status')
     commands.add_parser('task-list')
+    pipeline = commands.add_parser('pipeline-status', help='read-only stage timing; missing observations remain unknown')
+    pipeline.add_argument('--agent', help='current task owner session to include')
+    stage = commands.add_parser('task-stage', help='record a stage start; never a quality gate')
+    stage.add_argument('--id', required=True)
+    stage.add_argument('--agent', required=True)
+    stage.add_argument('--phase', required=True, choices=('analysis', 'implementation', 'validation', 'handoff'))
+    stage.add_argument('--reason', required=True)
+    stage.add_argument('--sha', help='full source SHA observed, especially for validation')
+    stage.add_argument('--evidence', help='reference to the observation; not interpreted as quality proof')
     for name in ('join', 'queue'):
         c = commands.add_parser(name)
         c.add_argument('--ready-limit', type=int, default=2)
@@ -403,6 +426,10 @@ def main():
     args = parser().parse_args()
     lock = operation_lock(args.db, args.environment) if args.command in ('env-release', 'env-handoff') else contextlib.nullcontext()
     try:
+        if args.command == 'pipeline-status':
+            # connect() creates/migrates schema; this observer must never call it.
+            print(json.dumps(pipeline_status(args.db, args.agent), ensure_ascii=False, indent=2))
+            return 0
         with lock, contextlib.closing(connect(args.db)) as db, db:
             db.execute('BEGIN IMMEDIATE')
             result = dispatch(db, args)

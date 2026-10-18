@@ -45,6 +45,15 @@ installation and the competition clone are separate directories.
    A local investigation/comparison ends with task-complete and its evidence;
    it does not need a deployment or the integration owner's reservation.
 
+Use `../prepare-candidate/SKILL.md` and
+`../../team/docs/PIPELINE.md` to keep candidate preparation moving while
+another candidate is measured. The main session owns prioritization and Discord;
+available native subagents may own bounded implementation through related QA,
+commit and READY artifacts, or investigate the next candidate. Roles and agent
+counts are dynamic. Start with one implementation and one next investigation
+per main session; respect the shared READY limit (default 2) before adding work.
+Small changes do not require delegation or an independent review ceremony.
+
 ## Integration
 
 Any session may become the integration owner, but only one may hold a given
@@ -146,10 +155,14 @@ Member installation: `$K/team/docs/ONBOARDING.md`.
 Control-host provisioning and deployment records: `$K/team/infra/README.md` and
 `$K/team/infra/DEPLOYMENT.md`. Members do not need to create another host.
 
-The plugin does not launch new AI sessions or a Discord Bot. Continue the loop
-inside the human-started session and use configured private Discord access for
-notifications. The current hook adapter targets Claude Code; do not claim a
-Codex hook adapter exists.
+The plugin does not launch independent member sessions or a Discord Bot.
+Continue the loop inside the human-started session, optionally using that
+provider's native subagents, and use configured private Discord access for
+notifications. Native subagents supplement each member; they do not replace
+Discord coordination or require another member to install a particular agent API.
+If native delegation is unavailable, continue the bounded work in the main
+session. The current hook adapter targets Claude Code; do not claim a Codex
+hook adapter exists.
 
 ## Preparation and tools
 

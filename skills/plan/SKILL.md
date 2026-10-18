@@ -34,9 +34,10 @@ For each serious option, fill:
    observations. A faster query alone does not establish a score gain. Distinguish
    time doing work from time waiting for a lock, connection or another request.
    Use ranges or qualitative estimates; do not invent precise probabilities.
-3. **total minutes**: implementation, checks/tests, compilation/linking, queue,
-   deployment, fresh samples, recovery (including its rebuild);
-   include a final stable/restart verification reserve.
+3. **total minutes**: analysis, implementation, checks/tests, compilation/linking,
+   handoff and queue, deployment, fresh samples, repair and recovery (including
+   its rebuild), final stable/restart checks and cleanup. Estimate elapsed
+   completion with dependencies and overlap, not just summed worker minutes.
 4. **dependencies**: prerequisites, conflicts, current base. An enabler with no
    measured gain is not automatically adopted; compare a coherent combination
    as its own candidate when appropriate, with human judgment for material risk.
@@ -50,13 +51,23 @@ adopted by AI; structural scope alone does not require human approval. Follow
 `../../team/POLICY.md` for a concrete choice beyond those limits.
 Follow the highest justified order, not a fixed index/cache/config recipe.
 
+Keep a small pipeline under `../../team/docs/PIPELINE.md`: while one candidate
+is implemented or measured, investigate the next independent option. Use
+`../prepare-candidate/SKILL.md` for the worker's complete preparation contract.
+Do not wait for a recorded decision merely to prepare a next option; revalidate
+its base and scoring path before implementation/integration. The shared READY
+limit provides backpressure; avoid speculative implementation queues.
+
 After every record, update outcomes, prediction errors and allocation in plan.md.
 After promotion, observe again: the limiting resource may have moved. If history
 flags repeated hypotheses, A→B→A parameter changes, or no rule-verified promotion
 for 3 experiments / 30 experiment-minutes, complete a brief strategy review at a
 stable boundary. These are advisory defaults, not proof that the strategy failed.
-Explain new evidence before retrying. Noise, missing samples and unexplained
-errors remain AI investigation; only concrete risk/tradeoff choices need humans.
+Before retrying a clean unadopted idea, cite its prior record and explain changed
+load, mechanism or discriminating evidence. Repeating the same SHA/conditions
+to draw a better score is not a new experiment. Noise, missing samples and
+unexplained errors remain AI investigation; only concrete risk/tradeoff choices
+need humans.
 
 The existing Stop hook asks for an updated plan after a record. Do not add a new
 meeting, approval or extra model call for every task. Preserve the human's order,
@@ -66,5 +77,8 @@ When tests or coupling block a promising candidate, use prepare-tests/refactor
 and `team/docs/PHASES.md`. Include preparation in total time, name the dependent
 candidate and stop condition, and retain final verification time. Prefer existing
 tools under `team/docs/TOOLS.md` to custom instrumentation.
+Set the finalization reserve from measured check/recovery/cleanup costs. A rough
+source-freeze time is a planning aid, not a reason to finish early while a useful
+bounded candidate still fits the remaining complete time budget.
 For Rust, use measured build/recovery times under `team/docs/RUST_BUILD.md`;
 do not equate a warm local no-change build with the actual deployment path.

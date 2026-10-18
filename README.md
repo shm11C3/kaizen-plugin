@@ -18,6 +18,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 - [Go／Rustの選択・ビルド時間・キャッシュ・終盤の予算](team/docs/RUST_BUILD.md)
 - [初期テスト・整備フェーズ](team/docs/PHASES.md)、[prepare-tests](skills/prepare-tests/SKILL.md)・[refactor](skills/refactor/SKILL.md)
 - [Discord連携とGitHubユーザー名による命名](team/docs/DISCORD.md)
+- [各主Agent内の候補準備パイプライン](team/docs/PIPELINE.md)と[prepare-candidate](skills/prepare-candidate/SKILL.md)
 - [規約・手動操作・並列検証](team/docs/REGULATIONS.md)
 - [共通台帳での並列検証と品質保留の修正・再計測](team/docs/PARALLEL_QUALITY.md)
 - 未解消の品質保留はtaskを越えてsourceへ引き継ぎ、全採用taskを公式記録と実測SHAに照合します。
@@ -27,10 +28,22 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 
 チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
 
+## 各主Agentの候補準備（0.8.0）
+
+各Discordの主Agentが判断と対外調整を持ち、利用できるnative SubAgentへ独立した
+実装・次候補調査・テスト観点の検討を渡す。初期の目安は実装1件＋次調査1件で、
+役割はタスクごとに変える。実装担当は準備Skillでactual sourceの関連検証とREADY資料まで
+自走し、主Agentの次指示待ちを各工程へ挟まない。共有READY上限と対象環境の排他は既存どおり。
+
+`control.py task-stage`は任意の工程開始観測、`control.py pipeline-status`は既存eventの
+読み取り集計である。検討・修正・検証の未記録時間を推定せず、検証済み・採用の証明にも
+使わない。正式な統合開始が未記録なら待ち時間はunknownとし、submittedAgeをqueue待ちと
+呼ばない。手順・制約は[PIPELINE](team/docs/PIPELINE.md)へ集約する。
+
 ## 構成
 
 ```
-skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, improve-workflow, prepare-tests, refactor
+skills/      setup, observe, plan, hypothesize, experiment, recover, status, knowledge, retro, team, prepare-candidate, improve-workflow, prepare-tests, refactor
 scripts/     deploy, verify, bench, observe, evaluate, recover, experiment, stable, status, knowledge（決定論的な部分）
 knowledge/   patterns/（シグネチャ・テンプレート・計測表）、signatures.py、match.py、records/、problems/
 hooks/       guard.py: スクリプトを迂回する操作と、記録のない終了を止める

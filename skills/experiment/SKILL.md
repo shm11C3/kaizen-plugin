@@ -7,6 +7,9 @@ description: "Run one experiment end to end on the open hypothesis: change the c
 
 Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 `KAIZEN_PROJECT` exported (see setup). `$K/scripts/status.sh` first when resuming.
+In a team, only the environment reservation holder runs this deployment loop.
+Workers use `../prepare-candidate/SKILL.md`; independent next-candidate preparation
+continues under `../../team/docs/PIPELINE.md` while this loop waits on target work.
 
 ## 1. Change and commit
 
@@ -19,6 +22,8 @@ Before deploying that commit, run relevant native lint and regression checks
 under `team/docs/LINT.md` and the prepare-tests skill. Resolve correctness
 diagnostics; retain explicit dispositions for advisory/style findings. Recheck
 the integrated source if composition changed it; no routine human approval.
+Reuse recorded results only when their source, scope and conditions still apply.
+Designing a test in parallel does not establish that the integrated SHA passed it.
 
 ## 2. Deploy and measure
 
@@ -86,6 +91,13 @@ record reruns evaluation to include samples added since the previous decision.
 
 Noisy/incomplete evidence is NEEDS_MEASUREMENT in the team ledger. Resume AI
 work or archive it when the budget is exhausted; do not invent a human choice.
+New warnings or correctness uncertainty use the team's quality-hold procedure.
+A later clean run, clean final pair or different task ID cannot erase an
+unresolved hold. For an input collision, establish the specification and repair
+the candidate or reproducer accordingly; never weaken an assertion solely to
+make an observed failure pass. Clean unadopted ideas retain their prior record;
+retry only with changed load, mechanism or new discriminating evidence, not
+same-source score rerolls.
 
 When the rule promotes and quality, comparability and resource recovery are
 verified within the agreed objective and limits, adopt without an approval wait,
