@@ -111,6 +111,25 @@ python3 "$K/scripts/team/control.py" env-release --agent "$KAIZEN_SESSION" --tok
 
 `env-release`は実行中のラッパーがあれば拒否します。実際のサーバー状態とポータルベンチ終了の確認は統合担当の責任です。
 
+## 常駐の統合Agent
+
+共通ホストで `kaizen-integrator.service` が動いている間は、READYの候補を無人の統合担当
+（セッションID `integrator-control-01`）が取り込みます。手順は[integrator/README](../infra/integrator/README.md)。
+メンバーは占有を取らず、提出後は次の作業へ進みます。
+
+- 候補ごとに `env-acquire` → 現stableへcherry-pick（dry run）→ 合成済み差分の契約レビュー（Bedrock経由の
+  `claude -p`、1回）→ baseline補充 → `experiment new` → deploy → bench/evaluate → record → 台帳更新 → push →
+  `env-release`。採否はルールが決め、レビューは契約違反の候補をベンチ前に返すだけです。
+- 衝突・採用済み変更との重なり・空差分・契約違反は計測せず `NEEDS_MEASUREMENT`（理由は `integrator:` で始まる）で
+  担当者へ返ります。担当者は `task-resume` し、現在の `main` にrebaseした統合SHAを `task-ready` で再提出します。
+- `review=human` の候補は取りません。従来どおり人が占有して統合します。その間、統合Agentは `waiting` で待ちます。
+- 状態は `control.py integrator status` と[ダッシュボード](../infra/integrator/README.md#ダッシュボード)で見ます。
+  人が統合したいときは先に `control.py integrator pause --reason ...`、終わったら `resume`。
+- ポータル方式では統合Agentが `--reserve` 後に待つので、人間がポータルで走らせ、終了確認後に
+  `control.py integrator result --label LABEL --result 'pass=.. score=.. errors=..'` で渡します。
+- エラー時は復旧・記録・返却を試みてから `pause` で止まります。`journalctl -u kaizen-integrator` と
+  `/srv/isucon/state/integrator/ledger.jsonl` を見て、対象の実状態を確認してから `resume` します。
+
 ## 自動採用と人間判断
 
 独立sandboxでの並列検証と、品質保留になった候補の修正・再提出は

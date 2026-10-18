@@ -60,6 +60,16 @@ Any session may become the integration owner, but only one may hold a given
 environment's reservation. Use `env-acquire` through `control.py`, retain it through portal
 benchmark execution, adoption or recovery, then verify and release it.
 
+When the resident integrator runs on the control host
+(`$K/team/infra/integrator/README.md`), READY candidates are composed, measured,
+recorded and pushed by it; members do not acquire the environment for them.
+Read `control.py integrator status` and the dashboard (`control.py dashboard
+--open`), hand portal results to it with `control.py integrator result`, and run
+`control.py integrator pause` before any human-led integration. A candidate it
+returns (NEEDS_MEASUREMENT with a reason starting `integrator:`) goes back to
+its owner: task-resume, rebase on the current main or fix the contract issue,
+then task-ready again with the integrated SHA.
+
 Run shared target actions with:
 
 ```bash

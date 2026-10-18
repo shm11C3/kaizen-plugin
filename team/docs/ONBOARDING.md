@@ -69,7 +69,7 @@ plugin更新時はメンバーと共通ホストの版を揃えます。競技�
 
 共通ホストでは `sudo -iu isucon` で、ソースの `/srv/isucon/repo` とプラグインの `/srv/isucon/kaizen-plugin` を分けて使います。台帳・対象有効化設定は `/srv/isucon/state`、大きなログは `/srv/isucon/artifacts` です。Git取り込みやpreset作成を非対話で行う場合は、環境占有のもとでSSM Run Commandを使い、Command IDから結果を確認します。
 
-プラグインは別のAIセッションやDiscord Botを自動起動しません。各自が起動したセッションで改善ループを続けます。対象が未設定の間は環境操作を開始しません。
+プラグインはメンバーのAIセッションやDiscord Botを自動起動しません。無人で動くのは共通ホストの常駐統合Agent（任意、[integrator](../infra/integrator/README.md)）だけです。各自が起動したセッションで改善ループを続けます。対象が未設定の間は環境操作を開始しません。
 
 - [Codexのプラグイン形式](https://developers.openai.com/plugins/build/plugins)
 - [Claudeのプラグイン導入](https://code.claude.com/docs/en/discover-plugins)

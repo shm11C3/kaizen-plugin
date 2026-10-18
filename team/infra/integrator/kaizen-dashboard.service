@@ -1,0 +1,15 @@
+[Unit]
+Description=kaizen dashboard: static integration status on 127.0.0.1:8080 (reach it through SSM port forwarding)
+After=network-online.target
+
+[Service]
+Type=simple
+User=isucon
+Group=isucon
+ExecStartPre=/usr/bin/mkdir -p /srv/isucon/state/integrator/dashboard
+ExecStart=/usr/bin/python3 -m http.server 8080 --bind 127.0.0.1 --directory /srv/isucon/state/integrator/dashboard
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

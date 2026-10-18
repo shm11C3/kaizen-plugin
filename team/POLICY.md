@@ -115,6 +115,14 @@ contains source and minimal bootstrap files, not these rules or management tools
 - Route target operations through `scripts/team/target.py`, which holds a local
   process lock and checks the reservation. Follow kaizen's scripts for deployment,
   verification, benchmarking, evaluation, recording, and recovery.
+- The control host may run the resident integrator (`scripts/team/integrator.py`,
+  `team/infra/integrator/README.md`) as the integration owner. It holds the
+  reservation only while one candidate is measured, composes the submitted source
+  by cherry-pick onto the current stable, lets the configured rule decide, and
+  returns unmergeable or contract-violating candidates to their owners without a
+  benchmark. Its single model call is advisory pre-screening, never the adoption
+  decision. Pause it before a human-led integration; it never resolves conflicts
+  and never takes review=human candidates.
 - Never bypass the boundary with direct SSH writes, rsync, service restarts,
   SQL mutations, profiling changes, log truncation, or portal benchmark runs.
   Observation setup/reset also belongs to the integration owner.

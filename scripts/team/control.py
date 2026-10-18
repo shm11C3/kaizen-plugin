@@ -17,13 +17,21 @@ def remote_command(config, command, arguments):
     for key in ('state_db', 'target_config'):
         if key in config and (not isinstance(config[key], str) or not Path(config[key]).is_absolute()):
             raise ValueError(key + ' must be an absolute control-host path')
+    database = config.get('state_db', '/srv/isucon/state/team.sqlite3')
+    target_config = config.get('target_config', '/srv/isucon/state/target.json')
+    if command == 'integrator':
+        # status, pause, resume, result, abandon: short commands against the resident integrator's state.
+        return shlex.join(['runuser', '-u', 'isucon', '--', 'python3', config['remote_plugin_root'] + '/scripts/team/integrator.py',
+                           '--db', database, '--config', target_config, *arguments])
+    if command == 'dashboard':
+        return shlex.join(['runuser', '-u', 'isucon', '--', 'cat', str(Path(database).parent / 'integrator/dashboard/summary.json')])
     script = 'target.py' if command == 'target' else 'team.py'
     forwarded = list(arguments) if command == 'target' else [command, *arguments]
-    options = ['--db', config.get('state_db', '/srv/isucon/state/team.sqlite3')]
+    options = ['--db', database]
     if 'environment' in config:
         options += ['--environment', environment_name(config['environment'])]
     if command == 'target':
-        options += ['--config', config.get('target_config', '/srv/isucon/state/target.json')]
+        options += ['--config', target_config]
     return shlex.join(['runuser', '-u', 'isucon', '--', 'python3',
                       config['remote_plugin_root'] + '/scripts/team/' + script, *options, *forwarded])
 
@@ -31,7 +39,7 @@ def remote_command(config, command, arguments):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--host-config', default=str(Path(__file__).resolve().parents[2] / 'team/environments/competition/control-host.json'))
-    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, shell, or result COMMAND_ID')
+    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, or result COMMAND_ID')
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:
@@ -46,6 +54,12 @@ def main():
             raise ValueError('AWS account mismatch; refusing to dispatch commands')
         if args.command == 'shell':
             return subprocess.run([*base, 'ssm', 'start-session', '--target', config['instance_id']]).returncode
+        if args.command == 'dashboard' and args.arguments == ['--open']:
+            # The control host has no inbound port: forward 127.0.0.1:8080 of the host to this PC through SSM.
+            print('dashboard: http://localhost:18080/ while this session runs (Ctrl-C ends it)', file=sys.stderr, flush=True)
+            return subprocess.run([*base, 'ssm', 'start-session', '--target', config['instance_id'],
+                                   '--document-name', 'AWS-StartPortForwardingSession',
+                                   '--parameters', json.dumps({'portNumber': ['8080'], 'localPortNumber': ['18080']})]).returncode
         if args.command == 'result':
             if len(args.arguments) != 1:
                 raise ValueError('result requires the previous SSM Command ID')
