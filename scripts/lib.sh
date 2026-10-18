@@ -54,6 +54,7 @@ now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 stamp() { date -u +%Y%m%dT%H%M%SZ; }
 epoch() { date +%s; }
 short() { printf '%s' "$1" | cut -c1-7; }
+count_limit_label() { if [ "$1" -eq 0 ]; then echo unlimited; else echo "$1"; fi; }
 to_epoch() { python3 -c 'import sys,datetime; print(int(datetime.datetime.strptime(sys.argv[1],"%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc).timestamp()))' "$1"; }
 
 load_config() {
@@ -76,13 +77,17 @@ load_config() {
   esac
   : "${SYNC_EXCLUDES:=}" "${RSYNC_PATH:=}" "${SSH_CONFIG:=}" "${HEALTH_RETRIES:=20}"
   : "${STABLE_BRANCH:=main}" "${OVERLAY_DIR:=etc}" "${OVERLAY_SERVICES:=}" "${VERIFY_EXCLUDE_REGEX:=\.gz$}"
-  : "${MIN_IMPROVEMENT_BP:=300}" "${MAX_BENCH_PER_EXP:=6}" "${MAX_EXP_MINUTES:=30}" "${MAX_EXP_PER_HOUR:=6}"
+  : "${MIN_IMPROVEMENT_BP:=300}" "${MAX_BENCH_PER_EXP:=0}" "${MAX_EXP_MINUTES:=30}" "${MAX_EXP_PER_HOUR:=0}"
   : "${MIN_SAMPLES:=2}" "${BASELINE_MAX_AGE_MINUTES:=60}" "${CORRECTNESS_ERROR_TYPES:=}"
   # v2: practice, two samples per side, error rates need request denominators.
   # v3: contest (opt-in), sequential by effect size against the baseline spread.
   : "${EVALUATION_RULE:=v2}" "${REQUEST_COUNT_CMD:=}" "${NGINX_HOST:=${APP_HOSTS%% *}}"
   case "$EVALUATION_RULE" in v2|v3) ;; *) die "EVALUATION_RULE must be v2 or v3" ;; esac
-  : "${MAX_BENCH_TOTAL:=120}" "${MAX_BENCH_PER_HOUR:=30}" "${RECOVERY_BENCH_RESERVE:=1}"
+  # Count caps are opt-in, not contest rules. Zero keeps accounting without a cap.
+  : "${MAX_BENCH_TOTAL:=0}" "${MAX_BENCH_PER_HOUR:=0}" "${RECOVERY_BENCH_RESERVE:=1}"
+  for name in MAX_BENCH_PER_EXP MAX_BENCH_TOTAL MAX_BENCH_PER_HOUR MAX_EXP_PER_HOUR RECOVERY_BENCH_RESERVE; do
+    [[ "${!name}" =~ ^[0-9]+$ ]] || die "$name must be a nonnegative integer (0 disables count caps)"
+  done
   : "${RESOURCE_HOSTS:=$APP_HOSTS}" "${RESOURCE_FINGERPRINT_CMD:=}" "${RECOVERY_CMD:=}"
   : "${RESOURCE_PATHS:=sql $OVERLAY_DIR}"
   if [ -n "$RESOURCE_FINGERPRINT_CMD" ] || [ -n "$RECOVERY_CMD" ]; then

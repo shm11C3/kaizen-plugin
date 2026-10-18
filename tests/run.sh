@@ -251,6 +251,14 @@ python3 -c 'import json; r=json.load(open(".kaizen/experiments/003-tiny/record.j
 [ "$(state DEPLOYED_REV)" = "$cand" ] || fail "stable back after override reject"
 expect_fail "$S/bench.sh" baseline-after-close         # closed experiments still own their recovery budget
 
+# Explicit hourly experiment caps still apply; zero removes only that cap.
+echo 'MAX_EXP_PER_HOUR=1' >> .kaizen/config.sh
+expect_fail "$S/experiment.sh" new explicit-hour-limit
+echo 'MAX_EXP_PER_HOUR=0' >> .kaizen/config.sh
+"$S/status.sh" > "$T/count-limits.txt"
+grep -q 'total unlimited; hourly unlimited' "$T/count-limits.txt" || fail 'zero count caps are displayed as unlimited'
+grep -q '/unlimited experiments this hour' "$T/count-limits.txt" || fail 'zero experiment cap is displayed as unlimited'
+
 echo "== manual bench mode"
 cat >> .kaizen/config.sh <<'EOF'
 BENCH_MODE=manual

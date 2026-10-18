@@ -162,7 +162,7 @@ if len(scores) >= 2:
     else: need, note = 4, "spread wide: four samples per side, or only hypotheses whose expected effect exceeds the spread"
     noise_line = f"- baseline: {len(scores)} samples {scores[0]}-{scores[-1]} (median {med:.0f}, spread ±{spread/2:.0f}%); {note}; MIN_IMPROVEMENT_BP={min_bp}"
 else:
-    noise_line = f"- baseline: {len(scores)} sample(s); take at least three before planning (bench.sh baseline, baseline-2, baseline-3)"
+    noise_line = f"- baseline: {len(scores)} sample(s); establish the configured MIN_SAMPLES and observed spread before comparison; independent planning can continue"
 out = subprocess.run([sys.executable, f"{root}/match.py", dump, "--json"], capture_output=True, text=True, check=True).stdout
 matches = json.loads(out)
 def minutes(cost):
@@ -201,7 +201,7 @@ header = f"""# plan
 
 - stable: {stable[:7] if stable else 'unset'}
 - loop started: {started}; elapsed {elapsed:.0f} of {budget_min} min ({max(0, float(budget_min) - elapsed):.0f} left)
-- experiments this hour: {exp_hour}/{max_hour}
+- experiments this hour: {exp_hour}/{max_hour if int(max_hour) else 'unlimited'}
 {noise_line}
 - observation: {os.path.relpath(dump)}
 - strategy review: {', '.join(s['kind'] for s in strategy['signals']) or 'no automatic signal'} (strategy.sh review for the investigation template)

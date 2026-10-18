@@ -1,8 +1,11 @@
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('measurement', ROOT / 'scripts/measurement.py')
@@ -93,6 +96,101 @@ class MeasurementTests(unittest.TestCase):
             take('E2', 'candidate', 1); take(None, 'baseline')
             with self.assertRaises(ValueError): take('E3', 'candidate', 1)
             self.assertEqual(len(m.attempts(path)), 6)
+
+    def test_zero_caps_still_record_every_physical_attempt(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'attempts.jsonl'
+            # Exceed the old defaults without a result: accounting stays intact.
+            for n in range(125):
+                m.reserve(path, 'E1' if n < 124 else None, f'run-{n}', 'rev', 0, 0, 0, 1, n < 124)
+            rows = m.attempts(path)
+            self.assertEqual(len(rows), 125)
+            self.assertEqual(len({row['id'] for row in rows}), 125)
+            self.assertIsNone(rows[-1]['experiment'])
+
+    def test_each_explicit_cap_preserves_stable_capacity_without_exceeding_it(self):
+        for axis in range(3):
+            for limit, reserve_slots in ((3, 1), (3, 0), (1, 1)):
+                with self.subTest(axis=axis, limit=limit, reserve=reserve_slots), tempfile.TemporaryDirectory() as d:
+                    path = Path(d) / 'attempts.jsonl'
+                    caps = [0, 0, 0]
+                    caps[axis] = limit
+                    for n in range(limit - reserve_slots):
+                        m.reserve(path, 'E1', f'candidate-{n}', 'rev', *caps, reserve_slots, True)
+                    before = path.read_bytes() if path.exists() else None
+                    with self.assertRaises(ValueError):
+                        m.reserve(path, 'E1', 'blocked-candidate', 'rev', *caps, reserve_slots, True)
+                    self.assertEqual(path.read_bytes() if path.exists() else None, before)
+                    for n in range(reserve_slots):
+                        m.reserve(path, 'E1', f'baseline-recovery-{n}', 'rev', *caps, reserve_slots, False)
+                    with self.assertRaises(ValueError):
+                        m.reserve(path, 'E1', 'baseline-after-close', 'rev', *caps, reserve_slots, False)
+                    self.assertEqual(len(m.attempts(path)), limit)
+
+    def test_hour_window_expires_but_total_and_closed_attempts_remain(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'attempts.jsonl'
+            fixed = m.now()
+            old = {'id': 'old-no-result', 'experiment': 'closed', 'label': 'candidate', 'revision': 'rev',
+                   'startedAt': (fixed - m.datetime.timedelta(hours=2)).isoformat()}
+            path.write_text(json.dumps(old) + '\n')
+            with mock.patch.object(m, 'now', return_value=fixed):
+                m.reserve(path, 'new', 'candidate', 'rev', 0, 2, 1, 0, True)
+                with self.assertRaisesRegex(ValueError, 'hour'):
+                    m.reserve(path, None, 'baseline', 'rev', 0, 0, 1, 0, False)
+                with self.assertRaisesRegex(ValueError, 'total'):
+                    m.reserve(path, 'another', 'candidate', 'rev', 0, 2, 0, 0, True)
+            self.assertEqual(m.attempts(path)[0], old)
+
+    def test_invalid_caps_do_not_mutate_accounting(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'attempts.jsonl'
+            m.reserve(path, 'E1', 'candidate', 'rev', 0, 0, 0, 1, True)
+            before = path.read_bytes()
+            for axis in range(4):
+                values = [0, 0, 0, 1]
+                values[axis] = -1
+                with self.subTest(axis=axis), self.assertRaises(ValueError):
+                    m.reserve(path, 'E1', 'invalid', 'rev', *values, True)
+                self.assertEqual(path.read_bytes(), before)
+
+
+class BudgetConfigurationTests(unittest.TestCase):
+    def load(self, project):
+        env = dict(os.environ, KAIZEN_PROJECT=str(project), KAIZEN_PLUGIN_ROOT=str(ROOT))
+        for name in ('MAX_BENCH_PER_EXP', 'MAX_BENCH_TOTAL', 'MAX_BENCH_PER_HOUR',
+                     'MAX_EXP_PER_HOUR', 'RECOVERY_BENCH_RESERVE'):
+            env.pop(name, None)
+        return subprocess.run(['bash', '-c', '. "$1"; load_config; printf "%s\\n" '
+                               '"$MAX_BENCH_PER_EXP" "$MAX_BENCH_TOTAL" "$MAX_BENCH_PER_HOUR" '
+                               '"$MAX_EXP_PER_HOUR" "$RECOVERY_BENCH_RESERVE"', 'budget-fixture',
+                               str(ROOT / 'scripts/lib.sh')], env=env, capture_output=True, text=True)
+
+    def test_defaults_disable_caps_explicit_values_survive_and_invalid_settings_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            project = Path(d)
+            folder = project / '.kaizen'
+            folder.mkdir()
+            config = folder / 'config.sh'
+            base = ('APP_HOST=fixture\nREMOTE_APP_DIR=app\nLOCAL_SYNC_PATHS=app\n'
+                    'BUILD_CMD=true\nRESTART_CMD=true\nHEALTH_CMD=true\nBENCH_MODE=manual\n')
+            config.write_text(base)
+            result = self.load(project)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.splitlines(), ['0', '0', '0', '0', '1'])
+            config.write_text(base + 'MAX_BENCH_PER_EXP=3\nMAX_BENCH_TOTAL=7\nMAX_BENCH_PER_HOUR=4\n'
+                              'MAX_EXP_PER_HOUR=2\nRECOVERY_BENCH_RESERVE=1\n')
+            result = self.load(project)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.splitlines(), ['3', '7', '4', '2', '1'])
+            for name in ('MAX_BENCH_PER_EXP', 'MAX_BENCH_TOTAL', 'MAX_BENCH_PER_HOUR',
+                         'MAX_EXP_PER_HOUR', 'RECOVERY_BENCH_RESERVE'):
+                for value in ('-1', 'invalid'):
+                    with self.subTest(name=name, value=value):
+                        config.write_text(base + f'{name}={value}\n')
+                        result = self.load(project)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn(name + ' must be a nonnegative integer', result.stderr)
 
 
 if __name__ == '__main__':

@@ -13,23 +13,25 @@ DB_HOST=isu1                     # where observe.sh reads performance_schema
 SSH_CONFIG=/Users/you/Develop/ISUCON/ssh_config
 
 # Practice only (BENCH_MODE=ssh): the benchmarker host and the addresses the
-# hosts use to reach each other. Contest day: BENCH_MODE=manual, no BENCH_HOST.
+# hosts use to reach each other. Contest day: follow the permitted method;
+# BENCH_MODE=manual needs no BENCH_HOST when the operator uses the portal.
 BENCH_HOST=isubench
 APP_PRIVATE_IP=172.31.0.10
 BENCH_PRIVATE_IP=172.31.0.20
 
-# Fixed evaluation rule (plugin-rule-v2) and budgets. Change per target, never
-# per experiment.
+# Fixed evaluation rule (plugin-rule-v2). Count caps below are optional team/target
+# quotas, not official ISUCON limits. Configure them from actual rules/budgets;
+# never reset accounting or change a quota to reroll a losing candidate.
 MIN_IMPROVEMENT_BP=300     # promote needs median +3% and noise separation
-MAX_BENCH_PER_EXP=6
+MAX_BENCH_PER_EXP=0        # 0=no plugin cap; positive values enforce an explicit cap
 MAX_EXP_MINUTES=30
-MAX_EXP_PER_HOUR=6
+MAX_EXP_PER_HOUR=0
 EVALUATION_RULE=v2         # v2: two samples per side, error rates by denominator. v3 (sequential, one clear sample) is opt-in until compared on real runs
 MIN_SAMPLES=2
 BASELINE_MAX_AGE_MINUTES=60
-MAX_BENCH_TOTAL=120        # includes baseline/recovery/no-result/portal attempts
-MAX_BENCH_PER_HOUR=30
-RECOVERY_BENCH_RESERVE=1   # leave this many experiment slots for final stable
+MAX_BENCH_TOTAL=0          # attempts still include baseline/recovery/no-result/portal
+MAX_BENCH_PER_HOUR=0
+RECOVERY_BENCH_RESERVE=1   # keep slots for stable/recovery within every finite cap
 CORRECTNESS_ERROR_TYPES="" # comma-separated benchmark-specific fatal error types
 
 # Before any SQL/config/resource candidate, fill both commands and prove recovery.

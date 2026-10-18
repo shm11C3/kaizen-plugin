@@ -110,16 +110,16 @@ Claude Code からは `/kaizen:setup` `/kaizen:observe` `/kaizen:hypothesize` `/
 | 変数 | 既定 | 意味 |
 |---|---|---|
 | `MIN_IMPROVEMENT_BP` | 300 | 中央値の改善がこれ未満なら inconclusive |
-| `MAX_BENCH_PER_EXP` | 6 | 復旧・結果なし・実験終了後の追加復旧も含む物理試行上限 |
-| `MAX_BENCH_TOTAL` / `MAX_BENCH_PER_HOUR` | 120 / 30 | project全体 / 直近1時間の物理試行上限 |
-| `RECOVERY_BENCH_RESERVE` | 1 | 実験内で最後のstable計測用に残す枠 |
+| `MAX_BENCH_PER_EXP` | 0 | 0はpluginの回数上限なし。正数なら実験の全物理試行を数える明示上限 |
+| `MAX_BENCH_TOTAL` / `MAX_BENCH_PER_HOUR` | 0 / 0 | 0はpluginの回数上限なし。正数ならproject全体 / 直近1時間の明示上限 |
+| `RECOVERY_BENCH_RESERVE` | 1 | 各有限上限の中で候補に使わせずstable/復旧確認に残す枠。上限なしの軸には影響しない |
 | `MIN_SAMPLES` | 2 | baseline/candidateそれぞれの最低サンプル数（v2） |
 | `EVALUATION_RULE` | v2 | v2: 両側 2 本以上、エラー率はリクエスト分母で比較。v3: 逐次判定（1 本で幅を超えれば promote、全 baseline を下回れば reject、幅内なら追加）。v3 は実測比較が済むまで opt-in |
 | `REQUEST_COUNT_CMD` | なし | 単一の非負整数を返す累積カウンター。SSHは実行前後、manualは予約時／結果登録時の差を分母にする。SSHの `parse_bench_requests` はこちらより優先 |
 | `NGINX_HOST` | 最初のapp host | カウンターを読むSSHホスト。実際のログ／カウンターがあるホストに合わせる |
 | `BASELINE_MAX_AGE_MINUTES` | 60 | 古いbaselineを判定から外す期限 |
 | `MAX_EXP_MINUTES` | 30 | 1 実験の制限時間 |
-| `MAX_EXP_PER_HOUR` | 6 | 1 時間に開ける実験数 |
+| `MAX_EXP_PER_HOUR` | 0 | 0はpluginの回数上限なし。正数なら1時間に開ける実験数の明示上限 |
 
 stable bundle の同一性は計測条件（ホスト、配備・再起動・ヘルスチェック・復旧・ベンチのコマンド、資源の指紋）だけで決まります。予算や閾値、観測の設定、plugin 自体の更新では bundle は無効になりません。本番中に plugin を直す前提なので、どの plugin 版で測ったかは bundle と各サンプルの `pluginRevision` に記録します。
 
