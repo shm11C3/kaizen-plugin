@@ -76,8 +76,9 @@ Rustの例（既存workspaceが`rust/`の場合）:
 常駐処理は既存`check.py`を再利用する小helperで全configured checksを走らせ、
 source SHA・JSON・生ログ・秒数を保存します。正しさに関わるcheckはblockingが既定で、
 失敗は品質保留・復旧へ戻します。style専用formatterの`advisory:true`は別記録し、
-raw status・exit code・passedをPASSへ書き換えません。diagnosticsの`needs_review`も
-既存の指摘対応へ渡し、一律の不採用にはしません。
+raw status・exit code・passedをPASSへ書き換えません。非advisoryの`needs_review`はwarning保留として
+担当AIが調査・修正し、明示したstyle advisoryは継続できます。compiler error・source変更・実行不能は
+advisoryでも免除しません。
 配布例の`checks=[]`は言語未指定のためで、未設定/未実施として台帳へ残します。
 空配列をtest PASSと扱わず、実projectに合わせて設定してください。既存設定へレシピを
 自動注入せず、idle時に更新します。[検証方針](team/docs/VALIDATION.md)も参照してください。

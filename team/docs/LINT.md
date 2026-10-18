@@ -52,7 +52,9 @@ parserを指定しない通常checkは従来通り終了コードで判定する
   性能提案は仮説としてベンチで確認し、DB整合性・仕様は再現テストと公式checkerで確認する。
 
 既存Lint一式の実行と、raceや新規の独立/LLMレビュー追加は分ける。
-これは候補提出手順と証拠の補助で、task-readyやdeployに新しい機械的なゲートは追加しない。
+既存checkを常駐integratorへ登録すると、配備前に全設定チェックを実行する。
+明示したstyle advisoryは継続できる。非advisoryの未分類警告はwarning保留へ戻し、担当AIが調査する。
+compiler error・source変更・実行不能はadvisoryでも免除しない。人間の毎回の承認は要求しない。
 実行時間と検出例は[Lint実測](../../knowledge/lessons/20261018-lint-validation.md)を参照する。
 
 一次資料: [gofmt](https://pkg.go.dev/cmd/gofmt)、[go vet](https://pkg.go.dev/cmd/vet)、

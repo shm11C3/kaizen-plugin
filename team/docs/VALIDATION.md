@@ -44,8 +44,10 @@ idle時に`none`へ変更する。設定名だけから候補別のrisk判定や
 秒数を残す。workerの旧sourceの結果だけで合成版を検証済みにはせず、通常はこの経路で確認を
 完結させる。blocking check失敗は品質保留・復旧へ戻す。style専用の`advisory:true`は
 declaredAdvisoryとして別記録し、raw status・exit code・passedをPASSへ書き換えない。
-diagnosticsの`needs_review`も一律の不採用にせず、既存の指摘対応へ渡す。既知の正しさ違反は
-advisoryラベルで免除しない。
+明示したstyle advisoryは継続できるが、非advisoryの`needs_review`は自動通過させずwarning保留へ戻し、
+担当AIが原因・正しさへの影響を調べる。必要な修正や根拠付きの局所抑制を同じtaskで再提出する。
+警告を一律エラー化したり人間の承認待ちにしたりはしない。compiler error・source変更・実行不能は
+advisoryラベルでも免除しない。
 
 setup時に[Go/Rustの既存suiteレシピ](../../README.md#candidate-checks)を実projectへ合わせ、
 `settings.checks`へ相対`cwd`とargvの`command`、`timeout_seconds`、必要な`diagnostics`を登録する。

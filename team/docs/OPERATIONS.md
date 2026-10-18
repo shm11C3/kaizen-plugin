@@ -125,7 +125,8 @@ python3 "$K/scripts/team/control.py" env-release --agent "$KAIZEN_SESSION" --tok
 - deploy前にactual candidate SHAで設定済みのchecksをすべて実行し、JSON・生ログ・秒数を保存します。
   setup時に[既存suiteレシピ](../../README.md#candidate-checks)を実projectへ合わせて登録します。
   `checks=[]`は未設定/未実施として記録し、PASSと扱いません。blocking失敗は品質保留・復旧へ戻し、
-  advisory styleやdiagnosticsの`needs_review`は一律に提出を止めず、raw結果と指摘対応を残します。
+  明示したstyle advisoryはraw結果を残して継続し、非advisoryの`needs_review`はwarning保留へ戻して
+  担当AIが調査・修正します。compiler errorやsource変更はadvisoryでも免除しません。
   workerの旧sourceのPASSと合成版の結果は区別します。
 - 衝突・採用済み変更との重なり・空差分・契約違反は計測せず `NEEDS_MEASUREMENT`（理由は `integrator:` で始まる）で
   担当者へ返ります。担当者は `task-resume` し、現在の `main` にrebaseした統合SHAを `task-ready` で再提出します。

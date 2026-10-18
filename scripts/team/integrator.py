@@ -397,10 +397,17 @@ class Integrator:
             native = receipt.get('nativeResult') or {}
             return (receipt.get('launcherError') or not receipt.get('sourceIntegrityPassed')
                     or native.get('timedOut') or native.get('interrupted')
-                    or native.get('exitCode') in (124, 127, 130))
+                    or native.get('exitCode') in (124, 127, 130)
+                    or (native.get('diagnosticsComplete') is False and not compiler_error(receipt)))
 
-        blocking = [receipt for receipt in receipts if infrastructure(receipt)
+        def compiler_error(receipt):
+            return any(item.get('level') in ('error', 'failure-note')
+                       for item in (receipt.get('nativeResult') or {}).get('diagnostics', []))
+
+        blocking = [receipt for receipt in receipts if infrastructure(receipt) or compiler_error(receipt)
                     or (receipt['status'] == 'failed' and not receipt['declaredAdvisory'])]
+        untriaged = [receipt for receipt in receipts
+                     if receipt['status'] == 'needs_review' and not receipt['declaredAdvisory']]
         state = ('failed' if error or blocking else
                  'needs_review' if any(receipt['status'] != 'passed' for receipt in receipts) else 'passed')
         directory = self.state_dir / 'checks' / candidate
@@ -419,14 +426,16 @@ class Integrator:
         manifest = json.loads(manifest_path.read_text())
         manifest['team']['checksRecord'] = str(record_path)
         write_json(manifest_path, manifest)
-        if state != 'failed':
+        if state != 'failed' and not untriaged:
             return True
         # Close without deploying or consuming candidate benchmark slots. The
         # source-bound hold keeps failed QA alive for repair and a fresh retest.
-        reason = '統合SHAの既存QA失敗: ' + (error or ', '.join(row['label'] for row in blocking))
+        reason = ('統合SHAの既存QA失敗: ' if state == 'failed' else '統合SHAの警告はAIによる調査が必要: ') + (
+            error or ', '.join(row['label'] for row in blocking or untriaged))
         self.target('evaluate')
         self.target('experiment', 'record', '--override', 'inconclusive', reason[:400])
-        category = 'conditions' if error or any(infrastructure(row) for row in blocking) else 'correctness'
+        category = ('conditions' if error or any(infrastructure(row) for row in blocking) else
+                    'correctness' if blocking else 'warning')
         self.team('task-quality-hold', '--id', task['id'], '--agent', self.agent, '--token', self.token,
                   '--category', category, '--evidence', str(record_path), '--reason', reason[:400])
         self.ledger('hold', task=task['id'], experiment=experiment, category=category, reason=reason[:400])

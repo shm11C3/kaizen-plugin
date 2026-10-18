@@ -90,3 +90,33 @@ class IntegratorChecks(IntegratorFixture):
         self.assertEqual(self.team('status')['quality_holds'][0]['category'], 'conditions')
         self.assertEqual(self.state_env()['DEPLOYED_REV'], stable)
         self.assertNotIn('deploy', [row['event'] for row in self.ledger(task)])
+
+    def test_unclassified_warning_returns_to_ai_instead_of_auto_deploying(self):
+        output = '\n'.join(json.dumps(item) for item in [
+            {'reason': 'compiler-message', 'message': {'level': 'warning',
+             'message': 'possible correctness defect', 'code': {'code': 'clippy::correctness'}, 'spans': []}},
+            {'reason': 'build-finished', 'success': True},
+        ])
+        self.configure([{'label': 'clippy', 'diagnostics': 'cargo',
+                         'command': [sys.executable, '-c', 'print(' + repr(output) + ')']}])
+        task = self.submit('Unclassified warning', 'worker/warning-check', {'go/score': '2000\n'})
+        self.assertTrue(self.once()['processed'])
+        self.assertEqual(self.tasks()[task]['status'], 'NEEDS_MEASUREMENT')
+        self.assertEqual(self.team('status')['quality_holds'][0]['category'], 'warning')
+        event = next(row for row in self.ledger(task) if row['event'] == 'checks')
+        self.assertEqual(event['status'], 'needs_review')
+        self.assertNotIn('deploy', [row['event'] for row in self.ledger(task)])
+
+    def test_compiler_error_cannot_be_waived_by_advisory_configuration(self):
+        output = '\n'.join(json.dumps(item) for item in [
+            {'reason': 'compiler-message', 'message': {'level': 'error',
+             'message': 'does not compile', 'code': None, 'spans': []}},
+            {'reason': 'build-finished', 'success': False},
+        ])
+        self.configure([{'label': 'clippy', 'diagnostics': 'cargo', 'advisory': True,
+                         'command': [sys.executable, '-c', 'print(' + repr(output) + '); raise SystemExit(1)']}])
+        task = self.submit('Compiler failure', 'worker/compiler-check', {'go/score': '2000\n'})
+        self.assertTrue(self.once()['processed'])
+        self.assertEqual(self.tasks()[task]['status'], 'NEEDS_MEASUREMENT')
+        self.assertEqual(self.team('status')['quality_holds'][0]['category'], 'correctness')
+        self.assertNotIn('deploy', [row['event'] for row in self.ledger(task)])

@@ -98,8 +98,9 @@ changes. The resident service runs all configured checks on its actual candidate
 SHA before deployment using the existing check.py helper. Register the project's
 existing suites at setup using `../../README.md#candidate-checks`. Empty checks
 are unconfigured/not run, never a pass. Preserve blocking failures through
-hold/recovery; advisory style and diagnostic needs_review retain their raw
-results without a blanket submission block or a fabricated PASS.
+hold/recovery. Explicit style advisory retains raw results and may continue;
+non-advisory needs_review returns to its owner AI in a warning hold.
+Compiler errors, source changes and unavailable execution are never waived.
 Adoption still uses the real official benchmark's performance and correctness,
 and a pass never clears known defects or unresolved quality holds.
 

@@ -20,7 +20,8 @@ Rustは`cargo test --workspace`・`cargo fmt --all -- --check`・workspace/all-t
 登録し、residentがactual candidate SHAをdeployする前に全configured checksを実行する。
 JSON・生ログ・秒数・source SHAを保持し、blocking失敗は品質保留・復旧へ戻す。
 `checks=[]`は未設定/未実施を記録し、PASS扱いにしない。advisory style/diagnosticsはraw結果を
-保持し、一律に止めず、恒常的な親待ち・再提出は増やさない。
+保持する。明示したstyle advisoryは継続できるが、非advisoryの未分類警告はwarning保留へ戻して
+担当AIが調査する。compiler error・source変更はadvisoryでも免除せず、恒常的な親待ちは増やさない。
 
 ## 0.9.0: 必要な事前確認と実ベンチ、回数上限の見直し
 

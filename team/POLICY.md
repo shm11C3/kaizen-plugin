@@ -138,8 +138,10 @@ contains source and minimal bootstrap files, not these rules or management tools
   composed SHA through the existing check.py helper, retaining JSON/raw logs
   and durations. Setup registers the project's existing suites; an empty checks
   list is unconfigured/not run, not passing. Failed blocking checks use the
-  quality-hold/recovery path. Style-only advisory and diagnostic needs_review
-  retain raw results rather than becoming PASS or blanket rejection.
+  quality-hold/recovery path. Explicit style advisory retains raw results and
+  may continue; non-advisory needs_review returns to the owner AI in a warning
+  hold for investigation. Compiler errors, source mutation and unavailable
+  execution cannot be waived by advisory configuration.
   See `team/docs/VALIDATION.md` for scope and evidence.
   Pause it before a human-led integration; it never resolves conflicts
   and never takes review=human candidates.
