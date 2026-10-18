@@ -10,6 +10,11 @@ Scripts: `$K/scripts/` (K = this skill's base directory `/../..`). Run with
 In a team, only the environment reservation holder runs this deployment loop.
 Workers use `../prepare-candidate/SKILL.md`; independent next-candidate preparation
 continues under `../../team/docs/PIPELINE.md` while this loop waits on target work.
+An integration assignment includes composition, related checks on its frozen
+actual SHA and the next authorized measurement or recovery action. Continue
+through those boundaries without waiting for the parent to start each phase.
+Record a real authority/dependency wait when the next action is unavailable;
+local integration delegation never grants a target reservation implicitly.
 
 ## 1. Change and commit
 
