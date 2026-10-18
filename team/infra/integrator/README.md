@@ -35,7 +35,7 @@
 |---|---|---|
 | Bedrockのモデル利用申請 | AWSアカウントごとに1回、Model catalogでAnthropicモデルのuse caseを送る | コンソールでアクセス付与を確認 |
 | IAM | EC2 role `isucon-competition-control-ssm` に [bedrock-policy.json](bedrock-policy.json) をinline policyとして付与 | 下のコマンド |
-| 推論プロファイルID | `ap-northeast-1` の接頭辞は `apac.`。Opus 5.5 は `apac.anthropic.claude-opus-5-5`（Claude Code文書の例は `us.` 接頭辞）。Sonnet/Haiku 5.5 のIDは文書に無く未確認 | `aws bedrock list-inference-profiles --region ap-northeast-1` |
+| 推論プロファイルID | `ap-northeast-1` には `jp.`（国内のみ）と `global.` のプロファイルがあり、5.5 系に `apac.` は無い（2026-10-18 実測）。Opus 5.5 `jp.anthropic.claude-opus-5-5`、Haiku 5.5 `jp.anthropic.claude-haiku-5-5`、Sonnet 5.5 は `global.` のみ。Claude Code の既定は `ap-*` を `apac.` に解決するので、全エイリアスを固定し `ANTHROPIC_BEDROCK_REGION_PREFIX=jp` を置く | `aws bedrock list-inference-profiles --region ap-northeast-1` |
 | クォータ | Bedrockのモデル別TPM/RPMは新規アカウントで低い。当日前に引き上げ申請し、模擬運転で429が出ないことを見る | Service Quotas / 模擬運転 |
 | 規約 | ISUCON2026規定はAI利用と外部での開発・テストを許可、競技ベンチ中の外部委譲を禁止（[REGULATIONS](../../docs/REGULATIONS.md)）。統合Agentはベンチを実行・肩代わりしない。当日マニュアルを優先 | 当日確認してRULESへ記録 |
 | ハードウェア | Claude Code文書の要件は4 GB以上のRAM。共通ホストは t3.small（2 GiB）。文書上の対応OSにAmazon Linuxは無い（Ubuntu/Debian等） | 模擬運転で `claude --version` と1回の `-p` 呼び出し、メモリを見て必要なら t3.medium へ |
@@ -131,8 +131,17 @@ python3 "$K/scripts/team/control.py" integrator abandon --experiment 003-T-0001-
 
 ## 検証状況
 
-- 実装はfake remoteのe2e（`tests/test_integrator.py`: 採用・衝突返却・レビュー返却・正しさ失敗の却下・占有待ち・pause）と
-  ダッシュボードのテストで確認済み。
-- 共通ホスト上でのClaude Code導入、Bedrock疎通、systemd運用、t3.smallでのメモリ、`apac.` のモデルID、
-  ポータル方式の `result` 受け渡しは**実機未検証**です。模擬運転（練習問題＋READY提出）で確認してから当日に使います。
-- モデルを使わない運転（`review=none`）でも全工程は同じで、契約レビューだけが省かれます。
+2026-10-18〜19 に制御ホスト（`isucon-competition-control`、AL2023 t3.small）と ISUCON14 練習環境（app1・bench を起動）で模擬運転した。
+
+| 項目 | 結果 |
+|---|---|
+| Claude Code 導入 | ネイティブインストーラで 2.1.302 が AL2023 に入った（文書の対応 OS 一覧に無いが動作）。`install.sh` 経由、isucon ユーザーの `~/.local/bin` |
+| Bedrock 疎通 | インスタンスロール＋inline policy で `claude -p` が応答。`jp.anthropic.claude-sonnet-4-6`: 2 秒、`total_cost_usd` 0.024（system prompt 約 6.3k トークンの cache 作成分が主） |
+| 5.5 系モデル | 利用申請フォーム提出後も `anthropic.claude-{opus,sonnet,haiku}-5-5 is not available for this account`（Converse API で確認）。Sonnet 4.6 は提出直後から利用可。本番までに 5.5 の可否を再確認し、`integrator.env` の ID を合わせる |
+| メモリ | 2 GiB のうち統合 Agent 常駐 10 MB、`claude -p` 実行中も空き 800 MB 以上。t3.small で足りた |
+| 統合の流れ | READY → `env-acquire` → fetch → 合成 dry run → Bedrock 契約レビュー（proceed、日本語の理由・リスク、6.6 秒、$0.035）→ baseline 計測まで無人で到達 |
+| エラー経路 | 再起動直後の app1 で unattended-upgrades がアプリを停止し、baseline ベンチが 502 で失敗。統合 Agent は復旧確認→タスクを NEEDS_MEASUREMENT で返却→`pause`→占有解放まで設計どおり。原因はホスト側（setup スキルの「Quiet hosts」未適用）で、`BENCH_PRECHECK_CMD` を preset に追加して再提出 |
+| ダッシュボード | `kaizen-dashboard.service` が 127.0.0.1:8080 で配信。`control.py dashboard --open` には各 PC に Session Manager plugin が必要（未導入の PC では `control.py dashboard` の summary.json を使う） |
+| ポータル方式 | `result`/`abandon` の受け渡しは fake remote のテストのみ（本番ポータルでは未実施） |
+
+模擬運転の最終結果（T-0001 の再提出以降）は PR のコメントに記録する。
