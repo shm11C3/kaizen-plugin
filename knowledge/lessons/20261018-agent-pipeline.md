@@ -39,7 +39,9 @@ Go1.24.4/darwin arm64/Apple M4、warm cache、各size3走のlocal microbenchで�
 ns/op中央値は6322/22861/106878から5489/21632/101505。
 ホスト上の他処理・同一負荷での対照なし・少数sampleのため、runtime差の一般化や
 アプリthroughput・競技スコア改善は主張しない。MySQL/HTTP/EC2では未検証で、競技sourceへ
-自動採用していない。固有コードは検証repoのsource refsへ保存する。
+自動採用していない。固有コードのGit履歴はローカル検証worktreeに保持する。
+非公開検証repoへの履歴追加送信は自動承認審査が機密性の確認不足を理由に拒否したため、
+そのrepoには検証手順・結果・証跡を保存する。
 
 ## 継続する境界
 
