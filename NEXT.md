@@ -20,9 +20,21 @@ unknownとし、記録区間の和とunionを区別する。submittedAgeは統�
 変わった負荷・機構・識別根拠から再検討する。登録名衝突のH1は未解消のまま保持し、
 後のclean pairや別タスクで免除しない。問題固有の施策はpractice knowledgeへ保存する。
 
-検証結果は作業中。実SubAgent＋実ISUCON14 Goコードで工程重なりとactual integratedSHAの
-再検証を確認し、別fixtureで既存排他/品質保留回帰を実行する。Discordの実接続、各PCの
-Claude/Codex install/reload、実EC2での得点・時間短縮の因果効果は別の検証項目として残す。
+[独立した検証記録](https://github.com/shm11C3/kaizen-agent-pipeline-validation-20261018/blob/main/REPORT.md)で、
+実SubAgent2つが実ISUCON14 Goコードを修正し、関連QAまで自走した。準備は54秒/104秒、
+明示した作業区間の重なりは17.47秒（準備windowの重なり40.50秒とは区別）。
+初回は成果READYから台帳READYへ146秒/83秒かかったため、同一主セッションの明示委譲を
+READY提出まで拡張した。既存候補を使う提出のみの再試行では台帳eventまで0.151秒/0.084秒。
+これは機能確認で、公平な直列対照や競技全体の短縮率ではない。
+
+合成で同一ファイルのblobが変わる2案をactual SHA `541e180`へ再提出し、そのsourceを
+native契約3件（4 subtestsを含む）・gofmt・vetで検証した。割当microbenchは
+61/63/65→各11 allocs/op。アプリ得点効果は未測定。追加14件を含むPython 118テストと
+`tests/run.sh`がPASSし、既存排他・品質保留・source guardを維持した。
+実DB2つで`pipeline-status`前後のbytes・mtime・schema・内容の不変も確認した。
+問題固有の変更は[practice knowledge](knowledge/lessons/20261018-agent-pipeline.md)へ保存した。
+Discordの実接続、各PCのClaude/Codex install/reload、実EC2での得点・時間短縮の因果効果は
+別の検証項目として残す。計測coreは変更していない。
 
 ## 0.7.6: 実証済み改善の自律採用
 
