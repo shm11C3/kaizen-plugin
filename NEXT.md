@@ -2,6 +2,30 @@
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
+## 0.9.0: 必要な事前確認と実ベンチ、回数上限の見直し
+
+[検証方針](team/docs/VALIDATION.md)へ集約した。事前は必要なbuild/smoke、変更契約・
+観測済み不具合のfocused regression、安価な関連Lintを選ぶ。全回帰・race・Clippy全target・
+新coverage・独立/LLMレビューを毎候補の必須ゲートにしない。実ベンチで性能とcheckerの
+正しさを確認し、既知欠陥・未解消holdはPASSでも免除しない。READYに公式結果は要求しない。
+
+一律の総120回・毎時30回・実験6回・毎時6実験という既定上限には、公式規定や実測で
+必要性を示す根拠を今回確認できなかった。4つの回数capは既定0（plugin上限なし）へ変更した。
+全物理試行は記録し、公式制限やチームの予算に基づく正の明示値は引き続き強制する。
+復旧余裕は各有限capの中に残し、実際のquotaを超過できる追加枠にはしない。
+時間予算・MAX_EXP_MINUTES=30・判定v2/最低2サンプル・排他・品質条件は維持する。
+
+既存configの正数は自動変更しない。変更はidle時に行い、チーム環境の既存再登録手順を
+使う。quotaだけの変更でstable bundleの比較条件は変わらないが、登録identityは別に守る。
+進行中のcore/pinは差し替えない。別ブランチで開発中の独立integratorはこの変更に含めず、
+統合時に任意レビューの既定無効化・占有前の実施を本方針と照合する。
+
+追加5件を含むPython123テスト（75.68秒）と`tests/run.sh`（49.44秒）がPASS。
+無制限でも125試行の記録、有限3scopeの復旧枠、上限超過拒否、時間窓、既存設定維持、
+不正値の拒否を確認した。これらはplugin変更の回帰で、アプリ候補ごとの全回帰義務ではない。
+詳細は[検証記録](knowledge/lessons/20261018-bench-first-validation.md)。公式ベンチの新得点や
+各PCのnative reload、独立integratorの実機運転はこの検証では確認していない。
+
 ## 0.8.0: 各主Agentの候補準備パイプライン
 
 各Discordの主Agentが判断と共有を持ち、native SubAgentへ実装から関連QA・READY資料までを

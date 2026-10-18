@@ -25,8 +25,9 @@ retain source-bound results, diagnostics and untested scope.
    in independent clones; do not block all implementation until coverage is complete.
    Set a time budget and the improvements these checks will unblock in the plan.
 3. Prefer existing focused regression for the changed contract or observed
-   failure. Add a reproducer or API/DB/concurrency check only when it answers a
-   concrete risk not covered by the benchmark/cheap existing checks. Use a real
+   failure. Add a reproducer or API/DB/concurrency check when it answers a
+   concrete risk more cheaply or directly, or covers a gap in the checker.
+   Do not duplicate cheap existing checks. Use a real
    database when transaction semantics matter; mocks alone cannot prove that
    behavior. Isolate/reset test data. New broad coverage is not a submission gate.
 4. Freeze an immutable commit before source-bound execution. Select the relevant
