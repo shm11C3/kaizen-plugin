@@ -201,6 +201,9 @@ class Integrator:
                 'candidatesProcessed': self.processed}
         write_json(path, data)
         self.last_state = state
+        # People watch the page while a candidate runs: refresh it on every state change, not only per candidate.
+        if self.project is not None:
+            self.dashboard()
 
     def paused(self):
         return (self.state_dir / 'pause').exists()
