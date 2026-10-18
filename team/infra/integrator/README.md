@@ -8,7 +8,8 @@
 
 - 対象操作はすべて `scripts/team/target.py` 経由です。占有、プロセスロック、kaizen各スクリプトの拒否条件は
   人間が統合するときと同じで、このサービスが新しい操作経路を増やすことはありません。
-- 採否は固定ルール（`EVALUATION_RULE`）が決めます。モデルは候補1件につき1回、合成済み差分の契約レビュー
+- 採否は固定ルール（`EVALUATION_RULE`）が決めます。既定は`review=none`でモデルを使いません。
+  任意の`review=llm`では、候補1件につき1回、合成済み差分の契約レビュー
   （課題票と差分の整合、無関係な変更・検証の無効化・空差分の検出）にだけ呼ばれ、`proceed=false` なら
   ベンチ枠を使わずに `NEEDS_MEASUREMENT` で担当者へ返します。効果の大小やノイズはレビュー理由になりません。
 - READYが無い間はsleepだけで、トークンを消費しません。`pause` ファイルがあると新しい候補を取りません。
@@ -19,12 +20,18 @@
   再開は人が状態を確認してからです（`resume`）。
 
 処理の流れ（1候補）: `env-acquire` → `git fetch` → 一時worktreeで `base..source` をstableへcherry-pick（dry run）
-→ 契約レビュー → 必要ならbaseline補充 → `experiment new` → 本番cherry-pick → manifest記入 → `deploy`
+→ 任意の契約レビュー → 必要ならbaseline補充 → `experiment new` → 本番cherry-pick → manifest記入 → 設定済みQA → `deploy`
 → `bench`/`evaluate` をルールの `nextAction` が `remeasure` の間、予算内で繰り返す → `experiment record`
 → promoteなら `task-finish ACCEPTED --record --tested-sha` と `git push origin main`、rejectなら `REJECTED`、
 品質不明なら `task-quality-hold`、ノイズならNEEDS_MEASUREMENT → `env-release`。
 各段階は `/srv/isucon/state/integrator/ledger.jsonl` に時刻・所要・結果・モデル費用付きで残り、
 担当者向けの短い結果票が `feedback/T-NNNN.md` に書かれます。
+
+既存テスト・formatter/Lint一式は[VALIDATION](../../docs/VALIDATION.md)に従ってsetup時に`checks`へ登録し、
+actual candidate SHAの配備前に全設定チェックを実行します。JSON・生ログ・秒数を保持し、blocking失敗は
+候補を配備せず品質保留へ戻します。`checks=[]`は未設定/未実施でありPASSではありません。
+style専用advisoryの生結果は書き換えません。重い検査だけ実測に基づいて範囲・頻度を調整します。
+[Go/Rustの設定例](../../../README.md#candidate-checks)を実projectに合わせて使います。
 
 ## 前提（当日前に済ませる）
 

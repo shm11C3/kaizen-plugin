@@ -8,24 +8,25 @@ Rustでは[ビルド時間](RUST_BUILD.md)も準備予算に含め、実際のde
 
 必要な担当が、具体的な変更の確認、既存ツールと計測、採点経路の調査を並列で行う。
 共有環境の変更・観測・ベンチは単一予約を守る。テスト完成まで実装を全面停止しない。
-[検証方針](VALIDATION.md)に従い、ベンチ前は必要なbuild/smokeと変更契約・観測済み不具合の
-既存focused regressionを選ぶ。包括テスト・新coverage・独立/LLMレビューは毎候補のゲートにしない。
+[検証方針](VALIDATION.md)に従い、ベンチ前は既存テスト・formatter/Lint一式を実行する。
+実測で重い検査だけ範囲・頻度・並列実行を調整し、秒数・省略範囲・理由を残す。
+既存suite実行と、新coverage・独立/LLMレビューを追加する判断は分ける。
 具体的な不足がある場合に[prepare-tests](../../skills/prepare-tests/SKILL.md)で仕様・checkerに
 沿う再現を追加する。現実装の誤りを正解にせず、DB・並行実行検証も必要範囲に限る。
 実DBが必要なもの、未実行、skip、依存不足を区別する。品質保留は再現→修正→再計測へ戻す。
-[Lint手順](LINT.md)も同じ予算に含め、安価な関連検査と残した未確認範囲を記録する。
+[Lint手順](LINT.md)も同じ予算に含め、cold/warm・build重複と実行時間を記録する。
 
 既存の言語ツールを使う。`scripts/check.py`は実行証拠を残す補助:
 
 ```bash
-python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/go" --label focused --timeout 120 -- go test -count=1 -run '^TestChangedContract$' .
-python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/rust" --label focused --timeout 120 -- cargo test --locked -p PACKAGE changed_contract
+python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/go" --label regression --timeout 120 -- go test ./...
+python3 "$K/scripts/check.py" --project "$KAIZEN_PROJECT/rust" --label regression --timeout 120 -- cargo test --workspace
 ```
 
 projectにはgo.mod／Cargo.tomlのあるディレクトリを指定する。`.kaizen/checks/`にログとJSONを保存する。
 通常checkは終了0かつ実行中のソース変化なしが`passed`。Lint用parserを指定した場合は指摘も判定し、
 終了0でも`needs_review`になりうる。テスト内容の十分性や公式checker合格は別途必要。
-テスト名・package/crateは実在する変更範囲に合わせ、wrapper成功にskipを隠さない。
+flags・featuresは既存project設定に合わせ、恣意的なall-featuresを足さず、wrapper成功にskipを隠さない。
 実施しなかった検査も理由と範囲を残す。成果物は追跡対象から除外し、到達可能なartifact参照で共有する。
 
 ### 実DBを使うGoテスト

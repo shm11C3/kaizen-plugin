@@ -117,9 +117,16 @@ python3 "$K/scripts/team/control.py" env-release --agent "$KAIZEN_SESSION" --tok
 （セッションID `integrator-control-01`）が取り込みます。手順は[integrator/README](../infra/integrator/README.md)。
 メンバーは占有を取らず、提出後は次の作業へ進みます。
 
-- 候補ごとに `env-acquire` → 現stableへcherry-pick（dry run）→ 合成済み差分の契約レビュー（Bedrock経由の
-  `claude -p`、1回）→ baseline補充 → `experiment new` → deploy → bench/evaluate → record → 台帳更新 → push →
-  `env-release`。採否はルールが決め、レビューは契約違反の候補をベンチ前に返すだけです。
+- 候補ごとに `env-acquire` → 現stableへcherry-pick（dry run）→ baseline補充 → `experiment new` →
+  deploy → bench/evaluate → record → 台帳更新 → push → `env-release`。採否はルールが決めます。
+- LLMレビューは新規設定例で`review=none`、組込既定も`none`です。既存の`review=llm`は自動変更せず、
+  互換modeではdry run後、占有内で処理候補ごとに任意レビューを行います。不要ならidle時に設定を変更します。
+  既存テスト/Lint一式の実行と新規の独立レビュー追加を混同せず、[検証方針](VALIDATION.md)に従います。
+- deploy前にactual candidate SHAで設定済みのchecksをすべて実行し、JSON・生ログ・秒数を保存します。
+  setup時に[既存suiteレシピ](../../README.md#candidate-checks)を実projectへ合わせて登録します。
+  `checks=[]`は未設定/未実施として記録し、PASSと扱いません。blocking失敗は品質保留・復旧へ戻し、
+  advisory styleやdiagnosticsの`needs_review`は一律に提出を止めず、raw結果と指摘対応を残します。
+  workerの旧sourceのPASSと合成版の結果は区別します。
 - 衝突・採用済み変更との重なり・空差分・契約違反は計測せず `NEEDS_MEASUREMENT`（理由は `integrator:` で始まる）で
   担当者へ返ります。担当者は `task-resume` し、現在の `main` にrebaseした統合SHAを `task-ready` で再提出します。
 - `review=human` の候補は取りません。従来どおり人が占有して統合します。その間、統合Agentは `waiting` で待ちます。

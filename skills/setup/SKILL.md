@@ -54,6 +54,15 @@ comparison identity intact, but registered team environments hash raw config.sh:
 re-register through the existing path while idle rather than weakening identity
 guards. See `../../team/docs/VALIDATION.md`.
 
+For a resident integrator, register the application's existing test and
+formatter/lint suites in settings.checks using `../../README.md#candidate-checks`.
+Each check has a project-relative cwd, command argv, timeout_seconds and optional
+gofmt/cargo diagnostics. Adapt paths, flags and features to the actual project.
+Style-only formatter checks may declare advisory=true; retain raw failures
+without relabeling them PASS. Test/correctness checks remain blocking by default.
+The service runs configured checks on its composed candidate SHA before deploy;
+checks=[] remains unconfigured/not run in the ledger, never a synthetic PASS.
+
 ## 2b. Quiet hosts
 
 A fresh AMI runs unattended-upgrades on first boot (ISUCON12 practice: it

@@ -70,14 +70,20 @@ Integrate tested tools into private plugin main and roll out at an idle boundary
 Keep competition main separate. Read `team/docs/REGULATIONS.md`
 before choosing manual operations or isolated parallel validation environments.
 
-Follow `team/docs/VALIDATION.md`: use the real official benchmark for performance
-and checker correctness, with only necessary build/smoke and focused local checks
-before it. Broad regression, race, all-target lint, new coverage and independent
-or LLM contract review are not universal candidate gates. Known correctness
+Follow `team/docs/VALIDATION.md`: run the existing test suite and formatter/lint
+suite by default, then adjust only checks measured to be costly. Record seconds,
+cold/warm and duplicate-build costs, and any omitted scope/reason. New coverage,
+race checks and independent or LLM contract review are separate risk-driven
+choices, not automatic additions. The real official benchmark supplies performance
+and checker correctness evidence for adoption. Known correctness
 failures and open quality holds still require repair; a benchmark pass cannot
-waive them. Scope cheap native lint under `team/docs/LINT.md`, retain diagnostic
+waive them. Follow `team/docs/LINT.md`, retain diagnostic
 dispositions and untested scope, and do not block submission on advisory style.
 Go and Rust use existing tools under `team/docs/TOOLS.md`.
+Setup registers existing suites in resident settings.checks; the integrator
+runs configured checks on the actual candidate before deploy with check.py.
+Empty checks are unconfigured/not run, never a PASS. Preserve blocking failures
+through quality hold/recovery and keep advisory results explicit.
 Optional contract tests and bounded preparation/refactor phases follow
 `team/docs/PHASES.md`, `skills/prepare-tests/SKILL.md` and `skills/refactor/SKILL.md`.
 Record preparation time and the dependent improvement. Costly collection uses

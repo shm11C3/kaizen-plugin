@@ -2,7 +2,29 @@
 
 `scripts/knowledge.sh report` の出力が一次情報です（`knowledge/records/`）。
 
+## PR #1統合時: 既存suite実行と新規検証の拡充を分ける
+
+ユーザーの指摘を受け、初めからfocusedへ限定する0.9.0の方針を修正する。
+既存テスト・formatter/Lint一式の実行を基本とし、Goは`go test ./...`・gofmt・`go vet ./...`、
+Rustは`cargo test --workspace`・`cargo fmt --all -- --check`・workspace/all-targetsのClippyを
+既存設定/featuresに合わせて使う。恣意的なall-featuresは足さない。実測で重い検査だけ
+範囲・頻度・並列実行を調整し、秒数・cold/warm・build重複・未実施範囲・理由を残す。
+既存suiteを回すことと、新coverage・race・独立/LLMレビューを追加する判断は分ける。
+実ベンチの役割、既知欠陥/未解消holdの保持、回数cap既定0は変更しない。
+
+常駐integratorの組込既定は既に`review=none`だが、配布exampleが`llm`だったため新例も`none`へ
+揃える。既存integrator.jsonの明示`llm`は自動変更せず、互換modeでは処理候補ごとに占有内で
+レビューする現動作を明記する。以下の0.9.0の測定値と当時の独立branch状態は履歴として保持する。
+今回の統合後の回帰結果・実機確認は、実際の実行後に別記する。
+合成後のQAのgapは、既存`check.py`を再利用する小helperで埋める。setupで既存suiteをchecksへ
+登録し、residentがactual candidate SHAをdeployする前に全configured checksを実行する。
+JSON・生ログ・秒数・source SHAを保持し、blocking失敗は品質保留・復旧へ戻す。
+`checks=[]`は未設定/未実施を記録し、PASS扱いにしない。advisory style/diagnosticsはraw結果を
+保持し、一律に止めず、恒常的な親待ち・再提出は増やさない。
+
 ## 0.9.0: 必要な事前確認と実ベンチ、回数上限の見直し
+
+この節は0.9.0時点の判断・検証記録。事前検査を一律に局所化する運用は上記で修正した。
 
 [検証方針](team/docs/VALIDATION.md)へ集約した。事前は必要なbuild/smoke、変更契約・
 観測済み不具合のfocused regression、安価な関連Lintを選ぶ。全回帰・race・Clippy全target・

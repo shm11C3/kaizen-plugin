@@ -33,18 +33,21 @@ contains source and minimal bootstrap files, not these rules or management tools
   Retain raw and machine-readable evidence; missing data is not a pass.
 - Follow `team/docs/VALIDATION.md`: the real official benchmark supplies both
   performance and checker correctness evidence for adoption. Pre-benchmark
-  checks are necessary build/smoke and focused regression for the changed
-  contract or observed defect. Add DB/concurrency checks only for a concrete
-  risk; broad regression, race, all-target lint and new coverage are not gates
-  for every candidate. Record actual scope and honest skips.
-- Select cheap related lint under `team/docs/LINT.md`. Resolve correctness
+  checks run the existing test and formatter/lint suites by default, using the
+  project's current settings/features. Measure seconds, cold/warm and duplicate
+  builds; adjust scope/frequency/parallelism only for measured costly checks and
+  retain omissions/reasons. New coverage and additional DB/concurrency/race
+  checks are separate risk-driven choices. Record honest skips.
+- Follow existing lint under `team/docs/LINT.md`. Resolve correctness
   diagnostics, retain source-bound results and duration, and explicitly triage
   advisory findings. Native exit0 does not erase diagnostics; advisory formatting
   or style alone does not block submission.
 - Independent or LLM contract review is optional for a specific unresolved
   semantic risk. All-case LLM review is off by default; do not make it a normal
-  candidate gate. Conduct review outside the shared target reservation.
-- `team/docs/PHASES.md` allows bounded focused test preparation in parallel;
+  candidate gate. Put preparation review outside the shared target reservation.
+  The resident integrator defaults to review=none; an existing explicit llm
+  setting remains compatible and currently reviews within its reservation.
+- `team/docs/PHASES.md` allows bounded new test preparation in parallel;
   repair known failures and quality holds using reproductions. A benchmark pass
   does not waive known local defects/open holds or prove the whole specification.
 - A bounded refactor can unblock a named optimization/repair. Timebox it,
@@ -127,11 +130,18 @@ contains source and minimal bootstrap files, not these rules or management tools
   verification, benchmarking, evaluation, recording, and recovery.
 - The control host may run the resident integrator (`scripts/team/integrator.py`,
   `team/infra/integrator/README.md`) as the integration owner. It holds the
-  reservation only while one candidate is measured, composes the submitted source
+  reservation through one candidate's measurement and adoption/recovery, composes the submitted source
   by cherry-pick onto the current stable, lets the configured rule decide, and
   returns unmergeable or contract-violating candidates to their owners without a
-  benchmark. Its single model call is advisory pre-screening, never the adoption
-  decision. Pause it before a human-led integration; it never resolves conflicts
+  benchmark. Its optional llm review is pre-screening, never the adoption
+  decision. Before deployment it runs every configured check on the actual
+  composed SHA through the existing check.py helper, retaining JSON/raw logs
+  and durations. Setup registers the project's existing suites; an empty checks
+  list is unconfigured/not run, not passing. Failed blocking checks use the
+  quality-hold/recovery path. Style-only advisory and diagnostic needs_review
+  retain raw results rather than becoming PASS or blanket rejection.
+  See `team/docs/VALIDATION.md` for scope and evidence.
+  Pause it before a human-led integration; it never resolves conflicts
   and never takes review=human candidates.
 - Never bypass the boundary with direct SSH writes, rsync, service restarts,
   SQL mutations, profiling changes, log truncation, or portal benchmark runs.

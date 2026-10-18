@@ -10,8 +10,9 @@
 - 変更したファイル・DB・設定・資源:
 - manifest.changedResources / 資源を検証するprobe / 安定bundle ID:
 - 前提タスク・他の候補との競合:
-- 必要と判断したbuild/smoke・focused regressionと結果 / 省略した範囲・理由:
-- 選択したLint・test記録 / 対象SHA・範囲 / toolchain版 / 実行時間 / 指摘の対応・保留理由（advisory styleは提出を止めない）:
+- 既存test・formatter/Lint一式と結果 / 重いと実測した検査・省略範囲・理由 / 追加検査を選んだ根拠:
+- Lint・test記録 / 対象SHA・範囲 / toolchain版・features / 秒数・cold/warm・build重複 / 指摘の対応・保留理由（advisory styleは提出を止めない）:
+- actual統合sourceのchecks設定・結果 / worker sourceの証跡との差 / 未設定・未実施範囲:
 - 公式実ベンチの性能・checker結果（READY時は未実施でよい）/ ローカルmicrobenchとの差 / 既知欠陥・未解消hold:
 - 採点への影響（直接・共有資源経由・不明）とマニュアル・観測の根拠:
 - 期待するスコア効果・不確実性（局所的な高速化と区別）:

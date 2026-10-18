@@ -9,7 +9,7 @@ scripts/team/target.py, so the reservation, the process lock and every refusal
 inside the kaizen scripts still apply; this file adds no new way to touch the
 servers.
 
-The model is consulted at one bounded point only: a contract review of the
+When explicitly enabled, the model is consulted for a bounded contract review of the
 composed diff before any benchmark slot is spent (`claude -p` on the control
 host, Amazon Bedrock credentials from the instance role). The rule, not the
 model, decides adoption. While nothing is READY the loop sleeps and spends no
@@ -37,6 +37,8 @@ import sys
 import tempfile
 import time
 
+from candidate_checks import run_checks
+
 ROOT = Path(__file__).resolve().parents[2]
 TEAM = ROOT / 'scripts/team/team.py'
 TARGET = ROOT / 'scripts/team/target.py'
@@ -48,6 +50,7 @@ DEFAULTS = {
     'github_user': '',
     'poll_seconds': 30,
     'review': 'none',
+    'checks': [],
     'accept_human_review': False,
     'push': True,
     'remote': 'origin',
@@ -350,6 +353,14 @@ class Integrator:
             self.status('working', 'stable へ合成', task=tid, experiment=experiment, step='compose')
             candidate = self.compose(task)
             self.fill_manifest(experiment, task, composed, verdict, candidate)
+            self.status('working', '統合SHAの既存テスト・Lint', task=tid, experiment=experiment, step='checks')
+            if not self.check_candidate(task, experiment, candidate):
+                return
+            if self.stopping:
+                self.target('evaluate')
+                self.target('experiment', 'record', '--override', 'inconclusive', '停止要求: 配備前の確認を終えてstableを維持')
+                self.return_task(task, '停止要求のため配備せず返却。実施済みQAの記録は保持')
+                return
             self.status('working', candidate[:7] + ' を配備中', task=tid, experiment=experiment, step='deploy')
             started = time.monotonic()
             self.target('deploy', candidate)
@@ -369,6 +380,61 @@ class Integrator:
             if self.last_state == 'working':
                 self.status('idle', tid + ' の処理を終えました')
             self.dashboard()
+
+    def check_candidate(self, task, experiment, candidate):
+        """Reuse native check.py receipts; no model or new testing framework."""
+        receipts, error = [], None
+        try:
+            receipts = run_checks(self.project, candidate, self.settings['checks'], self.state_dir)
+        except (ValueError, OSError, subprocess.SubprocessError) as failure:
+            error = str(failure)[-1000:]
+        if not receipts and not error:
+            self.ledger('checks', task=task['id'], experiment=experiment, revision=candidate,
+                        status='not_configured', checks=[])
+            return True
+
+        def infrastructure(receipt):
+            native = receipt.get('nativeResult') or {}
+            return (receipt.get('launcherError') or not receipt.get('sourceIntegrityPassed')
+                    or native.get('timedOut') or native.get('interrupted')
+                    or native.get('exitCode') in (124, 127, 130))
+
+        blocking = [receipt for receipt in receipts if infrastructure(receipt)
+                    or (receipt['status'] == 'failed' and not receipt['declaredAdvisory'])]
+        state = ('failed' if error or blocking else
+                 'needs_review' if any(receipt['status'] != 'passed' for receipt in receipts) else 'passed')
+        directory = self.state_dir / 'checks' / candidate
+        directory.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', prefix='suite-', suffix='.json',
+                                         dir=directory, delete=False) as stream:
+            record_path = Path(stream.name)
+            json.dump({'revision': candidate, 'task': task['id'], 'experiment': experiment,
+                       'at': now(), 'status': state, 'checks': receipts, 'error': error}, stream,
+                      ensure_ascii=False, indent=2)
+            stream.write('\n')
+        self.ledger('checks', task=task['id'], experiment=experiment, revision=candidate, status=state,
+                    record=str(record_path), checks=[{'label': row['label'], 'status': row['status'],
+                                                     'record': row['record']} for row in receipts])
+        manifest_path = self.project / '.kaizen/experiments' / experiment / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['team']['checksRecord'] = str(record_path)
+        write_json(manifest_path, manifest)
+        if state != 'failed':
+            return True
+        # Close without deploying or consuming candidate benchmark slots. The
+        # source-bound hold keeps failed QA alive for repair and a fresh retest.
+        reason = '統合SHAの既存QA失敗: ' + (error or ', '.join(row['label'] for row in blocking))
+        self.target('evaluate')
+        self.target('experiment', 'record', '--override', 'inconclusive', reason[:400])
+        category = 'conditions' if error or any(infrastructure(row) for row in blocking) else 'correctness'
+        self.team('task-quality-hold', '--id', task['id'], '--agent', self.agent, '--token', self.token,
+                  '--category', category, '--evidence', str(record_path), '--reason', reason[:400])
+        self.ledger('hold', task=task['id'], experiment=experiment, category=category, reason=reason[:400])
+        self.ledger('finish', task=task['id'], experiment=experiment, result='NEEDS_MEASUREMENT', reason=reason[:400])
+        self.feedback(task, experiment, None, reason[:400],
+                      '品質保留: 生のQA記録を確認し、task-resume → 修正 → task-ready。未実行やadvisoryをPASSへ変更しない')
+        self.processed += 1
+        return False
 
     def acquire(self, tid):
         reservation = self.team('env-acquire', '--agent', self.agent, '--purpose', 'integrate ' + tid)

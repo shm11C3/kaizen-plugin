@@ -23,12 +23,13 @@ On the branch opened by hypothesize (`<github-login>/exp/NNN-<slug>` in a team,
 manifest allows. Configuration changes go under `etc/` (every host) or
 `etc-<host>/` (one host) and deploy with the code. Commit with a message
 that states the mechanism. Uncommitted changes never deploy.
-Before deploying that commit, select only necessary build/smoke and focused
-checks under `../../team/docs/VALIDATION.md` and `../../team/docs/LINT.md`.
-Do not add broad regression, race, new coverage or independent/LLM review to
-every candidate. Resolve known correctness diagnostics; retain advisory/style
-dispositions without making them a submission gate. Recheck relevant scope on
-the integrated source if composition changed it; no routine human approval.
+Before deploying that commit, run existing tests and formatter/lint suites under
+`../../team/docs/VALIDATION.md` and `../../team/docs/LINT.md`. Measure elapsed
+seconds, cold/warm and build duplication; adjust scope/frequency/parallelism only
+for measured costly checks and record omissions/reasons. New coverage, race or
+independent/LLM review are separate choices. Resolve known correctness diagnostics;
+retain advisory/style dispositions without making them a submission gate. Check
+the actual integrated source if composition changed it; no routine human approval.
 Reuse recorded results only when their source, scope and conditions still apply.
 Designing a test in parallel does not establish that the integrated SHA passed it.
 

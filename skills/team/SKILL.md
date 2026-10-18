@@ -87,12 +87,19 @@ or Git commit author is not the member's identity.
 When using the existing setup, observe, hypothesize, experiment or recover skills
 as a team, apply this skill's ownership boundary first. Workers prepare candidate
 changes locally; only the reservation holder operates the control-host experiment.
-Before task-ready, select necessary focused checks under
-`../../team/docs/VALIDATION.md` and scoped cheap lint under `../../team/docs/LINT.md`.
+Before task-ready, run existing test and formatter/lint suites under
+`../../team/docs/VALIDATION.md` and `../../team/docs/LINT.md`. Adjust measured
+costly checks only, preserving elapsed seconds, omitted scope and reasons.
 Attach actual records, duration, tool versions, diagnostic dispositions and
-untested scope; advisory style does not block submission. Broad regression,
-race, new coverage and independent/LLM review are not default gates. The
-integrator checks relevant scope when integration changes the tested source.
+untested scope; advisory style does not block submission. New coverage,
+race and independent/LLM review are separate risk-driven choices. The
+human-started integration owner checks the actual composition when tested source
+changes. The resident service runs all configured checks on its actual candidate
+SHA before deployment using the existing check.py helper. Register the project's
+existing suites at setup using `../../README.md#candidate-checks`. Empty checks
+are unconfigured/not run, never a pass. Preserve blocking failures through
+hold/recovery; advisory style and diagnostic needs_review retain their raw
+results without a blanket submission block or a fabricated PASS.
 Adoption still uses the real official benchmark's performance and correctness,
 and a pass never clears known defects or unresolved quality holds.
 

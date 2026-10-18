@@ -33,11 +33,54 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 
 共通ホストに `scripts/team/integrator.py` を常駐させると、READYの候補を無人で
 合成・計測・記録・push します（`team/infra/integrator/README.md`）。採否は
-固定ルールのままで、モデル（制御ホスト上の Claude Code、Amazon Bedrock）は
-候補1件につき1回、合成済み差分の契約レビューにだけ使います。READYが無い間は
-トークンを使いません。衝突や契約違反は計測せず担当者へ返します。
+固定ルールのままで、LLMレビューは既定`none`です。具体的なリスクに対して任意に使い、
+既存設定の`review=llm`は自動変更しません。その互換modeでは処理候補ごとにレビューを行います。
+READYが無い間はトークンを使いません。衝突や確認された契約違反は計測せず担当者へ返します。
+配備前には、合成したactual candidate SHAに対して設定済みの既存チェックを実行します。
+設定とGo/Rust例は[候補チェック](#candidate-checks)を参照してください。
 `scripts/team/dashboard.py` が台帳・統合状態・kaizen記録から静的な
 ダッシュボードを作り、`control.py dashboard --open` のSSMポート転送で見ます。
+
+<a id="candidate-checks"></a>
+## 常駐integratorの候補チェック
+
+setup時に、既存projectのtest・formatter/Lint一式を`integrator.json`の`checks`へ登録します。
+各要素は`label`、projectからの相対ディレクトリ`cwd`、argv配列の`command`、
+`timeout_seconds`を持ち、必要なら`diagnostics: "gofmt" | "cargo"`を指定します。
+パス・flags・featuresは実projectへ合わせ、恣意的なall-featuresを追加しません。
+
+Goの例（既存moduleが`go/`の場合）:
+
+```json
+{
+  "checks": [
+    {"label": "test", "cwd": "go", "command": ["go", "test", "./..."], "timeout_seconds": 120},
+    {"label": "format", "cwd": "go", "command": ["gofmt", "-l", "."], "timeout_seconds": 120, "diagnostics": "gofmt", "advisory": true},
+    {"label": "vet", "cwd": "go", "command": ["go", "vet", "./..."], "timeout_seconds": 120}
+  ]
+}
+```
+
+Rustの例（既存workspaceが`rust/`の場合）:
+
+```json
+{
+  "checks": [
+    {"label": "test", "cwd": "rust", "command": ["cargo", "test", "--workspace"], "timeout_seconds": 120},
+    {"label": "format", "cwd": "rust", "command": ["cargo", "fmt", "--all", "--", "--check"], "timeout_seconds": 120, "advisory": true},
+    {"label": "clippy", "cwd": "rust", "command": ["cargo", "clippy", "--workspace", "--all-targets", "--message-format=json", "--", "--no-deps"], "timeout_seconds": 120, "diagnostics": "cargo"}
+  ]
+}
+```
+
+常駐処理は既存`check.py`を再利用する小helperで全configured checksを走らせ、
+source SHA・JSON・生ログ・秒数を保存します。正しさに関わるcheckはblockingが既定で、
+失敗は品質保留・復旧へ戻します。style専用formatterの`advisory:true`は別記録し、
+raw status・exit code・passedをPASSへ書き換えません。diagnosticsの`needs_review`も
+既存の指摘対応へ渡し、一律の不採用にはしません。
+配布例の`checks=[]`は言語未指定のためで、未設定/未実施として台帳へ残します。
+空配列をtest PASSと扱わず、実projectに合わせて設定してください。既存設定へレシピを
+自動注入せず、idle時に更新します。[検証方針](team/docs/VALIDATION.md)も参照してください。
 
 ## 各主Agentの候補準備（0.8.0）
 
@@ -76,9 +119,9 @@ tests/       偽リモートに対するループ全体のテスト
 
 品質・比較・得点改善・変更資源の復旧を確認し、合意した目的と制約を守る候補は、規模が大きくてもAIが採用します。構造変更や副指標の悪化だけで承認待ちを作らず、合意を超える具体的な選択を[人間判断の基準](team/POLICY.md#adoption-and-human-judgment)へ渡します。
 
-候補前は必要なbuild/smoke、変更契約・観測済み不具合のfocused regression、安価な関連Lintへ
-絞り、実際の公式ベンチで性能とcheckerの正しさを確認します。全回帰・race・Clippy全target・
-新coverage・独立/LLM契約レビューは毎候補のゲートにしません。既知欠陥や未解消holdは
+候補前は既存テスト・formatter/Lint一式の実行を基本とし、秒数・cold/warm・build重複を測って、
+重い検査だけ範囲・頻度・並列実行を調整します。新coverage・race・独立/LLM契約レビューの追加は
+別判断です。実際の公式ベンチで性能とcheckerの正しさを確認し、既知欠陥や未解消holdは
 ベンチPASSでも免除せず、省略範囲は記録します。[検証方針](team/docs/VALIDATION.md)を参照してください。
 
 ## 実験の選択と停滞時の再検討（0.4.0）

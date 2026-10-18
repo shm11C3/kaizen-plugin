@@ -1,34 +1,57 @@
-# 実ベンチへ進むための必要な確認を選ぶ
+# 既存の確認を実行し、実測で調整する
 
 目的は制限時間内の最終有効スコア。候補ごとに包括テストを完成させることではない。
 当日の公式実ベンチ（練習では配布された実ベンチ）を、性能とcheckerが検査する正しさの
-共通の判断材料にする。ベンチ前の確認は、明白な失敗を安く止める、変更した契約を守る、
-既知の不具合を再現するために必要な範囲へ絞る。
+共通の判断材料にする。既存テストとformatter/Lint一式は実行を基本とする。
+既存suiteを回す費用と、新しいテスト・独立レビューを作る費用は分けて判断する。
 
 ## 候補前の確認
 
-1. 必要なら最小のbuild・load/smoke確認を行う。既存deployのbuild・health確認と同じ
-   処理を、別の一律ゲートとして二重に要求しない。
-2. 変更した契約や観測済み不具合に対応する既存のfocused regressionを選ぶ。
-   足りない範囲のテスト追加は、具体的な故障リスク・再現・回収できる時間がある場合に行う。
-3. SQLの意味、transaction、競合などが今回の変更で問題になる場合に限り、対象の
-   実DB・並行実行検査を足す。mockやpure helperの成功でその範囲を検証済みにしない。
-4. [Lint](LINT.md)も変更package/crateやファイルを中心に安価なものを選び、
-   正しさの診断を修正する。整形・styleの助言だけで提出を止めない。
+1. プロジェクトの既存テスト・formatter/Lint一式を、既存の設定・featuresで実行する。
+   Goの例は`go test ./...`、`gofmt -l .`、`go vet ./...`。Rustの例は
+   `cargo test --workspace`、`cargo fmt --all -- --check`、
+   `cargo clippy --workspace --all-targets`。[Lint手順](LINT.md)の記録方法を使う。
+   既存CI/scriptのflagsやDB接続条件に合わせ、恣意的な`--all-features`は追加しない。
+2. 実行時間を測り、cold/warm、依存取得・compile・link、既存buildとの重複を区別する。
+   重いことが確認できた検査だけ、残り時間から範囲・頻度・並列実行を調整する。
+   最初から全体をfocusedへ限定せず、数秒で済むsuiteはそのまま回す。
+   並列化によるCPU競合・共有cache/build lockも測り、コマンドを同時起動しただけで
+   時間が減るとは扱わない。target計測と資源を競合させない。
+3. 足りない範囲のテスト追加やrace・DB/並行検査は、具体的な故障リスク・観測済み不具合・
+   回収できる時間がある場合に別途選ぶ。mockやpure helperの成功でDBの意味を検証済みにしない。
+4. 必要ならbuild・load/smokeも確認する。既存テストやdeployのbuild・health確認との
+   重複費用を把握する。正しさの診断を修正し、整形・styleの助言だけで提出を止めない。
 
-全回帰、race、Clippy全target、新しい網羅的coverage、独立レビュー・LLM契約レビューは
-毎候補の必須条件にしない。全ケースを列挙するLLM契約レビューは既定で行わず、
+既存suite実行と、新しい網羅的coverage・race・独立レビュー・LLM契約レビューは別判断。
+全ケースを列挙するLLM契約レビューは既定で行わず、
 具体的な仕様疑義・大きな意味変更・観測した失敗を解く必要があるときだけ任意に使う。
-レビューやテスト設計は共有targetの占有外で行い、環境が必要な検証のみ既存の占有を使う。
+準備段階の独立レビューやテスト設計は共有targetの占有外で行い、環境が必要な検証は既存の占有を使う。
 小さな修正を包括レビューの完了待ちへ戻さない。
+常駐integratorの新規設定例は`review=none`。既存設定の`review=llm`は互換のため維持され、
+現実装では処理する候補ごとに占有内で任意レビューを行う。自動で書き換えず、不要なら
+idle時に`none`へ変更する。設定名だけから候補別のrisk判定や占有前レビューを推測しない。
 
 ## 何を確認できたかを残す
 
 実行したcheckはimmutable source SHA・範囲・条件・結果・時間へ結び付ける。
-未実施・skip・依存不足・選択0件をPASSと記録しない。必要な確認を選ばなかった場合も
-理由と未確認範囲を短く残す。全テストの実施や新coverageをREADYの一律条件にしない。
-統合で関連sourceが変わった場合はactual integrated SHAで必要範囲を確認する。
-同じsource・scope・条件の証拠は再利用し、無関係なcheckを繰り返さない。
+未実施・skip・依存不足・選択0件をPASSと記録しない。実測を受けて範囲や頻度を変えたら、
+元の秒数・判断理由・未実施範囲を残す。新coverageの完成をREADYの一律条件にしない。
+統合でsourceが変わった場合はactual integrated SHAで既存suiteを基本に確認し、
+高コスト検査の調整は同じ基準で行う。同じsource・scope・条件の証拠は再利用できる。
+
+常駐integratorは、合成したactual candidate SHAをdeployする前に設定済みの`checks`を実行する。
+既存`check.py`を再利用する小helperで全configured checksを走らせ、source SHA・JSON・生ログ・
+秒数を残す。workerの旧sourceの結果だけで合成版を検証済みにはせず、通常はこの経路で確認を
+完結させる。blocking check失敗は品質保留・復旧へ戻す。style専用の`advisory:true`は
+declaredAdvisoryとして別記録し、raw status・exit code・passedをPASSへ書き換えない。
+diagnosticsの`needs_review`も一律の不採用にせず、既存の指摘対応へ渡す。既知の正しさ違反は
+advisoryラベルで免除しない。
+
+setup時に[Go/Rustの既存suiteレシピ](../../README.md#candidate-checks)を実projectへ合わせ、
+`settings.checks`へ相対`cwd`とargvの`command`、`timeout_seconds`、必要な`diagnostics`を登録する。
+配布例・未設定の`checks=[]`は未設定/未実施として台帳へ記録し、PASSを作らない。
+既存設定を自動で書き換えず、idle時に更新する。新しいテストframeworkを導入したり、
+QAのためだけに恒常的な親待ち・手動再提出を追加したりしない。
 
 既知のローカル正しさ違反は修正・保留へ戻す。公式ベンチのPASSでも既知の欠陥や
 未解消quality holdを免除しない。品質の調査が必要な事実と、未着手の包括coverageは

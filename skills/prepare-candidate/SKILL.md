@@ -8,8 +8,9 @@ description: "Prepare a claimed ISUCON team candidate from an evidence-backed hy
 Set `K` to this skill's base directory `/../..` and `KAIZEN_PROJECT` to the
 competition clone. Apply `../team/SKILL.md` for shared ownership and read
 `../../team/docs/PIPELINE.md` for delegation, backpressure and time accounting.
-Choose necessary pre-benchmark checks under `../../team/docs/VALIDATION.md`;
-full regression, new coverage and independent/LLM review are not default gates.
+Run existing tests and formatter/lint suites under `../../team/docs/VALIDATION.md`.
+Adjust only checks measured to be costly; new coverage and independent/LLM
+review are separate risk-driven choices.
 
 Take a claimed task with a current base, scoring hypothesis, allowed files and
 resources, observable completion criteria, time budget and stop/repair conditions.
@@ -27,9 +28,11 @@ coordinates with other members through Discord.
    worktree. Use `../prepare-tests/SKILL.md` or `../refactor/SKILL.md` only for a
    concrete blocker with its own time limit and dependent improvement.
 3. Commit and freeze the source at an immutable full SHA before source-bound
-   checks. Use a necessary build/load smoke and existing focused regression for
-   the changed contract or observed failure; select cheap related lint under
-   `../../team/docs/LINT.md`. Add real DB/concurrency checks or a focused
+   checks. Run existing tests and formatter/lint suites using current project
+   settings under `../../team/docs/LINT.md`. Record seconds, cold/warm and build
+   duplication; adjust scope/frequency/parallelism only for measured costly
+   checks, retaining omitted scope and reasons. Use build/load smoke if needed.
+   Add real DB/concurrency checks or a focused
    reproducer when a concrete risk needs them, not as a universal gate. Preserve
    failures, diagnostic dispositions and explicitly skipped scope. Advisory
    formatting/style findings alone do not block READY. Keep assertions grounded
@@ -41,6 +44,10 @@ coordinates with other members through Discord.
    conditions and durations, and match the source being submitted. If subsequent
    composition changes relevant source, the integrator checks that actual
    integrated SHA; a worker's result is not proof for an untested composition.
+   The resident service runs configured checks on its actual candidate SHA
+   before deployment using check.py; setup registers the existing suite under
+   `../../team/docs/VALIDATION.md`. Empty checks are unconfigured/not run, not
+   passing. Do not add a routine parent-wait/resubmission stage for this QA.
 5. Complete `../../team/templates/CANDIDATE.md` with source/base, evidence,
    changed resources, related checks, remaining costs, recovery and open risks.
    Publish immutable source/artifact references accessible to other members.
