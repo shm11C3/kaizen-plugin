@@ -37,6 +37,8 @@ other target operations. New source requires a new sandbox baseline.
 For a shared competition, start with `skills/team/SKILL.md` and follow
 `team/POLICY.md` and `team/docs/DISCORD.md`. Each member uses an independent
 session, reads current Discord decisions and coordinates through the shared ledger.
+Adopt evidence-backed, recoverable improvements within the agreed limits even
+when structural or large; classify human review under `team/POLICY.md`, not by size.
 Use the member's GitHub login as the branch prefix; keep session IDs distinct.
 Team procedures, coordination scripts, infrastructure and
 templates belong to this plugin; the competition repository holds source and

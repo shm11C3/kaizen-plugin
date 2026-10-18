@@ -74,12 +74,15 @@ The integrator reruns relevant checks when integration changes the tested source
 
 ## Decisions and interruption
 
-Ordinary measured, correct, reversible improvements may be adopted autonomously.
+Measured, correct, comparable improvements with verified recovery are adopted
+autonomously within the agreed objective, rules and limits, including large or
+structural changes. Size, architectural options or a worse secondary metric alone
+do not create a human decision; record the measured tradeoff in the normal reason.
 Localized correctness repairs, including bounded row locking, do not require
 human judgment merely because they introduce a minor implementation tradeoff;
 use the material-impact threshold in `../../team/POLICY.md`.
-Escalate ambiguous adoption, broad risky changes, significant tradeoffs, or
-competing architectural/strategic options with evidence and a recommendation.
+Escalate a concrete unresolved objective, authorization, irreversible-operation
+or residual-risk choice outside those limits, following `../../team/POLICY.md`.
 Do safe comparison work first; ask before the risky shared action itself.
 Never waive correctness. Restore stable while waiting for human judgment.
 

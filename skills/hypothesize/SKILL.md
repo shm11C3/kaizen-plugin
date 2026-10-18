@@ -70,6 +70,10 @@ Fill `.kaizen/experiments/NNN-<slug>/manifest.json` completely:
   These fields aid planning and review; empty historical fields are not evidence.
 - `changeSummary`, `expectedEffect`: which endpoint or query gets faster and
   the score direction. If you cannot say which, the hypothesis is not ready.
+- `review`: use `auto` for work within the agreed objective, rules and recovery
+  scope, including structural changes. Use `human` only for a concrete unresolved
+  choice under `../../team/POLICY.md`; size or pending measurements alone are
+  not reasons. Investigate missing evidence instead of creating approval wait.
 
 deploy.sh refuses a candidate while `hypothesis`, `observations[0].artifact`
 or `expectedEffect` is empty. Then continue with the experiment skill.

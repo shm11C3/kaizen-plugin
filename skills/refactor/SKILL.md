@@ -26,8 +26,9 @@ permission for repository-wide cleanup or a mandatory periodic rewrite.
 6. If the refactor alone has no demonstrated score gain, do not label it a
    performance success. It may be measured as an explicit prerequisite combination
    with the named optimization; record both the combined gain and preparation cost.
-   Ambiguous adoption, broad risk or material architectural choices follow the
-   existing human judgment policy. A local comparison is still autonomous.
+   Size and architectural options alone do not require approval. Adopt a verified,
+   recoverable gain within the agreed limits autonomously; escalate a concrete
+   unresolved choice under `../../team/POLICY.md`. Missing evidence is AI work.
 7. Stop if the payoff no longer fits the remaining time. Revert/defer cleanly,
    preserving tests and findings where useful. After the dependent change, record
    actual implementation/repair time and whether the anticipated seam helped.

@@ -136,18 +136,30 @@ contains source and minimal bootstrap files, not these rules or management tools
 
 ## Adoption and human judgment
 
-- Automatically adopt ordinary, bounded, reversible improvements only when
-  correctness passes, measurement conditions are comparable, performance passes
-  the configured evaluator, and no human-decision condition applies.
+- Automatically adopt authorized, reversible improvements when correctness passes,
+  measurement conditions are comparable, performance passes the configured
+  evaluator, and recovery of every changed resource is verified. This includes
+  large or structural changes that preserve required behavior and remain within
+  the agreed objective, rules, operating limits and risk scope.
 - Small, localized correctness repairs, including row locking scoped to affected
   records, can be ordinary improvements when recovery and measured quality and
   performance are verified. A minor implementation tradeoff alone does not
   require human judgment; assess whether its impact materially affects adoption.
-- Request human judgment for ambiguous adoption, broad changes with material
-  risk, significant tradeoffs, or competing designs that affect architecture or
-  strategy. Routine implementation details remain autonomous.
-- Classify by semantics and recovery impact, not only line count or passing tests.
-  Complete safe local implementation, tests, and comparison before asking.
+- Change size, architectural scope, multiple implementation options, or a worse
+  secondary metric do not by themselves require human judgment. Under an agreed
+  score-maximization objective, AI weighs measured tradeoffs within the existing
+  constraints, records them in the normal decision reason, and proceeds when the
+  adoption conditions pass. Do not invent a separate approval gate or report.
+- Request human judgment for a concrete choice outside that agreement: conflicting
+  objectives or requirements, rule/authorization questions, irreversible operations
+  outside the approved recovery scope, or material residual risk that cannot be
+  established as acceptable within the agreed limits. Missing validation remains
+  AI investigation; human approval cannot substitute for it.
+- Classify residual semantic and recovery impact, not line count, architecture
+  labels or passing tests alone. Set review=auto when the conditions above apply;
+  review=human needs the specific unresolved choice. Complete safe implementation,
+  tests and comparison first. Do not silently downgrade an existing human-review
+  classification or rewrite a closed decision to bypass its required reference.
 - Obtain judgment before any shared-environment action whose material risk is
   itself the reason for escalation. A post-benchmark approval is too late for
   an irreversible operation.

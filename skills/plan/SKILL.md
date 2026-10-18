@@ -45,7 +45,9 @@ For each serious option, fill:
 
 Add an observation-derived hypothesis even if no corpus signature matches.
 Consider a structural alternative when bounded tweaks cannot explain the cost;
-roles remain dynamic, and a safe comparison can proceed before human adoption.
+roles remain dynamic. Verified, recoverable gains within the agreed limits are
+adopted by AI; structural scope alone does not require human approval. Follow
+`../../team/POLICY.md` for a concrete choice beyond those limits.
 Follow the highest justified order, not a fixed index/cache/config recipe.
 
 After every record, update outcomes, prediction errors and allocation in plan.md.

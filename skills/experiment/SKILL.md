@@ -87,6 +87,12 @@ record reruns evaluation to include samples added since the previous decision.
 Noisy/incomplete evidence is NEEDS_MEASUREMENT in the team ledger. Resume AI
 work or archive it when the budget is exhausted; do not invent a human choice.
 
+When the rule promotes and quality, comparability and resource recovery are
+verified within the agreed objective and limits, adopt without an approval wait,
+including structural changes. A secondary-metric tradeoff belongs in the normal
+decision reason. Apply `../../team/POLICY.md` before choosing human review; do not
+silently clear an existing review=human or bypass its required actual reference.
+
 `record promote` fast-forwards the stable branch, pins the new STABLE_REV,
 and reseeds the baseline from the candidate samples; `record reject` and
 `record inconclusive` put stable back on every host. Either way the
