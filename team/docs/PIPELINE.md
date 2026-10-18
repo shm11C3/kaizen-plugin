@@ -48,9 +48,19 @@ queueと残り時間を見た理由を残す。Agentを増やして未検証コ�
   実装担当の可変worktreeを変更しないことを伝える。
 
 実装担当は実装だけ返さず、[prepare-candidate](../../skills/prepare-candidate/SKILL.md)
-で関連検証とcommitまで完結する。主Agentの認証でのみ実行できる台帳提出は、
-完成した資料を受けてそのまま実行する。SubAgentの内部IDは作業の出所として残し、
-独立してjoinしたメンバーや別の占有者だと扱わない。tokenや他セッションの認証を渡さない。
+で関連検証・commit・READYまで完結する。主Agentがexact task IDと許可する
+`task-stage` / `task-ready`コマンドを明示委譲し、同じ人間開始主セッション内の
+native SubAgentが既存の同一認証文脈・接続方式を使える場合、親SESSION principalで
+そのタスクを提出してよい。ownerとDiscord窓口は主Agentに残し、内部worker IDを
+reason/evidenceへ記録する。別メンバー・独立joinとは扱わない。
+
+これは既存ownerの責任下での準備委譲であり、認証guardの変更・回避や追加CLIを
+意味しない。別セッション・他人のidentityを借用せず、credentialやreservation tokenを
+新たに共有しない。env取得・deploy・bench・採否の権限を暗黙に委譲しない。
+source-bound QA・commit・READY条件も変わらない。
+接続手段が使えない場合のみ、task ID、source/base SHA、変更パス、実チェックの結果・
+証拠・時間、リスク・推奨を短い機械可読completion packageで親へ返す。
+親はまとめて台帳へ提出し、工程ごとの再許可待ちや同じ調査のやり直しを挟まない。
 
 ## 品質と履歴を省略しない
 

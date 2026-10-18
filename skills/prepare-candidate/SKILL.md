@@ -39,11 +39,20 @@ coordinates with other members through Discord.
 5. Complete `../../team/templates/CANDIDATE.md` with source/base, evidence,
    changed resources, related checks, remaining costs, recovery and open risks.
    Publish immutable source/artifact references accessible to other members.
-   The authenticated task owner submits `task-ready` through the shared control
-   interface and posts READY to its Discord thread. A subagent without that
-   identity returns the complete submission package to the owner, who forwards
-   it without a new approval or repeated investigation. Never share reservation
-   tokens or impersonate another session.
+   The main session remains the task owner and Discord contact. Within that same
+   human-started session, it may explicitly delegate an exact task ID and its
+   permitted `task-stage` / `task-ready` commands to a native subagent. When the
+   existing authentication context and connection are available, the subagent
+   executes those preparation commands as the parent SESSION principal, records
+   its internal worker ID in reason/evidence and submits without waiting for the
+   parent to relay READY. This is work under the same owner's responsibility,
+   not a new member, separate join or authentication bypass. It grants no
+   environment reservation, deploy, benchmark or adoption authority. Do not
+   borrow another session/person's identity or newly share credentials or
+   reservation tokens. If that connection is unavailable, return one concise
+   machine-readable completion package (task, source/base SHA, paths, check
+   results/evidence, durations, risks and recommendation); the parent submits
+   it in one pass without a new approval wait or repeated investigation.
 
 Finish by the agreed time with READY, a bounded repair with preserved failure,
 or a reasoned stop and the smallest next discriminating action. Unresolved
