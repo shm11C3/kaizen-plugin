@@ -25,7 +25,10 @@
 `task-quality-hold --category correctness`（失敗したソースに保留が残り、修正・再提出の導線になる）、
 スコア低下の reject なら `REJECTED`、品質不明なら `task-quality-hold`、ノイズならNEEDS_MEASUREMENT → `env-release`。
 候補の標本数は `MAX_BENCH_PER_EXP`（0 なら plugin 側の上限なし）と `integrator.json` の
-`max_candidate_samples`（既定 6）の小さい方で打ち切ります。
+`max_candidate_samples`（既定 6）の小さい方で打ち切ります。baseline の補充は実験を開いてから
+その実験の枠内で行う（閉じた実験の枠に課金されると次の候補が待ち続けるため）ので、`MAX_BENCH_PER_EXP` を
+正の値にするなら `2×MIN_SAMPLES + RECOVERY_BENCH_RESERVE` 以上にします。stable の baseline に失敗サンプルがあれば
+`stable.sh forget-baseline` で退避してから取り直します。
 各段階は `/srv/isucon/state/integrator/ledger.jsonl` に時刻・所要・結果・モデル費用付きで残り、
 担当者向けの短い結果票が `feedback/T-NNNN.md` に書かれます。
 

@@ -70,7 +70,7 @@ BUILD_CMD='test -f webapp/go/score'
 RESTART_CMD='sudo systemctl restart app.service'
 HEALTH_CMD='true'
 bench_command() { echo "bash %s/tests/fake-bench.sh"; }
-MAX_BENCH_PER_EXP=3
+MAX_BENCH_PER_EXP=0
 MIN_SAMPLES=2
 RECOVERY_BENCH_RESERVE=0
 RESOURCE_FINGERPRINT_CMD='cat database.state'
@@ -224,8 +224,24 @@ class IntegratorLoop(IntegratorFixture):
         self.assertEqual(summary['promoted'], 1)
         self.assertAlmostEqual(summary['llm']['costUsd'], 0.0123)
 
+        # 1b. A failed run of stable in the fresh baseline set is retired, not paid for with candidate slots.
+        baseline_dir = self.project / '.kaizen/baseline' / adopted
+        failed_sample = dict(json.loads(next(baseline_dir.glob('*.json')).read_text()), label='baseline-flaky', score=900,
+                             finishedAt=module.now(), **{'pass': False})
+        (baseline_dir / 'bench-flaky.json').write_text(json.dumps(failed_sample))
+        neutral = self.submit('Neutral edit', 'worker/T-0002-neutral', {'notes.txt': 'a\nb\nc\nd\ne\nf\n'}, hypothesis='neutral-edit')
+        self.assertTrue(self.once()['processed'])
+        row = self.tasks()[neutral]
+        self.assertEqual(row['status'], 'NEEDS_MEASUREMENT', row)
+        self.assertEqual(self.team('status')['quality_holds'], [], 'measurement conditions are not a candidate quality hold')
+        retired = [r for r in self.ledger(neutral) if r['event'] == 'baseline-retired']
+        self.assertEqual(retired[0]['failed'], ['baseline-flaky'])
+        self.assertTrue(list((self.project / '.kaizen/baseline').glob(adopted + '.retired-*')), 'failed set retired as evidence')
+        self.assertGreaterEqual(len([r for r in self.ledger(neutral) if r['event'] == 'baseline']), 2, 'fresh baseline taken after retiring')
+        self.assertTrue(list((self.project / '.kaizen/experiments').glob('002-' + neutral + '-neutral-edit')), 'slug from the hypothesis key')
+
         # 2. A branch from the old base that conflicts with the adopted change is returned without a bench.
-        second = self.submit('Lower the score', 'worker/T-0002-conflict', {'go/score': '1500\n'}, base=before)
+        second = self.submit('Lower the score', 'worker/T-0003-conflict', {'go/score': '1500\n'}, base=before)
         self.assertTrue(self.once()['processed'])
         row = self.tasks()[second]
         self.assertEqual(row['status'], 'NEEDS_MEASUREMENT', row)
@@ -233,13 +249,13 @@ class IntegratorLoop(IntegratorFixture):
         compose = [r for r in self.ledger(second) if r['event'] == 'compose'][0]
         self.assertEqual(compose['status'], 'conflict')
         self.assertEqual([r['event'] for r in self.ledger(second) if r['event'] in ('open', 'bench', 'deploy', 'review')], [])
-        self.assertEqual(len(list((self.project / '.kaizen/experiments').glob('*/'))), 1, 'no experiment opened')
+        self.assertEqual(len(list((self.project / '.kaizen/experiments').glob('*/'))), 2, 'no experiment opened')
         self.assertEqual(self.sha(self.project, 'main'), adopted)
         self.assertEqual(self.git(self.project, 'status', '--porcelain', '--', 'go', 'sql', 'notes.txt'), '', 'checkout left clean')
         self.assertEqual(self.git(self.project, 'worktree', 'list').count('\n'), 1, 'dry-run worktree removed')
 
         # 3. The reviewer may return a candidate before any slot is spent; the rule never saw it.
-        third = self.submit('RETURN-ME: weaken a check', 'worker/T-0003-return', {'notes.txt': 'a\nb\nc\nd\nskip-check\n'})
+        third = self.submit('RETURN-ME: weaken a check', 'worker/T-0004-return', {'notes.txt': 'a\nb\nc\nd\nskip-check\n'})
         self.assertTrue(self.once()['processed'])
         row = self.tasks()[third]
         self.assertEqual(row['status'], 'NEEDS_MEASUREMENT', row)
@@ -247,7 +263,7 @@ class IntegratorLoop(IntegratorFixture):
         self.assertEqual([r['event'] for r in self.ledger(third) if r['event'] in ('open', 'bench', 'baseline', 'deploy')], [])
 
         # 4. A correctness failure recovers stable and leaves a hold on the failed source.
-        fourth = self.submit('Break it', 'worker/T-0004-break', {'go/score': 'fail\n'})
+        fourth = self.submit('Break it', 'worker/T-0005-break', {'go/score': 'fail\n'})
         self.assertTrue(self.once()['processed'])
         row = self.tasks()[fourth]
         self.assertEqual(row['status'], 'NEEDS_MEASUREMENT', row)
@@ -268,7 +284,7 @@ class IntegratorLoop(IntegratorFixture):
         self.assertEqual(self.state_env()['CURRENT_EXPERIMENT'], '')
 
         # 5. While another session holds the environment the integrator waits and takes nothing.
-        fifth = self.submit('Tradeoff', 'worker/T-0005-human', {'notes.txt': 'z\n'})
+        fifth = self.submit('Tradeoff', 'worker/T-0006-human', {'notes.txt': 'z\n'})
         self.team('env-acquire', '--agent', 'worker-claude-01', '--purpose', 'manual integration')
         waiting = self.once()
         self.assertFalse(waiting['processed'])
@@ -353,6 +369,12 @@ class Helpers(unittest.TestCase):
         lane = dict(config, state_db='/srv/isucon/state/lane.sqlite3', target_config='/srv/isucon/state/lane.json')
         self.assertIn('--db /srv/isucon/state/lane.sqlite3 --config /srv/isucon/state/lane.json status',
                       control.remote_command(lane, 'integrator', ['status']))
+
+    def test_conditions_problem_is_about_the_baseline_not_the_candidate(self):
+        self.assertTrue(module.conditions_problem({'decision': 'inconclusive', 'reason': 'need passing baseline and candidate samples'}))
+        self.assertTrue(module.conditions_problem({'decision': 'inconclusive', 'reason': 'stable bundle/measurement conditions differ; take fresh samples'}))
+        self.assertFalse(module.conditions_problem({'decision': 'inconclusive', 'reason': 'improvement/noise not separated; remeasure within the physical-run budget'}))
+        self.assertFalse(module.conditions_problem({'decision': 'reject', 'reason': 'need passing baseline and candidate samples'}))
 
     def test_model_answer_and_hold_category(self):
         self.assertEqual(module.parse_json_object('text ```json\n{"proceed": true}\n``` more')['proceed'], True)

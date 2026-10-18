@@ -109,6 +109,13 @@ def parse_json_object(text):
     return json.loads(text[start:end + 1])
 
 
+def conditions_problem(decision):
+    """The rule could not compare because of the measurement conditions, not the candidate."""
+    reason = str(decision.get('reason') or '').lower()
+    return decision.get('decision') == 'inconclusive' and any(
+        word in reason for word in ('passing baseline', 'baseline median', 'bundle', 'denominator', 'conditions differ'))
+
+
 def hold_category(decision):
     reason = (decision.get('quality') or {}).get('reason', '') + ' ' + decision.get('reason', '')
     reason = reason.lower()
@@ -171,6 +178,7 @@ class Integrator:
         self.plugin_root = None
         self.config = {}
         self.processed = 0
+        self.bench_serial = 0
         self.last_state = None
         if (self.state_dir / 'status.json').is_file():
             try:
@@ -365,10 +373,11 @@ class Integrator:
             if verdict and not verdict.get('proceed'):
                 self.return_task(task, 'レビュー: ' + '; '.join(str(r) for r in verdict.get('reasons') or ['理由なし']))
                 return
-            self.status('working', 'baseline 計測', task=tid, step='baseline')
-            self.ensure_baseline(tid)
+            self.retire_failed_baseline(tid)
             self.status('working', '実験を開始', task=tid, step='open')
             experiment = self.open_experiment(task)
+            self.status('working', 'baseline 計測', task=tid, experiment=experiment, step='baseline')
+            self.ensure_baseline(tid, experiment)
             self.status('working', 'stable へ合成', task=tid, experiment=experiment, step='compose')
             candidate = self.compose(task)
             self.fill_manifest(experiment, task, composed, verdict, candidate)
@@ -507,28 +516,50 @@ class Integrator:
                       'task-resume → 修正 → task-ready で再提出')
         self.processed += 1
 
-    def baseline_samples(self):
+    def fresh_baseline_samples(self):
+        """(passing, failed) labels among the current stable's fresh, non-observed baseline samples."""
         state = read_state(self.project)
         folder = self.project / '.kaizen/baseline' / state.get('STABLE_REV', '')
         fresh = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=self.config['baseline_max_age_minutes'])
-        count = 0
-        for path in folder.glob('*.json'):
+        passing, failed = [], []
+        for path in sorted(folder.glob('*.json')):
             try:
                 sample = json.loads(path.read_text())
                 finished = datetime.datetime.fromisoformat(sample['finishedAt'].replace('Z', '+00:00'))
             except (ValueError, KeyError, OSError):
                 continue
-            if sample.get('pass') and not sample.get('observed') and finished >= fresh:
-                count += 1
-        return count
+            if sample.get('observed') or finished < fresh:
+                continue
+            (passing if sample.get('pass') else failed).append(str(sample.get('label') or path.stem))
+        return passing, failed
 
-    def ensure_baseline(self, tid):
+    def baseline_samples(self):
+        return len(self.fresh_baseline_samples()[0])
+
+    def retire_failed_baseline(self, tid):
+        """Before an experiment opens: a failed run of stable in the fresh set is retired.
+
+        The rule needs every fresh baseline sample to pass; one flaky run of stable would
+        otherwise leave every candidate inconclusive, and candidate slots cannot repair it.
+        """
+        failed = self.fresh_baseline_samples()[1]
+        if failed:
+            self.target('stable', 'forget-baseline', '統合Agent: stable の baseline に失敗サンプル ' + ', '.join(failed) + ' があり比較不能のため取り直し')
+            self.ledger('baseline-retired', task=tid, failed=failed)
+
+    def ensure_baseline(self, tid, experiment):
+        """Inside the open experiment, before the candidate deploys: fresh passing baseline samples.
+
+        Taken inside the experiment so they count against its own benchmark quota; outside,
+        bench.sh charges them to the previous experiment, whose slots are usually spent.
+        """
         while self.baseline_samples() < self.config['min_samples']:
-            label = 'baseline-' + stamp()
-            self.bench(tid, None, label)
+            self.bench_serial += 1
+            self.bench(tid, experiment, 'baseline-' + stamp() + '-' + str(self.bench_serial))
 
     def open_experiment(self, task):
-        title = re.sub(r'[^A-Za-z0-9_-]+', '-', task['title']).strip('-')[:24]
+        # The hypothesis key is ASCII by convention; a Japanese title would leave an empty slug.
+        title = re.sub(r'[^A-Za-z0-9_-]+', '-', task.get('hypothesis_key') or task['title']).strip('-')[:24]
         slug = (task['id'] + ('-' + title if title else '')).replace('--', '-')
         self.target('experiment', 'new', slug, '--github-user', self.settings['github_user'])
         name = read_state(self.project).get('CURRENT_EXPERIMENT')
@@ -667,6 +698,10 @@ class Integrator:
                         nextAction=decision.get('nextAction'), reason=decision.get('reason'))
             if not passed or decision.get('nextAction') != 'remeasure':
                 break
+            if conditions_problem(decision):
+                # More candidate samples cannot repair a baseline-side condition; stop spending slots.
+                self.ledger('budget', task=tid, experiment=experiment, message='計測条件側の問題のため候補の追加計測を打ち切り: ' + str(decision.get('reason')))
+                break
         if decision is None:
             decision = self.evaluate(experiment)
         return decision
@@ -718,6 +753,9 @@ class Integrator:
         elif final == 'reject':
             self.team('task-finish', '--id', tid, '--agent', self.agent, '--result', 'REJECTED', '--reason', reason)
             result, advice = 'REJECTED', 'スコアが stable を下回ったため却下。stable は復旧済み。再試行には新しい根拠か別の機構が必要'
+        elif conditions_problem(decision):
+            self.team('task-finish', '--id', tid, '--agent', self.agent, '--result', 'NEEDS_MEASUREMENT', '--reason', reason)
+            result, advice = 'NEEDS_MEASUREMENT', '計測条件側の問題（baseline・bundle・分母）で比較できず。統合Agentが baseline を取り直すので、task-resume → 同じソースを task-ready で再提出'
         elif quality != 'pass':
             category = hold_category(decision)
             self.team('task-quality-hold', '--id', tid, '--agent', self.agent, '--token', self.token, '--category', category,
