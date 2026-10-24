@@ -1,0 +1,24 @@
+[Unit]
+Description=kaizen integrator: unattended integration owner for the shared competition environment
+Documentation=file:///srv/isucon/kaizen-plugin/team/infra/integrator/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=isucon
+Group=isucon
+WorkingDirectory=/srv/isucon
+EnvironmentFile=/srv/isucon/state/integrator.env
+Environment=PATH=/home/isucon/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/isucon
+ExecStart=/usr/bin/python3 /srv/isucon/kaizen-plugin/scripts/team/integrator.py --db /srv/isucon/state/team.sqlite3 --config /srv/isucon/state/target.json run
+# SIGTERM asks the loop to stop after the current candidate; a benchmark or recovery in flight is never cut.
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStopSec=3600
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

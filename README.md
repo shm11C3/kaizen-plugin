@@ -30,6 +30,16 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 
 チームで参加するときは、Claudeでは `/kaizen:team`、Codexではkaizenのteamスキルから開始します。各AIはタスク発見から候補提出・次の作業まで自走し、共有環境の操作は単一の統合担当が行います。
 
+### 常駐の統合Agentとダッシュボード
+
+共通ホストに `scripts/team/integrator.py` を常駐させると、READYの候補を無人で
+合成・計測・記録・push します（`team/infra/integrator/README.md`）。採否は
+固定ルールのままで、モデル（制御ホスト上の Claude Code、Amazon Bedrock）は
+候補1件につき1回、合成済み差分の契約レビューにだけ使います。READYが無い間は
+トークンを使いません。衝突や契約違反は計測せず担当者へ返します。
+`scripts/team/dashboard.py` が台帳・統合状態・kaizen記録から静的な
+ダッシュボードを作り、`control.py dashboard --open` のSSMポート転送で見ます。
+
 ## 各主Agentの候補準備（0.8.0）
 
 各Discordの主Agentが判断と対外調整を持ち、利用できるnative SubAgentへ独立した

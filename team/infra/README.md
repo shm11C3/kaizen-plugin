@@ -1,6 +1,6 @@
 # 共通ホスト
 
-統合用Git clone、kaizen、台帳、計測記録を1台に集約します。各PCのAIが判断し、このホストのコマンドを操作します。AI自体の常駐サービスは作りません。
+統合用Git clone、kaizen、台帳、計測記録を1台に集約します。各PCのAIが判断し、このホストのコマンドを操作します。常駐するのは統合担当の無人サービス（[integrator/README.md](integrator/README.md)、任意）だけで、メンバーのAIセッションやDiscord Botは起動しません。
 
 以下は管理担当がプラグインのsource cloneで行う操作です。`K`はそのcloneの絶対パスです。メンバーは構築済みホストを使い、毎回作成する必要はありません。
 
@@ -9,7 +9,7 @@
 - Amazon Linux 2023 x86_64、t3.small（2 vCPU / 2 GiB）、暗号化gp3 30 GiB。
 - 競技アプリの実行環境とは分離。既存の練習用インスタンスとSecurity Groupを変更しない。
 - 専用Security Groupはインバウンドルールなし。SSMのために既存のpublic subnetから外向き通信を行う。public IPv4は外向き接続用で、SSHやWebの公開口はない。NAT Gateway・Elastic IPは作らない。
-- IMDSv2必須。EC2のroleはAmazonSSMManagedInstanceCoreだけで、EC2作成・IAM変更などの管理権限を持たせない。
+- IMDSv2必須。EC2のroleはAmazonSSMManagedInstanceCoreだけで、EC2作成・IAM変更などの管理権限を持たせない。統合AgentをBedrockで動かす場合だけ[integrator/bedrock-policy.json](integrator/bedrock-policy.json)（モデル呼び出しのみ）をinline policyとして足す。
 - CPU creditはstandard。継続的なビルド能力が必要になった場合は、使用量を見て人間がサイズ変更を判断する。
 - SQLiteと実験状態はEBS上に置く。root volumeはインスタンス終了時に削除されるので、終了前に必ずバックアップする。
 - provisioningはAWS CLIのAPIで行い、既存の練習用インフラとライフサイクルを分離する。CloudFormationスタックは作らない。

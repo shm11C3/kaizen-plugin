@@ -1,0 +1,21 @@
+{
+  "agent": "integrator-control-01",
+  "github_user": "FILL: the operator login that owns the integrator's <login>/exp/NNN-slug branches",
+  "poll_seconds": 30,
+  "review": "llm",
+  "accept_human_review": false,
+  "push": true,
+  "remote": "origin",
+  "pause_on_error": true,
+  "dashboard_dir": "",
+  "llm": {
+    "command": ["claude", "-p", "--output-format", "json", "--no-session-persistence", "--tools", "",
+                "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}", "--permission-mode", "dontAsk",
+                "--max-turns", "1"],
+    "model": "",
+    "max_budget_usd": 1.0,
+    "timeout_seconds": 300,
+    "max_diff_bytes": 60000
+  },
+  "note": "Lives at /srv/isucon/state/integrator/integrator.json on the control host. review=none skips the model entirely; the rule decides either way. The model comes from ANTHROPIC_MODEL in integrator.env unless llm.model is set."
+}
