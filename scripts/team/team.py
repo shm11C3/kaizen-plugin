@@ -274,7 +274,18 @@ def dispatch(db, args):
                 raise ValueError('active hypothesis already exists: ' + public_task(existing)['id'] + '; coordinate or add evidence there')
         cur = db.execute('INSERT INTO tasks(title,evidence,priority,updated_at,hypothesis_key,work_kind,related_task) VALUES (?,?,?,?,?,?,?)',
                          (args.title, args.evidence, args.priority, now(), args.hypothesis, args.kind, args.related))
-        return public_task(db.execute('SELECT * FROM tasks WHERE id=?', (cur.lastrowid,)).fetchone())
+        created = public_task(db.execute('SELECT * FROM tasks WHERE id=?', (cur.lastrowid,)).fetchone())
+        if args.related:
+            # Hypothesis keys are free text, so two sessions can name one mechanism
+            # differently (practice: T-0006 duplicated READY T-0001). Show the
+            # active work around the same task so the creator can coordinate.
+            near = db.execute("SELECT * FROM tasks WHERE id<>? AND status NOT IN ('ACCEPTED','REJECTED','DONE') "
+                              "AND (id=? OR related_task=?) ORDER BY id",
+                              (cur.lastrowid, task(db, args.related)['id'], args.related)).fetchall()
+            if near:
+                created['possibleDuplicates'] = [{k: public_task(r)[k] for k in ('id', 'title', 'status', 'owner', 'hypothesis_key')}
+                                                 for r in near]
+        return created
     if command == 'task-claim':
         if args.ready_limit < 1:
             raise ValueError('ready-limit must be positive')
