@@ -37,9 +37,11 @@ the restart.
 
 ## Checklist
 
-- The restart test (再起動試験) at the end of the contest restarts the
-  machine cleanly; a clean restart loses nothing with value 2. Only an OS
-  crash loses up to one second of commits.
+- Read the actual contest's durability/restart requirements. Value 2 normally
+  flushes on clean shutdown, but OS/power failure can lose recent commits and
+  periodic flushing is not a strict one-second loss bound. Verify newly written
+  data after the required reboot, before another initialize; do not infer this
+  from a post-initialize benchmark alone.
 - If binary logging is on, `sync_binlog=0` matters as much; check
   `SHOW VARIABLES LIKE 'log_bin'`.
 - Confirm the mysql restart actually happened (overlay restarts only when a

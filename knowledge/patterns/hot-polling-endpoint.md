@@ -27,8 +27,11 @@ see and lowers satisfaction: tune by measurement, do not maximise.
 1. Return a larger `retry_after_ms` (100 → 300 → 1000, measuring each).
 2. Serve the polled answer from memory: cache the latest ride status per
    chair/user, invalidate on status change (one map, one mutex).
-3. SSE only when the above are exhausted; it needs push on status change
-   (channel/pub-sub) to pay off; budget it as a late, risky experiment.
+3. Check SSE support in the rules and both clients early. When polling or
+   state-transition delay dominates, compare bounded SSE/difference notifications
+   by expected gain and total time; do not reserve it automatically for late work.
+   A stream needs a cheaper update path to pay off, not the same expensive query
+   loop at a higher frequency.
 
 ## Checklist
 
@@ -38,6 +41,10 @@ see and lowers satisfaction: tune by measurement, do not maximise.
   manual gives; read the manual's tick and timeout values first.
 - Each step is its own experiment: the interval change and the cache are
   different mechanisms.
+- Read existing benchmark satisfaction/transition metrics as well as request
+  counts. Preserve order, reconnect behavior and cross-app visibility; process-local
+  caches alone cannot observe another app's writes. See the
+  [R2 practice lesson](../lessons/20261029-isucon14-r2-feedback.md).
 
 ## Measured
 | problem | experiment | baseline | candidate | delta | samples | minutes | rule | final | notes |
