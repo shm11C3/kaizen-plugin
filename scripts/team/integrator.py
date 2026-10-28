@@ -352,6 +352,7 @@ class Integrator:
             if known.returncode == 0:
                 return row
             self.ledger('skip', task=row['id'], reason='base ' + row['base_sha'][:7] + ' は ' + stable + ' に未採用。base の採用待ち')
+        self.waiting_on_base = [(row['id'], row['base_sha'][:7]) for row in rows]
         return None
 
     # -- the candidate ---------------------------------------------------------------
@@ -361,9 +362,15 @@ class Integrator:
         if reason:
             self.status('paused' if reason == 'paused' else 'waiting', '一時停止中（pause ファイル）' if reason == 'paused' else reason)
             return False
+        self.waiting_on_base = []
         task = self.next_candidate()
         if task is None:
-            self.status('idle', 'READY の候補なし')
+            if self.waiting_on_base:
+                bases = sorted({base for _, base in self.waiting_on_base})
+                self.status('waiting', 'READY ' + str(len(self.waiting_on_base)) + ' 件が未採用の base（' + ', '.join(bases)
+                            + '）の採用待ち: ' + ', '.join(tid for tid, _ in self.waiting_on_base))
+            else:
+                self.status('idle', 'READY の候補なし')
             return False
         self.process(task)
         return True
