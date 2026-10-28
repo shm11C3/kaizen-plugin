@@ -71,11 +71,14 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True, tolera
     if require_denominators and new_kinds:
         tolerated = tolerated_new_errors(candidate, c, new_kinds, tolerate)
         if tolerated is None:
-            # increasedKinds lets a multi-fold gain (STABILIZE_GAIN_BP) adopt with stabilization:
-            # practice T-0001 retest scored 3028 against 776/1007 with 13 owner/chairs timeouts
+            if not all(isinstance(s.get('requests'), int) and not isinstance(s['requests'], bool)
+                       and s['requests'] > 0 for s in baseline + candidate):
+                return {'status': 'unknown', 'reason': 'a new error type occurred; investigate'}
+            # Fall through to the rates: a new type counts as increased from zero, so a
+            # multi-fold gain (STABILIZE_GAIN_BP) can adopt it with stabilization. Practice:
+            # T-0001 retest scored 3028 against 776/1007 with 13 owner/chairs timeouts
             # (error25) that the fresh baseline happened not to show.
-            return {'status': 'unknown', 'reason': 'a new error type occurred; investigate',
-                    'increasedKinds': sorted(new_kinds)}
+            tolerated = {}
     # A higher request volume can increase counts; compare only known denominators.
     if not all(isinstance(s.get('requests'), int) and not isinstance(s['requests'], bool)
                and s['requests'] > 0 for s in baseline + candidate):
@@ -110,7 +113,8 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True, tolera
         rates.append({kind: n / denominator for kind, n in totals.items()})
     increased = [kind for kind in kinds if kind not in tolerated and rates[1][kind] > rates[0][kind]]
     result = {'status': 'unknown' if increased else 'pass',
-              'reason': 'error rate increased; investigate' if increased else 'known error rates did not increase',
+              'reason': ('a new error type occurred; investigate' if set(increased) & new_kinds
+                         else 'error rate increased; investigate') if increased else 'known error rates did not increase',
               'baselineRates': rates[0], 'candidateRates': rates[1]}
     if increased:
         result['increasedKinds'] = sorted(increased)
