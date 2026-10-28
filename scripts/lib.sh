@@ -83,8 +83,9 @@ load_config() {
   # stabilization task instead of held. COUNT:PER_10K_REQUESTS per type; 0 disables.
   : "${NEW_ERROR_TOLERANCE:=2:1}"
   # v2: at this median gain (bp) a rising known non-correctness error rate also
-  # promotes with a stabilization task; 0 disables. 10000 = the score doubled.
-  : "${STABILIZE_GAIN_BP:=10000}"
+  # promotes with a stabilization task; 0 disables. Default: the promotion threshold,
+  # since a passing run already excludes fatal errors (practice T-0004: +25%, held).
+  : "${STABILIZE_GAIN_BP:=300}"
   # v2: practice, two samples per side, error rates need request denominators.
   # v3: contest (opt-in), sequential by effect size against the baseline spread.
   : "${EVALUATION_RULE:=v2}" "${REQUEST_COUNT_CMD:=}" "${NGINX_HOST:=${APP_HOSTS%% *}}"
