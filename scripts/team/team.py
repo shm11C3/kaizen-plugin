@@ -543,6 +543,14 @@ def main():
         with lock, contextlib.closing(connect(args.db)) as db, db:
             db.execute('BEGIN IMMEDIATE')
             result = dispatch(db, args)
+            if args.command in ('task-claim', 'task-ready', 'task-handoff') and isinstance(result, dict) and result.get('id'):
+                # Practice: a subagent claimed and submitted T-0010 as "parent"; its return
+                # would have reached no member's watch. Name the joined session instead.
+                who = args.to if args.command == 'task-handoff' else args.agent
+                if db.execute('SELECT 1 FROM members LIMIT 1').fetchone() and not db.execute(
+                        'SELECT 1 FROM members WHERE agent=?', (who,)).fetchone():
+                    result.setdefault('warnings', []).append(
+                        who + ' has not joined; use the joined session ID so returns reach its watch (task-handoff to fix)')
             if args.command not in ('status', 'task-list', 'feedback-list'):
                 event(db, args, result)
         print(json.dumps(result, ensure_ascii=False, indent=2))

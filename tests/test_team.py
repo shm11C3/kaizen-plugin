@@ -109,6 +109,14 @@ class CoordinationTests(unittest.TestCase):
         self.assertEqual(sum(r.returncode == 0 for r in results), 1)
         self.assertEqual(len(self.call('task-list')), 1)
 
+    def test_claims_by_sessions_that_never_joined_warn(self):
+        # Practice: a subagent claimed T-0010 as "parent".
+        self.call('join', '--agent', 'member-01', '--provider', 'claude', '--plugin-version', '0.10.0')
+        task_id = self.create()
+        self.assertIn('parent', self.call('task-claim', '--id', task_id, '--agent', 'parent')['warnings'][0])
+        fixed = self.call('task-handoff', '--id', task_id, '--agent', 'parent', '--to', 'member-01', '--reason', 'real owner')
+        self.assertNotIn('warnings', fixed)
+
     def test_related_creation_lists_active_work_around_the_same_task(self):
         # Practice: T-0006 "index only" duplicated READY T-0001 under another key.
         first = self.create()
