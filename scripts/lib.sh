@@ -177,6 +177,43 @@ sync_overlay() {
   fi
 }
 
+# overlay_files <rev> <host>: overlay paths (relative to /<OVERLAY_DIR>) that
+# <rev> installs on <host>, from <OVERLAY_DIR>/ and <OVERLAY_DIR>-<host>/.
+overlay_files() {
+  local rev=$1 host=$2 dir
+  for dir in "$OVERLAY_DIR" "$OVERLAY_DIR-$host"; do
+    git -C "$KAIZEN_PROJECT" ls-tree -r --name-only "$rev" -- "$dir/" 2>/dev/null | sed "s|^$dir/||"
+  done | sort -u
+}
+
+# reconcile_overlay <host> <previous-rev> <rev>: sync_overlay never deletes, so a
+# file only the previous revision installed stayed behind after a rollback
+# (practice R2: the 3-host split's db.env and drop-ins kept the app on another
+# DB). Before installing <rev>, keep the host's original of each file <rev>
+# replaces for the first time, then put back the original of each file <rev>
+# no longer installs, or remove the file when there was none. Prints the
+# restored/removed paths.
+reconcile_overlay() {
+  local host=$1 prev=$2 rev=$3 root keep stale sudo=sudo f script=""
+  [ -n "${KAIZEN_FAKE_REMOTE:-}" ] && sudo=""
+  root="$(overlay_root "$host")"
+  keep=$(overlay_files "$rev" "$host")
+  stale=""
+  if [ -n "$prev" ] && git_rev "$prev" >/dev/null; then
+    stale=$(comm -23 <(overlay_files "$prev" "$host") <(echo "$keep" | sed '/^$/d'))
+  fi
+  for f in $keep; do
+    # A file the previous revision installed is not the host's original.
+    if [ -z "$prev" ] || ! overlay_files "$prev" "$host" | grep -qxF "$f"; then
+      script="$script d=$root/$OVERLAY_DIR/$f; b=$root/var/lib/kaizen/overlay-orig/$f; if [ -e \$d ] && [ ! -e \$b ]; then $sudo mkdir -p \$(dirname \$b) && $sudo cp -a \$d \$b; fi;"
+    fi
+  done
+  for f in $stale; do
+    script="$script d=$root/$OVERLAY_DIR/$f; b=$root/var/lib/kaizen/overlay-orig/$f; if [ -e \$b ]; then $sudo cp -a \$b \$d; else $sudo rm -f \$d; fi; echo $f;"
+  done
+  [ -z "$script" ] || remote "$host" "$script"
+}
+
 acquire_bench_lock() {
   if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     die "a benchmark or deploy is already running (lock $LOCK_DIR; rmdir it only if you are sure none is)"

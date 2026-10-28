@@ -81,6 +81,7 @@ restart_overlay_services() {
   done
 }
 
+previous_rev=$(state_get DEPLOYED_REV)
 state_set DEPLOYED_REV "$rev"
 state_set DEPLOYED_AT "$(now)"
 state_set DEPLOYED_HEALTHY 0
@@ -89,9 +90,10 @@ for host in $APP_HOSTS; do
   for path in $LOCAL_SYNC_PATHS; do
     sync_dir "$export_dir/$path" "$host" "$REMOTE_APP_DIR/$path"
   done
-  changed=""
+  changed=$(reconcile_overlay "$host" "$previous_rev" "$rev")
   if [ -d "$export_dir/$OVERLAY_DIR" ]; then
-    changed=$(sync_overlay "$export_dir/$OVERLAY_DIR" "$host")
+    changed="$changed
+$(sync_overlay "$export_dir/$OVERLAY_DIR" "$host")"
   fi
   if [ -d "$export_dir/$OVERLAY_DIR-$host" ]; then
     changed="$changed
