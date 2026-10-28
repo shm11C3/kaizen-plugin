@@ -108,9 +108,12 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True, tolera
     result = {'status': 'unknown' if increased else 'pass',
               'reason': 'error rate increased; investigate' if increased else 'known error rates did not increase',
               'baselineRates': rates[0], 'candidateRates': rates[1]}
-    if tolerated and not increased:
-        result['reason'] = 'known error rates did not increase; rare new error types need a stabilization task'
+    if increased:
+        result['increasedKinds'] = sorted(increased)
+    if tolerated:
         result['toleratedNewErrors'] = tolerated
+        if not increased:
+            result['reason'] = 'known error rates did not increase; rare new error types need a stabilization task'
     return result
 
 
@@ -149,7 +152,7 @@ def parse_tolerance(value):
 
 
 def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=60, forbidden=(), rule='v2',
-           tolerate=None):
+           tolerate=None, stabilize_gain_bp=0):
     if minimum < 1 or max_age < 1 or min_bp < 0:
         raise ValueError('sample count/age must be positive and improvement threshold nonnegative')
     if rule not in ('v2', 'v3'):
@@ -227,6 +230,17 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
     else:
         q = quality(baseline, candidate, forbidden, tolerate=tolerate)
         blocked = q['status'] != 'pass'
+        if blocked and q.get('increasedKinds') and stabilize_gain_bp and len(b) >= minimum and len(c) >= minimum:
+            # A multi-fold gain raises load-driven freshness errors with it. When every
+            # sample passed and no correctness type occurred, holding that gain stops
+            # later candidates from stacking on it; adopt and stabilize instead.
+            bm, cm = statistics.median(b), statistics.median(c)
+            gain = int((cm - bm) * 10000 // bm) if bm > 0 else 0
+            if gain >= stabilize_gain_bp and c[0] > b[-1]:
+                q = dict(q, status='pass', reason=q['reason'] + f'; tolerated for a {gain} bp gain (STABILIZE_GAIN_BP)',
+                         toleratedNewErrors={**q.get('toleratedNewErrors', {}),
+                                             **{k: 'rate' for k in q['increasedKinds']}})
+                blocked = False
         if q['status'] == 'failed':
             decision, reason, action = 'reject', q['reason'], 'reject'
         elif blocked:
@@ -244,8 +258,8 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
                 decision, reason, action = 'promote', f'median improved {bp} bp and worst candidate {c[0]} > best baseline {b[-1]}', 'promote'
     stabilize = q.get('toleratedNewErrors') if decision == 'promote' else None
     if stabilize:
-        reason += '; adopt and open a related stabilization task for new error types ' + ','.join(
-            f'{kind}x{n}' for kind, n in sorted(stabilize.items()))
+        reason += '; adopt and open a related stabilization task for error types ' + ','.join(
+            f'{kind}x{n}' if n != 'rate' else f'{kind}(rate up)' for kind, n in sorted(stabilize.items()))
     if ignored:
         reason += f' ({ignored} observation samples were left out)'
     spread_bp = int((b[-1] - b[0]) * 10000 // statistics.median(b)) if len(b) >= 2 and statistics.median(b) > 0 else None
@@ -296,6 +310,7 @@ def main():
     e = sub.add_parser('evaluate')
     e.add_argument('--rule', default='v2', choices=('v2', 'v3'))
     e.add_argument('--tolerate-new-errors', default='', help="COUNT:PER_10K, e.g. '2:1'; empty disables")
+    e.add_argument('--stabilize-gain-bp', type=int, default=0, help='promote known-error rate rises at this gain; 0 disables')
     e.add_argument('out'); e.add_argument('stable'); e.add_argument('bundle')
     e.add_argument('min_bp', type=int); e.add_argument('minimum', type=int); e.add_argument('max_age', type=int)
     e.add_argument('forbidden'); e.add_argument('samples', nargs=argparse.REMAINDER)
@@ -312,7 +327,7 @@ def main():
             return [json.loads(Path(path).read_text()) for path in paths if Path(path).is_file()]
         result = assess(load(a.samples[:split]), load(a.samples[split + 1:]), a.stable, a.bundle,
                         a.min_bp, a.minimum, a.max_age, tuple(filter(None, a.forbidden.split(','))), a.rule,
-                        parse_tolerance(a.tolerate_new_errors))
+                        parse_tolerance(a.tolerate_new_errors), a.stabilize_gain_bp)
         Path(a.out).write_text(json.dumps(result, indent=2) + '\n')
     elif a.action == 'reserve':
         result = reserve(Path(a.path), a.experiment or None, a.label, a.revision,

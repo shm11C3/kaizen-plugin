@@ -29,6 +29,7 @@ MAX_EXP_PER_HOUR=0
 EVALUATION_RULE=v2         # v2: two samples per side, error rates by denominator. v3 (sequential, one clear sample) is opt-in until compared on real runs
 MIN_SAMPLES=2
 NEW_ERROR_TOLERANCE=2:1    # v2: rare new non-correctness error types (<=2 and <=1 per 10k requests) promote with a stabilization task; 0 holds them
+STABILIZE_GAIN_BP=10000    # v2: at +100% median gain, a rising known non-correctness error rate promotes with a stabilization task; 0 holds
 BASELINE_MAX_AGE_MINUTES=60
 MAX_BENCH_TOTAL=0          # attempts still include baseline/recovery/no-result/portal
 MAX_BENCH_PER_HOUR=0

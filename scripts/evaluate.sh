@@ -10,5 +10,5 @@ if [ $# -eq 0 ]; then
   set -- "$KAIZEN_DIR/baseline/$stable"/*.json -- "$EXP_DIR"/bench-candidate*.json
 fi
 python3 "$KAIZEN_PLUGIN_ROOT/scripts/measurement.py" evaluate --rule "$EVALUATION_RULE" \
-  --tolerate-new-errors "$NEW_ERROR_TOLERANCE" "$EXP_DIR/decision.json" \
+  --tolerate-new-errors "$NEW_ERROR_TOLERANCE" --stabilize-gain-bp "$STABILIZE_GAIN_BP" "$EXP_DIR/decision.json" \
   "$stable" "$bundle" "$MIN_IMPROVEMENT_BP" "$MIN_SAMPLES" "$BASELINE_MAX_AGE_MINUTES" "$CORRECTNESS_ERROR_TYPES" "$@"
