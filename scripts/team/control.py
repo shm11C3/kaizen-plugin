@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Call the central ledger through AWS SSM without inbound SSH or shared keys."""
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
@@ -60,12 +61,41 @@ def remote_command(config, command, arguments):
                       config['remote_plugin_root'] + '/scripts/team/' + script, *options, *forwarded])
 
 
+def source_push_command(config, arguments):
+    """Ship local branches to the control project as a small git bundle: the host often cannot fetch a private fork."""
+    q = argparse.ArgumentParser(prog='control.py source-push')
+    q.add_argument('--since', default='origin/main', help='commit the control project already has (default: origin/main)')
+    q.add_argument('branches', nargs='+', help='local branch names; each lands at refs/remotes/origin/BRANCH on the host')
+    a = q.parse_args(arguments)
+    refs = []
+    for branch in a.branches:
+        full = subprocess.check_output(['git', 'rev-parse', '--symbolic-full-name', branch], text=True).strip()
+        if not full.startswith('refs/heads/'):
+            raise ValueError(branch + ' is not a local branch; create one with git branch NAME SHA')
+        refs.append(full)
+    data = subprocess.check_output(['git', 'bundle', 'create', '-', *refs, '--not', a.since], stderr=subprocess.DEVNULL)
+    encoded = base64.b64encode(data).decode()
+    if len(encoded) > 48000:
+        raise ValueError('bundle is %d bytes; pass a newer --since the host already has' % len(data))
+    target_config = config.get('target_config', '/srv/isucon/state/target.json')
+    script = 'set -eu\n' \
+        'P=$(python3 -c \'import json,sys; print(json.load(open(sys.argv[1]))["project"])\' %s)\n' \
+        'F=$(mktemp /tmp/kaizen-source-XXXXXX.bundle); trap \'rm -f "$F"\' EXIT\n' \
+        'echo %s | base64 -d > "$F"; chmod 644 "$F"\n' \
+        'runuser -u isucon -- git -C "$P" fetch -q "$F" %s\n' \
+        'for r in %s; do echo "$r $(runuser -u isucon -- git -C "$P" rev-parse "$r")"; done\n' % (
+            shlex.quote(target_config), encoded,
+            ' '.join(shlex.quote('+%s:refs/remotes/origin/%s' % (r, r[len('refs/heads/'):])) for r in refs),
+            ' '.join(shlex.quote('refs/remotes/origin/' + r[len('refs/heads/'):]) for r in refs))
+    return script
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     where = p.add_mutually_exclusive_group()
     where.add_argument('--host-config', help='explicit host config path')
     where.add_argument('--env', help='environment name: team/environments/NAME or ~/.config/kaizen/NAME/control-host.json')
-    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, or result COMMAND_ID')
+    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, source-push [--since BASE] BRANCH..., or result COMMAND_ID')
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:
@@ -93,7 +123,8 @@ def main():
                 raise ValueError('result requires the previous SSM Command ID')
             command_id = args.arguments[0]
         else:
-            command = remote_command(config, args.command, args.arguments)
+            command = (source_push_command(config, args.arguments) if args.command == 'source-push'
+                       else remote_command(config, args.command, args.arguments))
             response = aws('ssm', 'send-command', '--document-name', 'AWS-RunShellScript',
                            '--instance-ids', config['instance_id'], '--timeout-seconds', '60',
                            '--parameters', json.dumps({'commands': [command], 'executionTimeout':

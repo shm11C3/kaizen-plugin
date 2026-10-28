@@ -106,6 +106,10 @@ or Git commit author is not the member's identity.
 When using the existing setup, observe, hypothesize, experiment or recover skills
 as a team, apply this skill's ownership boundary first. Workers prepare candidate
 changes locally; only the reservation holder operates the control-host experiment.
+When the control host cannot fetch your candidate (a private fork), send it yourself
+before task-ready: `control.py --env NAME source-push [--since BASE] BRANCH...` from
+the candidate checkout bundles the branches and lands them at
+`refs/remotes/origin/BRANCH` on the control project; nobody else has to relay them.
 Before task-ready, select necessary focused checks under
 `../../team/docs/VALIDATION.md` and scoped cheap lint under `../../team/docs/LINT.md`.
 Attach actual records, duration, tool versions, diagnostic dispositions and
