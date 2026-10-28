@@ -337,6 +337,44 @@ class IntegratorLoop(IntegratorFixture):
 
 
 class Helpers(unittest.TestCase):
+    def test_irrecoverable_score_overlap_stops_candidate_measurement(self):
+        scores = {'ruleVersion': 'plugin-rule-v2', 'decision': 'inconclusive', 'nextAction': 'remeasure',
+                  'minimumSamples': 2, 'baselineScores': [58567, 62811],
+                  'candidateScores': [65191, 61956]}
+        self.assertTrue(module.overlap_cannot_recover(scores))
+        self.assertFalse(module.overlap_cannot_recover(dict(scores, ruleVersion='plugin-rule-v3', candidateScores=[61956])))
+        self.assertFalse(module.overlap_cannot_recover(dict(scores, ruleVersion='plugin-rule-v4')))
+        self.assertFalse(module.overlap_cannot_recover(dict(scores, candidateScores=['61956', 65191])))
+
+        decisions = [dict(scores, candidateScores=[65191]), scores]
+        labels = []
+        ledger = []
+        engine = type('FakeEngine', (), {})()
+        engine.sample_limit = lambda: 6
+        engine.bench = lambda tid, experiment, label: labels.append(label) or True
+        engine.evaluate = lambda experiment: decisions.pop(0)
+        engine.ledger = lambda event, **fields: ledger.append((event, fields))
+        result = module.Integrator.measure(engine, 'T-test', 'exp-test')
+        self.assertEqual(labels, ['candidate', 'candidate-2'])
+        self.assertEqual(result['candidateScores'], [65191, 61956])
+        self.assertTrue(any(row[0] == 'budget' and '分離条件' in row[1]['message'] for row in ledger))
+
+    def test_separated_candidate_can_still_take_another_sample(self):
+        base = {'ruleVersion': 'plugin-rule-v2', 'decision': 'inconclusive', 'nextAction': 'remeasure',
+                'minimumSamples': 2, 'baselineScores': [58567, 62811]}
+        first = dict(base, candidateScores=[65191, 66000])
+        second = dict(base, candidateScores=[65191, 66000, 67000])
+        self.assertFalse(module.overlap_cannot_recover(first))
+        decisions = [first, second, dict(second, decision='promote', nextAction='promote')]
+        labels = []
+        engine = type('FakeEngine', (), {})()
+        engine.sample_limit = lambda: 6
+        engine.bench = lambda tid, experiment, label: labels.append(label) or True
+        engine.evaluate = lambda experiment: decisions.pop(0)
+        engine.ledger = lambda event, **fields: None
+        module.Integrator.measure(engine, 'T-test', 'exp-test')
+        self.assertEqual(labels, ['candidate', 'candidate-2', 'candidate-3'])
+
     def test_sample_limit_respects_plugin_cap_and_own_ceiling(self):
         args = type('Args', (), {'db': '/nonexistent/db', 'config': '/nonexistent/target.json', 'state': None, 'settings': None})()
         with tempfile.TemporaryDirectory() as directory:

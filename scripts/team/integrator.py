@@ -116,6 +116,25 @@ def conditions_problem(decision):
         word in reason for word in ('passing baseline', 'baseline median', 'bundle', 'denominator', 'conditions differ'))
 
 
+def overlap_cannot_recover(decision):
+    """Whether more candidate samples cannot satisfy the score-separation rule."""
+    if not isinstance(decision, dict) or decision.get('nextAction') != 'remeasure':
+        return False
+    if decision.get('ruleVersion') not in ('plugin-rule-v2', 'plugin-rule-v3'):
+        return False
+    baseline = decision.get('baselineScores')
+    candidate = decision.get('candidateScores')
+    minimum = decision.get('minimumSamples')
+    if (not isinstance(baseline, list) or not isinstance(candidate, list)
+            or not isinstance(minimum, int) or isinstance(minimum, bool) or minimum < 1
+            or len(baseline) < minimum or len(candidate) < max(2, minimum)):
+        return False
+    scores = baseline + candidate
+    if any(not isinstance(score, (int, float)) or isinstance(score, bool) for score in scores):
+        return False
+    return min(candidate) <= max(baseline)
+
+
 def hold_category(decision):
     reason = (decision.get('quality') or {}).get('reason', '') + ' ' + decision.get('reason', '')
     reason = reason.lower()
@@ -738,6 +757,10 @@ class Integrator:
             if conditions_problem(decision):
                 # More candidate samples cannot repair a baseline-side condition; stop spending slots.
                 self.ledger('budget', task=tid, experiment=experiment, message='計測条件側の問題のため候補の追加計測を打ち切り: ' + str(decision.get('reason')))
+                break
+            if overlap_cannot_recover(decision):
+                self.ledger('budget', task=tid, experiment=experiment,
+                            message='候補スコアの最小値がbaseline最大値以下で、追加候補では分離条件を満たせないため打ち切り')
                 break
         if decision is None:
             decision = self.evaluate(experiment)
