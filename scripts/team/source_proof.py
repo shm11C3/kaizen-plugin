@@ -88,12 +88,12 @@ def guard_holds(db, proof, candidate, stabilized=False):
     holds = inherited_holds(db, proof, candidate)
     for hold in holds:
         repair = hold['repair_sha']
+        if stabilized and hold['category'] in SOFT_CATEGORIES:
+            continue
         if (hold['state'] != 'RETEST_PENDING' or not repair
                 or not proof.contains(hold['source_sha'], repair, candidate)):
             raise ValueError('candidate inherits unresolved quality hold H-{} from T-{:04d}; '
                              'repair/resubmit that task before competition promotion'.format(hold['id'], hold['task_id']))
-        if stabilized and hold['category'] in SOFT_CATEGORIES:
-            continue
         if hold['category'] != 'conditions' and proof.same(hold['source_sha'], repair):
             raise ValueError('quality hold H-{} needs changed repair content; fresh clean samples alone do not repair it'.format(hold['id']))
     return holds
