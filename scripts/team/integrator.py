@@ -553,13 +553,19 @@ class Integrator:
         folder = self.project / '.kaizen/baseline' / state.get('STABLE_REV', '')
         fresh = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=self.config['baseline_max_age_minutes'])
         passing, failed = [], []
+        try:
+            bundle = json.loads((self.project / '.kaizen/stable-bundle.json').read_text()).get('id')
+        except (ValueError, OSError):
+            bundle = None
         for path in sorted(folder.glob('*.json')):
             try:
                 sample = json.loads(path.read_text())
                 finished = datetime.datetime.fromisoformat(sample['finishedAt'].replace('Z', '+00:00'))
             except (ValueError, KeyError, OSError):
                 continue
-            if sample.get('observed') or finished < fresh:
+            # A re-captured bundle makes older samples incomparable; the rule would answer
+            # "conditions differ" after spending the candidate slot (practice: T-0011).
+            if sample.get('observed') or finished < fresh or (bundle and sample.get('stableBundleId') != bundle):
                 continue
             (passing if sample.get('pass') else failed).append(str(sample.get('label') or path.stem))
         return passing, failed
