@@ -104,25 +104,30 @@ BENCH_HOST_PRECHECK_CMD can refuse a busy SSH benchmark host.
 ## 4. First baseline
 
 ```bash
-$K/scripts/observe.sh reset
 $K/scripts/bench.sh baseline          # ssh mode
 $K/scripts/bench.sh baseline --reserve  # manual mode, before the portal run
 $K/scripts/bench.sh baseline --result 'pass=true score=1234 errors=none'   # after it ended
-$K/scripts/observe.sh dump baseline
 $K/scripts/bench.sh baseline-2
 ```
+
+Use existing access logs and read-only SQL/resource counters first. If additional
+profiling is needed, run `observe.sh reset`, a separate observed benchmark, and
+`observe.sh dump`; keep that evidence out of the normal comparison samples.
 
 Manual mode also reserves baseline-2 before the portal starts. All attempts,
 including missing results and recovery, count toward any applicable finite
 physical-run budgets and the actual time budget.
 
-Two samples show the noise; three when the two differ by more than
-`MIN_IMPROVEMENT_BP`. Commit `.kaizen/` (config, RULES, samples, dump) on
-`main`, then `$K/scripts/stable.sh repin`: the commit moved `main` past
+Two normal samples show the noise. Add another only when the uncertainty could
+change the next decision and its information value fits the run budget; do not
+delay an obvious large improvement merely because the baseline spread is wide.
+Commit only tracked config/preset/RULES changes; keep samples and dumps out of Git.
+If that commit moved `main`, run `$K/scripts/stable.sh repin`: the commit moved `main` past
 STABLE_REV without changing what the servers run, and repin moves
 STABLE_REV (and the baseline samples' key) to it after verifying the
-hosts still match. Report `$K/scripts/status.sh` to the human and stop:
-the loop starts with the observe skill.
+hosts still match. Report `$K/scripts/status.sh` and continue the authorized
+observe/plan/candidate loop. Setup completion does not create a new human approval
+wait; escalate only an actual choice outside the agreed scope.
 
 For the planned Go/Rust choice, fill LOCAL_SYNC_PATHS, BUILD_CMD, binary excludes
 and service paths from the actual source layout. Go examples use go build; Rust
