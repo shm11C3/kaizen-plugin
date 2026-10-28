@@ -463,7 +463,8 @@ def dispatch(db, args):
                 if row['status'] != 'READY':
                     raise ValueError('only READY candidates may be withdrawn; measured results are finished by the integrator')
                 env = reservation(db)
-                if env and env['owner'] != args.agent and env['purpose'] == public_task(row)['id']:
+                tid = public_task(row)['id']
+                if env and env['owner'] != args.agent and env['purpose'] in (tid, 'integrate ' + tid):
                     raise ValueError('integration of this candidate is in progress; ask ' + env['owner'] + ' to finish or release it first')
                 # The repair stays unsubmitted until the next task-ready names a new SHA.
                 db.execute("UPDATE quality_holds SET state='OPEN',repair_sha=NULL,repair_submitted_at=NULL "

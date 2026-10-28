@@ -291,11 +291,12 @@ class CoordinationTests(unittest.TestCase):
         self.call(*ready, '--sha', '2'*40, '--reason', 'index and retry together')
         self.assertNotEqual(self.run_cli('task-withdraw', '--id', task_id, '--agent', 'other',
                                         '--reason', 'not mine').returncode, 0)
-        token = self.call('env-acquire', '--agent', 'integrator', '--purpose', task_id)['token']
-        busy = self.run_cli('task-withdraw', '--id', task_id, '--agent', 'worker', '--reason', 'split')
-        self.assertNotEqual(busy.returncode, 0)
-        self.assertIn('integrator', busy.stderr)
-        self.call('env-release', '--agent', 'integrator', '--token', token, '--reason', 'not started')
+        for purpose in (task_id, 'integrate ' + task_id):
+            token = self.call('env-acquire', '--agent', 'integrator', '--purpose', purpose)['token']
+            busy = self.run_cli('task-withdraw', '--id', task_id, '--agent', 'worker', '--reason', 'split')
+            self.assertNotEqual(busy.returncode, 0)
+            self.assertIn('integrator', busy.stderr)
+            self.call('env-release', '--agent', 'integrator', '--token', token, '--reason', 'not started')
         withdrawn = self.call('task-withdraw', '--id', task_id, '--agent', 'worker',
                               '--reason', 'integrator asked to measure index and retry separately')
         self.assertEqual((withdrawn['status'], withdrawn['owner']), ('CLAIMED', 'worker'))
