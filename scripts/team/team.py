@@ -350,6 +350,7 @@ def dispatch(db, args):
         else:
             if row['owner'] != args.agent:
                 raise ValueError('task belongs to another session')
+            warnings = []
             if command == 'task-complete':
                 if row['status'] != 'CLAIMED' or row['work_kind'] == 'implementation':
                     raise ValueError('only claimed investigation/comparison work may complete without integration')
@@ -366,6 +367,14 @@ def dispatch(db, args):
                            (args.base, args.sha, args.review, args.reason, now(), row['id']))
                 db.execute("UPDATE quality_holds SET state='RETEST_PENDING',repair_sha=?,repair_submitted_at=? WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
                            (args.sha, now(), row['id']))
+                # Practice: T-0007/T-0009 were stacked on T-0001's source while it sat in a
+                # quality hold; repairing T-0001 changes that SHA and forces both to rebase.
+                held = db.execute("SELECT * FROM quality_holds WHERE state IN ('OPEN','RETEST_PENDING') "
+                                  "AND task_id<>? AND (source_sha=? OR repair_sha=?)",
+                                  (row['id'], args.base.lower(), args.base.lower())).fetchall()
+                warnings = ['base ' + args.base[:7] + ' is the held source of ' + public_task(dict(id=h['task_id']))['id']
+                            + ' (hold #' + str(h['id']) + ', ' + h['state'] + '); expect a rebase when it is repaired'
+                            for h in held]
             elif command == 'task-withdraw':
                 if row['status'] != 'READY':
                     raise ValueError('only READY candidates may be withdrawn; measured results are finished by the integrator')
@@ -392,6 +401,10 @@ def dispatch(db, args):
                     raise ValueError('cannot hand off a finished task')
                 db.execute('UPDATE tasks SET owner=?,reason=?,updated_at=? WHERE id=?',
                            (args.to, args.reason, now(), row['id']))
+            if warnings:
+                result = public_task(db.execute('SELECT * FROM tasks WHERE id=?', (row['id'],)).fetchone())
+                result['warnings'] = warnings
+                return result
         return public_task(db.execute('SELECT * FROM tasks WHERE id=?', (row['id'],)).fetchone())
     if command == 'env-register':
         return register(db, args.db, args.environment, args.config, args.reason)
