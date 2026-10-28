@@ -365,8 +365,10 @@ def dispatch(db, args):
             # but the only way to move it ahead was withdrawing three other READY candidates.
             if row['status'] in ('ACCEPTED', 'REJECTED', 'DONE'):
                 raise ValueError('finished tasks keep their priority')
-            db.execute('UPDATE tasks SET priority=?,reason=?,updated_at=? WHERE id=?',
-                       (args.priority, args.reason, now(), row['id']))
+            # The reason stays in the event only: practice R2 T-0010 showed "C（80）の次"
+            # in place of the evidence its task-ready had written.
+            db.execute('UPDATE tasks SET priority=?,updated_at=? WHERE id=?',
+                       (args.priority, now(), row['id']))
         else:
             if row['owner'] != args.agent:
                 raise ValueError('task belongs to another session')
@@ -385,6 +387,10 @@ def dispatch(db, args):
                     raise ValueError('a human-review candidate keeps that classification when resubmitted')
                 db.execute("UPDATE tasks SET status='READY',base_sha=?,source_sha=?,review=?,reason=?,updated_at=? WHERE id=?",
                            (args.base, args.sha, args.review, args.reason, now(), row['id']))
+                # Practice R2: T-0008's rejected SHA went back in under T-0010; say so, so the
+                # reason carries why a re-measurement is worth a benchmark.
+                rejected = db.execute("SELECT id FROM tasks WHERE status='REJECTED' AND id<>? AND lower(source_sha)=?",
+                                      (row['id'], args.sha.lower())).fetchall()
                 db.execute("UPDATE quality_holds SET state='RETEST_PENDING',repair_sha=?,repair_submitted_at=? WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
                            (args.sha, now(), row['id']))
                 # Practice: T-0007/T-0009 were stacked on T-0001's source while it sat in a
@@ -395,6 +401,8 @@ def dispatch(db, args):
                 warnings = ['base ' + args.base[:7] + ' is the held source of ' + public_task(dict(id=h['task_id']))['id']
                             + ' (hold #' + str(h['id']) + ', ' + h['state'] + '); expect a rebase when it is repaired'
                             for h in held]
+                warnings += ['source ' + args.sha[:7] + ' was already REJECTED as ' + public_task(dict(r))['id']
+                             + '; state in --reason what changed since that measurement' for r in rejected]
             elif command == 'task-withdraw':
                 if row['status'] != 'READY':
                     raise ValueError('only READY candidates may be withdrawn; measured results are finished by the integrator')
