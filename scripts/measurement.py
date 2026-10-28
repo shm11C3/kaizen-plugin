@@ -252,7 +252,10 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
             # later candidates from stacking on it; adopt and stabilize instead.
             bm, cm = statistics.median(b), statistics.median(c)
             gain = int((cm - bm) * 10000 // bm) if bm > 0 else 0
-            if gain >= stabilize_gain_bp and c[0] > b[-1]:
+            # The noise separation (worst candidate above the best baseline) is the normal
+            # rule's job below: practice T-0004 (8120/12090 against 8518/8999) stopped at
+            # "investigate" when it only needed another sample.
+            if gain >= stabilize_gain_bp:
                 q = dict(q, status='pass', reason=q['reason'] + f'; tolerated for a {gain} bp gain (STABILIZE_GAIN_BP)',
                          toleratedNewErrors={**q.get('toleratedNewErrors', {}),
                                              **{k: 'rate' for k in q['increasedKinds']}})

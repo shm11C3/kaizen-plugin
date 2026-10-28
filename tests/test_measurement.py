@@ -95,6 +95,13 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(result['stabilizationRequired'], {'25': 'rate'})
         self.assertTrue(m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
 
+    def test_overlapping_gain_with_rising_soft_errors_remeasures(self):
+        # Practice T-0004: median +15% but the worse sample overlapped the baseline.
+        b = [sample(n, 'stable', 'map[26:1]', 63000) for n in (8518, 8999)]
+        c = [sample(n, 'candidate', 'map[26:2]', 70000) for n in (8120, 12090)]
+        result = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=300)
+        self.assertEqual((result['decision'], result['nextAction']), ('inconclusive', 'remeasure'))
+
     def test_unknown_errors_are_not_zero(self):
         self.assertIsNone(m.error_counts('unparsed warnings'))
         self.assertIsNone(m.error_counts(''))
