@@ -351,6 +351,14 @@ class Integrator:
                                    capture_output=True, text=True)
             if known.returncode == 0:
                 return row
+            # Adoption cherry-picks, so an adopted base is rarely an ancestor of stable
+            # (practice: T-0001's 7983f36 landed as ffd23fd). Every base commit whose
+            # patch is already in stable shows as "-" in git cherry.
+            cherry = subprocess.run(['git', '-C', str(self.project), 'cherry', stable, row['base_sha']],
+                                    capture_output=True, text=True)
+            lines = [line for line in cherry.stdout.splitlines() if line.strip()]
+            if cherry.returncode == 0 and lines and all(line.startswith('-') for line in lines):
+                return row
             self.ledger('skip', task=row['id'], reason='base ' + row['base_sha'][:7] + ' は ' + stable + ' に未採用。base の採用待ち')
         self.waiting_on_base = [(row['id'], row['base_sha'][:7]) for row in rows]
         return None
