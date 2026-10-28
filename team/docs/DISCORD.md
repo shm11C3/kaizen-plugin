@@ -64,6 +64,8 @@ Issue AssigneeやPR mergeを取得・採用の代用にしない。追加の権�
 最後に読んだ位置は、チャンネルごとに`<channel>: <message-id> <JST時刻>`の形で
 自分の作業メモへ残す。未読追跡のあるMCP（readerIdごとの`read_unread`/`ack_unread`）
 なら、セッションIDをreaderIdにしてページ全体を読んでからackする。
+結果が空でも、返ったreceiptは毎回ackする。ackしない間は同じsnapshotが返り続け、
+新着が届いていても「空」に見える（R3で他Agentの指摘を約3分見落とした）。
 
 ## 作業の区切りで読む・伝える
 
