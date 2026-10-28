@@ -38,6 +38,7 @@ pluginは差し替えておらず、版も上げていない（版を上げる�
 - `watch.py`: 自分のタスクの変化（差し戻し・終了・引継ぎ）を読み取り専用`task-list`で待ち、最初の変化で終了する。
   練習でAgent1がT-0001をNEEDS_MEASUREMENTで返したが、待機中のAgent2は気づかず止まっていた。実台帳でSSM経由の取得を確認。
 
+- teamスキル: 1〜2分ごとに環境の全Discordチャンネルを読む（Subagent可）、control.pyはstdoutだけを解析する（stderrは`SSM Command ID:`と`environment:`）。（指摘14: Agent2はAgent1の返答4件を約10分見逃し、監視scriptはstderrの行をJSONとして読もうとして毎回失敗していた）
 - 未対応（観察）: 練習環境の準備をAgent1が手書きscript 6本（制御ホストの専用dir、plugin/repoのclone、deploy key、ssh_config、control-host.json、target.json、env-acquire）で行った。生成したcontrol-host.jsonには`name`も`discord`もない。環境名・repo・host一覧から一式を出す`practice-init`があれば、state_dbとtarget_configの組のずれと、targetの`environment: competition`による取り違えを防げる。また占有tokenがローカルのscriptファイルに平文で残った。
 
 残り: MCPにチャンネル名変更・カテゴリ移動がない（指摘5）、新着でのセッション起動（指摘8の本体）は
