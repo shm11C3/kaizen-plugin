@@ -11,16 +11,16 @@ installation and the competition clone are separate directories.
 
 ## Join
 
-1. Read `$K/team/POLICY.md`, then `$K/team/docs/OPERATIONS.md` and
-   `$K/team/docs/RUNBOOK.md` and `$K/team/docs/DISCORD.md`.
+1. Start with `$K/team/docs/START.md`. Open detailed guides at the operation
+   boundaries it lists; do not load the entire handbook before the first task.
    Members use independent sessions on their own PCs and coordinate through
    the configured private Discord. Read shared discussions yourself; another
    session's context and local files are not automatically available.
 2. Identify the member's actual GitHub login and choose a unique session ID,
    e.g. `<github-login>-codex-01` or `<github-login>-claude-01`. Read the human's current
    strategy, exclusions, time budget, and stop instructions.
-   Record practice/competition mode and consult `../../team/docs/REGULATIONS.md`
-   for permitted methods and operator handoffs. For recurring work use
+   Record practice/competition mode. Before choosing automated/manual target
+   operations, consult `../../team/docs/REGULATIONS.md`. For recurring work use
    `../improve-workflow/SKILL.md`: practice refines reusable skills and saves
    problem-specific procedures as knowledge; competition can also specialize skills.
 3. Run `python3 "$K/scripts/team/join.py" --project "$KAIZEN_PROJECT" --agent SESSION --provider codex`
@@ -36,7 +36,8 @@ installation and the competition clone are separate directories.
    decisions and related threads before claims and at work boundaries; post
    verified state changes and artifact references after updating the ledger.
    Check Discord read/write access separately: join.py does not probe it.
-   Read `$K/team/docs/STRATEGY.md`; choose work by score impact and evidence.
+   Choose work by the current scoring path and evidence. Read
+   `$K/team/docs/STRATEGY.md` when choosing a new experiment or revising priority.
    Check `control.py queue` at work boundaries. If READY candidates accumulate,
    use investigation/comparison tasks to analyze existing evidence or unblock measurement.
    Automatic task-claim skips implementation when READY reaches its --ready-limit
