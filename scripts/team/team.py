@@ -57,6 +57,14 @@ def connect(path):
             state TEXT NOT NULL DEFAULT 'OPEN', repair_sha TEXT, repair_submitted_at TEXT,
             retest_record TEXT, retest_digest TEXT, tested_sha TEXT, closed_at TEXT
         );
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_ref TEXT NOT NULL, summary TEXT NOT NULL, owner TEXT NOT NULL,
+            created_at TEXT NOT NULL, decision TEXT
+                CHECK(decision IN ('adopt','existing','defer','reject')),
+            reason TEXT, artifact TEXT, next_action TEXT, decided_at TEXT,
+            UNIQUE(source_ref, summary)
+        );
     """)
     schema(db)
     for column, definition in (('human_question', 'TEXT'), ('hypothesis_key', 'TEXT'),
@@ -160,6 +168,27 @@ def public_task(row):
     return result
 
 
+def public_feedback(row):
+    result = dict(row)
+    result['id'] = 'F-{:04d}'.format(row['id'])
+    return result
+
+
+def feedback_attention(db):
+    return {
+        'feedback_pending': [public_feedback(r) for r in db.execute(
+            'SELECT * FROM feedback WHERE decision IS NULL ORDER BY id')],
+        'feedback_deferred': [public_feedback(r) for r in db.execute(
+            "SELECT * FROM feedback WHERE decision='defer' ORDER BY id")],
+    }
+
+
+def required_text(value, name):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(name + ' must not be blank')
+    return value.strip()
+
+
 def event(db, args, result):
     db.execute('INSERT INTO events(at,actor,action,details) VALUES (?,?,?,?)',
                (now(), getattr(args, 'agent', 'observer'), args.command,
@@ -199,12 +228,39 @@ def dispatch(db, args):
                   'advice': 'analyze submitted candidates or logs before more implementation' if counts.get('READY', 0) >= args.ready_limit else 'claim or discover the next useful task'}
         if command == 'join':
             result['member'] = {'agent': args.agent, 'provider': args.provider}
+        result.update(feedback_attention(db))
         return result
     if command == 'status':
         return {'environment': reservation(db, environment=args.environment),
                 'inventory': [dict(r) for r in db.execute('SELECT * FROM environments ORDER BY name')],
                 'quality_holds': [dict(r) for r in db.execute('SELECT * FROM quality_holds ORDER BY id')],
-                'tasks': [public_task(r) for r in db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')]}
+                'tasks': [public_task(r) for r in db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')],
+                **feedback_attention(db)}
+    if command == 'feedback-list':
+        query = 'SELECT * FROM feedback' + (' WHERE decision IS NULL' if args.pending else '') + ' ORDER BY id'
+        return [public_feedback(r) for r in db.execute(query)]
+    if command == 'feedback-add':
+        source = required_text(args.source_ref, 'source-ref')
+        summary = required_text(args.summary, 'summary')
+        owner = required_text(args.agent, 'agent')
+        db.execute('INSERT OR IGNORE INTO feedback(source_ref,summary,owner,created_at) VALUES (?,?,?,?)',
+                   (source, summary, owner, now()))
+        return public_feedback(db.execute('SELECT * FROM feedback WHERE source_ref=? AND summary=?',
+                                          (source, summary)).fetchone())
+    if command == 'feedback-decide':
+        if not re.fullmatch(r'F-\d+', args.id):
+            raise ValueError('feedback id must be F-0001 or equivalent')
+        row = db.execute('SELECT * FROM feedback WHERE id=?', (int(args.id[2:]),)).fetchone()
+        if row is None:
+            raise ValueError('unknown feedback ' + args.id)
+        if row['owner'] != args.agent:
+            raise ValueError('only the feedback owner may record its decision')
+        reason = required_text(args.reason, 'reason')
+        artifact = required_text(args.artifact, 'artifact')
+        next_action = required_text(args.next_action, 'next-action') if args.decision == 'defer' else args.next_action
+        db.execute('UPDATE feedback SET decision=?,reason=?,artifact=?,next_action=?,decided_at=? WHERE id=?',
+                   (args.decision, reason, artifact, next_action, now(), row['id']))
+        return public_feedback(db.execute('SELECT * FROM feedback WHERE id=?', (row['id'],)).fetchone())
     if command == 'task-list':
         return [public_task(r) for r in db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')]
     if command == 'task-create':
@@ -356,6 +412,19 @@ def parser():
     commands = p.add_subparsers(dest='command', required=True)
     commands.add_parser('status')
     commands.add_parser('task-list')
+    feedback_list = commands.add_parser('feedback-list', help='list recorded advice and its decisions')
+    feedback_list.add_argument('--pending', action='store_true', help='only advice without a decision')
+    feedback_add = commands.add_parser('feedback-add', help='record advice before deciding its reusable scope')
+    feedback_add.add_argument('--agent', required=True)
+    feedback_add.add_argument('--source-ref', required=True, help='private message/observation reference')
+    feedback_add.add_argument('--summary', required=True)
+    feedback_decide = commands.add_parser('feedback-decide', help='record a workflow decision, not code adoption')
+    feedback_decide.add_argument('--id', required=True)
+    feedback_decide.add_argument('--agent', required=True)
+    feedback_decide.add_argument('--decision', required=True, choices=('adopt', 'existing', 'defer', 'reject'))
+    feedback_decide.add_argument('--reason', required=True)
+    feedback_decide.add_argument('--artifact', required=True, help='existing guidance, investigation, task or commit reference')
+    feedback_decide.add_argument('--next-action', help='required for defer; name the next investigation/action')
     pipeline = commands.add_parser('pipeline-status', help='read-only stage timing; missing observations remain unknown')
     pipeline.add_argument('--agent', help='current task owner session to include')
     stage = commands.add_parser('task-stage', help='record a stage start; never a quality gate')
@@ -433,7 +502,7 @@ def main():
         with lock, contextlib.closing(connect(args.db)) as db, db:
             db.execute('BEGIN IMMEDIATE')
             result = dispatch(db, args)
-            if args.command not in ('status', 'task-list'):
+            if args.command not in ('status', 'task-list', 'feedback-list'):
                 event(db, args, result)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0

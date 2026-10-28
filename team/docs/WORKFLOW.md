@@ -22,6 +22,32 @@
 再発防止や判断精度に効く最小差分をこの手順で検証・共有する。助言のたびに一律の承認待ちや
 plugin変更を作らない。固有の知見はknowledgeへ残し、汎用変更と実際の配布・読込状態を区別する。
 
+### 助言の判断を台帳へ残す
+
+新たな人間の助言ごとに、まず共有台帳へ`feedback-add`で原文の参照先・要約・担当を登録し、
+既存手順への適合を確認して`feedback-decide`で判断・理由・根拠を残す。同じ参照先と要約の
+再登録は既存項目を返す。これは起動中のAIが行う手順であり、人間の発言を自動捕捉するhookや
+Codex adapterは実装していない。`queue`/`status`の`feedback_pending`で未判断を確認し、
+`feedback_deferred`の次アクションも作業境界で見直す。未判断は通常の候補作業を停止するgateではない。
+
+```bash
+python3 "$K/scripts/team/control.py" feedback-add --agent "$KAIZEN_SESSION" \
+  --source-ref PRIVATE_MESSAGE_REFERENCE --summary '他の問題にも適用できる運用上の助言'
+python3 "$K/scripts/team/control.py" feedback-decide --agent "$KAIZEN_SESSION" --id F-0001 \
+  --decision existing --reason '既存手順が同じ条件と動作を定義している' --artifact team/docs/PIPELINE.md
+python3 "$K/scripts/team/control.py" feedback-list --pending
+```
+
+判断は`adopt`（必要な反映を選択しtask/commitへつなぐ）、`existing`（既存の適合箇所）、
+`defer`（見送る理由と調査・修復などの`--next-action`必須）、`reject`（採らない根拠）から選ぶ。
+すべて理由と`--artifact`を必須とし、担当だけが更新する。更新前の判断もeventsへ残る。
+`adopt`はコード採用・配布完了の証拠ではない。通常の検証、release、実読確認まで別に追跡する。
+原文・privateな固有情報は共有private DBとアクセス可能なartifactに保持し、汎用pluginのGitへ写さない。
+
+新しいwarningや品質保留を単なる終了理由にせず、再現・原因調査・修復案・実現性と総費用を
+比較し、続ける次アクションまたは見切る根拠を残す。この運用への助言もfeedbackへ登録する。
+品質の事実と候補の修復は元のquality hold/taskへ記録し、feedbackの判断だけで保留を解除しない。
+
 ## 時間を回収できる作業を選ぶ
 
 コマンド反復・ログ集計は小さなscript、判断や手動手順を含む作業はSkillにする。

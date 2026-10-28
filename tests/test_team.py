@@ -30,6 +30,69 @@ class CoordinationTests(unittest.TestCase):
     def create(self):
         return self.call('task-create', '--title', 'Measured hypothesis', '--evidence', 'observe-001.txt')['id']
 
+    def add_feedback(self, source='private-message:1', summary='Keep leads available for coordination'):
+        return self.call('feedback-add', '--agent', 'lead', '--source-ref', source, '--summary', summary)
+
+    def test_feedback_is_persistent_visible_and_does_not_block_work(self):
+        feedback = self.add_feedback()
+        self.assertEqual(feedback['id'], 'F-0001')
+        self.assertIsNone(feedback['decision'])
+        self.assertEqual(feedback['owner'], 'lead')
+        self.assertTrue(feedback['created_at'])
+        self.assertEqual(self.call('feedback-list', '--pending'), [feedback])
+        for command in ('queue', 'status'):
+            self.assertEqual(self.call(command)['feedback_pending'], [feedback])
+        task_id = self.create()
+        self.assertEqual(self.call('task-claim', '--id', task_id, '--agent', 'worker')['status'], 'CLAIMED')
+
+    def test_every_feedback_decision_requires_owner_reason_and_artifact(self):
+        for decision in ('adopt', 'existing', 'defer', 'reject'):
+            feedback = self.add_feedback('private-message:' + decision)
+            base = ['feedback-decide', '--id', feedback['id'], '--agent', 'lead', '--decision', decision]
+            for suffix in ([], ['--reason', ''], ['--reason', '  ', '--artifact', 'docs'],
+                           ['--reason', 'evaluated', '--artifact', '  ']):
+                self.assertNotEqual(self.run_cli(*base, *suffix).returncode, 0)
+            extra = ['--next-action', 'investigate the reproducer'] if decision == 'defer' else []
+            self.assertNotEqual(self.run_cli('feedback-decide', '--id', feedback['id'], '--agent', 'other',
+                                           '--decision', decision, '--reason', 'reviewed', '--artifact', 'docs', *extra).returncode, 0)
+            record = self.call(*base, '--reason', 'reviewed scope and alternatives', '--artifact', 'shared-evidence', *extra)
+            self.assertEqual(record['decision'], decision)
+            self.assertEqual(record['artifact'], 'shared-evidence')
+            self.assertTrue(record['decided_at'])
+        self.assertEqual(self.call('feedback-list', '--pending'), [])
+
+    def test_deferred_feedback_retains_next_action_and_decision_history(self):
+        feedback = self.add_feedback()
+        args = ['feedback-decide', '--id', feedback['id'], '--agent', 'lead', '--decision', 'defer',
+                '--reason', 'repair feasibility needs a reproduction', '--artifact', 'reproducer:1']
+        for extra in ([], ['--next-action', '  ']):
+            self.assertNotEqual(self.run_cli(*args, *extra).returncode, 0)
+        deferred = self.call(*args, '--next-action', 'compare two bounded repairs')
+        self.assertEqual(self.call('queue')['feedback_deferred'], [deferred])
+        self.assertEqual(self.call('status')['feedback_pending'], [])
+        self.call('feedback-decide', '--id', feedback['id'], '--agent', 'lead', '--decision', 'adopt',
+                  '--reason', 'bounded repair selected', '--artifact', 'tooling-task:T-0001')
+        self.assertEqual(self.call('queue')['feedback_deferred'], [])
+        with sqlite3.connect(self.db) as db:
+            decisions = [json.loads(row[0]) for row in db.execute(
+                "SELECT details FROM events WHERE action='feedback-decide' ORDER BY id")]
+        self.assertEqual([r['decision'] for r in decisions], ['defer', 'adopt'])
+        self.assertEqual(decisions[0]['next_action'], 'compare two bounded repairs')
+
+    def test_feedback_registration_is_idempotent_under_concurrent_sessions(self):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda agent: self.run_cli('feedback-add', '--agent', agent,
+                '--source-ref', 'private-message:1', '--summary', 'same advice'), ('a', 'b')))
+        self.assertTrue(all(r.returncode == 0 for r in results))
+        rows = [json.loads(r.stdout) for r in results]
+        self.assertEqual(rows[0], rows[1])
+        self.assertEqual(len(self.call('feedback-list')), 1)
+        for name in ('--source-ref', '--summary', '--agent'):
+            args = {'--agent': 'lead', '--source-ref': 'message', '--summary': 'advice'}
+            args[name] = '  '
+            flat = [value for pair in args.items() for value in pair]
+            self.assertNotEqual(self.run_cli('feedback-add', *flat).returncode, 0)
+
     def test_simultaneous_claim_has_one_winner(self):
         task_id = self.create()
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
@@ -154,6 +217,9 @@ class CoordinationTests(unittest.TestCase):
         row = self.call('task-list')[0]
         self.assertEqual((row['title'], row['status'], row['owner']), ('existing work', 'READY', 'worker'))
         self.assertIsNone(row['human_question'])
+        self.assertEqual(self.call('status')['feedback_pending'], [])
+        self.assertEqual(self.add_feedback()['id'], 'F-0001')
+        self.assertEqual(self.call('task-list')[0]['status'], 'READY')
 
     def test_portal_benchmark_blocks_release_and_handoff_between_commands(self):
         env = self.call('env-acquire', '--agent', 'a', '--purpose', 'portal')

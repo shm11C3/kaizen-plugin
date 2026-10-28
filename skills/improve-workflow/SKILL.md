@@ -11,6 +11,13 @@ Human workflow advice also triggers this skill's scope check: decide whether it
 belongs in reusable guidance, session strategy, or problem-specific knowledge.
 Check existing coverage first; implement the smallest justified reusable change
 without turning each suggestion into a new approval wait or mandatory plugin edit.
+For every new human suggestion, record its source, summary and owner with
+`control.py feedback-add`, check existing guidance, then record the decision,
+reason and artifact with `feedback-decide` as described in WORKFLOW.md. Review
+pending/deferred entries in queue/status; this is a session procedure, not an
+implemented automatic message hook. A warning or quality hold calls for a
+reproducer, cause/repair options and feasibility before a next action or a
+reasoned stop; feedback never clears the underlying quality hold.
 
 1. Establish `practice` or `competition` from the human's instruction or session
    record. Classify the operation as reusable or problem/environment-specific.

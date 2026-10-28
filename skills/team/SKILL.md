@@ -45,6 +45,12 @@ installation and the competition clone are separate directories.
    A local investigation/comparison ends with task-complete and its evidence;
    it does not need a deployment or the integration owner's reservation.
 
+Record each new human workflow suggestion through `feedback-add`, inspect
+existing coverage, and use `feedback-decide` with its reason/artifact before
+the necessary minimal change. Follow `team/docs/WORKFLOW.md`; queue/status
+expose pending and deferred feedback. Feedback decisions neither adopt source
+nor resolve quality holds, and no automatic Codex message hook is implied.
+
 Use `../prepare-candidate/SKILL.md` and
 `../../team/docs/PIPELINE.md` to keep candidate preparation moving while
 another candidate is measured. The main session owns prioritization and Discord;
