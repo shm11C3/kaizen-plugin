@@ -82,7 +82,18 @@ class MeasurementTests(unittest.TestCase):
         small = [sample(n, 'candidate', 'map[25:16]', 50000) for n in (1500, 1600)]
         self.assertTrue(m.assess(b, small, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)['qualityBlockPromotion'])
         self.assertEqual(m.assess(b, c, 'stable', 'bundle', forbidden=('25',), stabilize_gain_bp=10000)['decision'], 'reject')
-        self.assertTrue(m.assess(b, c, 'stable', 'bundle', stabilize_gain_bp=10000)['qualityBlockPromotion'])
+        # A new type beyond the count tolerance also stabilizes at a multi-fold gain.
+        self.assertEqual(m.assess(b, c, 'stable', 'bundle', stabilize_gain_bp=10000)['stabilizationRequired'], {'25': 'rate', '26': 'rate'})
+
+    def test_multifold_gain_with_a_new_error_type_promotes_with_stabilization(self):
+        # Practice T-0001 retest: baseline 776/1007 without errors, candidate 3028 with error25x13.
+        b = [sample(n, 'stable', 'none', 17000) for n in (776, 1007)]
+        c = [sample(n, 'candidate', 'map[25:13]', 50000) for n in (3028, 3100)]
+        self.assertEqual(m.assess(b, c[:1], 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)['nextAction'], 'remeasure')
+        result = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)
+        self.assertEqual(result['decision'], 'promote')
+        self.assertEqual(result['stabilizationRequired'], {'25': 'rate'})
+        self.assertTrue(m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
 
     def test_unknown_errors_are_not_zero(self):
         self.assertIsNone(m.error_counts('unparsed warnings'))

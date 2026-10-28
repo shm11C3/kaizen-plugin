@@ -71,7 +71,11 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True, tolera
     if require_denominators and new_kinds:
         tolerated = tolerated_new_errors(candidate, c, new_kinds, tolerate)
         if tolerated is None:
-            return {'status': 'unknown', 'reason': 'a new error type occurred; investigate'}
+            # increasedKinds lets a multi-fold gain (STABILIZE_GAIN_BP) adopt with stabilization:
+            # practice T-0001 retest scored 3028 against 776/1007 with 13 owner/chairs timeouts
+            # (error25) that the fresh baseline happened not to show.
+            return {'status': 'unknown', 'reason': 'a new error type occurred; investigate',
+                    'increasedKinds': sorted(new_kinds)}
     # A higher request volume can increase counts; compare only known denominators.
     if not all(isinstance(s.get('requests'), int) and not isinstance(s['requests'], bool)
                and s['requests'] > 0 for s in baseline + candidate):
