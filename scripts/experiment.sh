@@ -168,6 +168,13 @@ EOF
       git -C "$KAIZEN_PROJECT" update-ref "refs/heads/$STABLE_BRANCH" "$head" "$mainrev" || die "stable branch $STABLE_BRANCH moved while recording; resolve by hand"
       git -C "$KAIZEN_PROJECT" switch -q "$STABLE_BRANCH"
       state_set STABLE_REV "$head"
+      # The benchmark initializes only the measured host, so hosts it never reached
+      # still hold the old schema (practice: T-0001's indexes reached isu14a only and
+      # the next recovery failed the bundle check). Restore every resource host from
+      # the new stable before its bundle is captured.
+      if [ -n "$RECOVERY_CMD" ]; then
+        for host in $RESOURCE_HOSTS; do remote "$host" "$RECOVERY_CMD" || die "restoring $host from the adopted stable failed"; done
+      fi
       capture_bundle >/dev/null
       state_set REVERT_PENDING 0
       mkdir -p "$KAIZEN_DIR/baseline/$head"
