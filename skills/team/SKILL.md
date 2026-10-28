@@ -70,6 +70,11 @@ returns (NEEDS_MEASUREMENT with a reason starting `integrator:`) goes back to
 its owner: task-resume, rebase on the current main or fix the contract issue,
 then task-ready again with the integrated SHA.
 
+Submit one mechanism per candidate (a constant and a schema change are two).
+To split or replace your own READY candidate before integration starts, run
+`task-withdraw` (READY back to CLAIMED) and submit the new SHA with task-ready;
+it is refused while the integration owner holds the environment for that task.
+
 Run shared target actions with:
 
 ```bash

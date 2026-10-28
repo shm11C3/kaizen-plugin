@@ -299,6 +299,17 @@ def dispatch(db, args):
                            (args.base, args.sha, args.review, args.reason, now(), row['id']))
                 db.execute("UPDATE quality_holds SET state='RETEST_PENDING',repair_sha=?,repair_submitted_at=? WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
                            (args.sha, now(), row['id']))
+            elif command == 'task-withdraw':
+                if row['status'] != 'READY':
+                    raise ValueError('only READY candidates may be withdrawn; measured results are finished by the integrator')
+                env = reservation(db)
+                if env and env['owner'] != args.agent and env['purpose'] == public_task(row)['id']:
+                    raise ValueError('integration of this candidate is in progress; ask ' + env['owner'] + ' to finish or release it first')
+                # The repair stays unsubmitted until the next task-ready names a new SHA.
+                db.execute("UPDATE quality_holds SET state='OPEN',repair_sha=NULL,repair_submitted_at=NULL "
+                           "WHERE task_id=? AND state='RETEST_PENDING'", (row['id'],))
+                db.execute("UPDATE tasks SET status='CLAIMED',reason=?,updated_at=? WHERE id=?",
+                           (args.reason, now(), row['id']))
             elif command == 'task-resume':
                 if row['status'] not in ('NEEDS_MEASUREMENT', 'BLOCKED'):
                     raise ValueError('only measurement/investigation or blocked work may be resumed')
@@ -383,7 +394,7 @@ def parser():
     claim.add_argument('--agent', required=True)
     claim.add_argument('--id')
     claim.add_argument('--ready-limit', type=int, default=2)
-    for name in ('task-ready', 'task-release', 'task-handoff', 'task-finish', 'task-resume', 'task-complete', 'task-quality-hold'):
+    for name in ('task-ready', 'task-withdraw', 'task-release', 'task-handoff', 'task-finish', 'task-resume', 'task-complete', 'task-quality-hold'):
         c = commands.add_parser(name)
         c.add_argument('--id', required=True)
         c.add_argument('--agent', required=True)

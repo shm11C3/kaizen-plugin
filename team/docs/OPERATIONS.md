@@ -139,6 +139,8 @@ python3 "$K/scripts/team/control.py" env-release --agent "$KAIZEN_SESSION" --tok
 [並列検証と品質保留](PARALLEL_QUALITY.md)に従う。共通のタスク台帳を維持し、
 保留の元SHA・原因・修正・公式再計測をつなげて記録する。
 
+提出後に候補を分ける・差し替える必要が出たら、統合が始まる前に提出者が `task-withdraw --id T-0001 --agent SESSION --reason '理由'` でREADYからCLAIMEDへ戻し、新しいSHAで `task-ready` し直す。統合担当がその候補IDで占有中なら拒否されるので、先に統合担当へ伝える。仕組みの違う変更（定数とスキーマ等）は最初から別候補にする。
+
 計測不足や原因未解明のエラーは `task-finish --result NEEDS_MEASUREMENT`。元の担当が `task-resume --id T-0001 --agent SESSION --reason '調査を再開'` してCLAIMEDへ戻し、追加検証・再提出を行う。人間判断待ちは `--result NEEDS_HUMAN --question '判断してほしい選択'` とし、reasonに根拠・選択肢・推奨を記す。
 
 integratorは人間判断対象をmanifest.review=humanに設定する。採用時は `experiment record --human-decision ACTUAL_REF '理由'` とtask-finishの両方に実際の参照を記録する。質が不明な計測や正しさの問題は、この参照でも免除しない。

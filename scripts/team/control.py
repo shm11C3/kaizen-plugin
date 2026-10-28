@@ -2,6 +2,7 @@
 """Call the central ledger through AWS SSM without inbound SSH or shared keys."""
 import argparse
 import json
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -9,6 +10,29 @@ import sys
 import time
 
 from environments import environment_name
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def host_config_path(name=None, explicit=None):
+    """Resolve --env NAME to one fixed per-PC place so every session passes the same host config."""
+    if explicit:
+        return Path(explicit)
+    name = name or 'competition'
+    if not all(part.isalnum() or part in '-_.' for part in name) or name.startswith('.'):
+        raise ValueError('environment name must be letters/digits/-_.')
+    bundled = ROOT / 'team/environments' / name / 'control-host.json'
+    if bundled.exists():
+        return bundled
+    local = Path(os.environ.get('KAIZEN_CONFIG_DIR', Path.home() / '.config/kaizen')) / name / 'control-host.json'
+    if not local.exists():
+        raise ValueError('no host config for environment ' + name + '; save the shared JSON as ' + str(local))
+    return local
+
+
+def environment_label(config, path):
+    return config.get('name') or Path(path).parent.name
 
 
 def remote_command(config, command, arguments):
@@ -38,12 +62,16 @@ def remote_command(config, command, arguments):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--host-config', default=str(Path(__file__).resolve().parents[2] / 'team/environments/competition/control-host.json'))
+    where = p.add_mutually_exclusive_group()
+    where.add_argument('--host-config', help='explicit host config path')
+    where.add_argument('--env', help='environment name: team/environments/NAME or ~/.config/kaizen/NAME/control-host.json')
     p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, or result COMMAND_ID')
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:
-        config = json.loads(Path(args.host_config).read_text())
+        args.host_config = host_config_path(args.env, args.host_config)
+        config = json.loads(args.host_config.read_text())
+        print('environment: ' + environment_label(config, args.host_config), file=sys.stderr, flush=True)
         base = ['aws', '--region', config['region'], '--no-cli-pager']
 
         def aws(*arguments):

@@ -1,0 +1,21 @@
+{
+  "name": "isu14-practice-YYYYMMDD",
+  "account_id": "AWS_ACCOUNT_ID",
+  "region": "ap-northeast-1",
+  "instance_id": "i-CONTROL_HOST",
+  "repository": "OWNER/PRACTICE_REPOSITORY",
+  "remote_plugin_root": "/srv/isucon/isu14-practice-YYYYMMDD/plugin",
+  "state_db": "/srv/isucon/isu14-practice-YYYYMMDD/state/team.sqlite3",
+  "target_config": "/srv/isucon/isu14-practice-YYYYMMDD/state/target.json",
+  "discord": {
+    "guild_id": "SERVER_SNOWFLAKE",
+    "channels": {
+      "ops": "CHANNEL_SNOWFLAKE",
+      "discoveries": "CHANNEL_SNOWFLAKE",
+      "tasks": "CHANNEL_SNOWFLAKE",
+      "benchmarks": "CHANNEL_SNOWFLAKE",
+      "decisions": "CHANNEL_SNOWFLAKE"
+    },
+    "post_prefix": "[SESSION_ID]"
+  }
+}
