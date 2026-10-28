@@ -25,20 +25,15 @@ contains source and minimal bootstrap files, not these rules or management tools
   ledger, tests) rather than manual ceremony. The measured result within the
   time budget comes first. Delegate bounded work to native subagents when it
   keeps the main session coordinating.
-- Weigh refactoring that makes the next improvements cheaper by the same score
-  impact as any task. Use Issues/PRs when they coordinate faster than chat.
 - A passing measured gain is not dropped for a rare new non-correctness error:
   adopt it and fix the error as the next related task (rule v2
   `NEW_ERROR_TOLERANCE`). Hold only for correctness failures, rising known
   error rates, or errors beyond the tolerance.
-- Record human feedback and lessons learned in tasks or validations as they
-  appear, in the shared ledger's feedback registry, and decide whether to
-  reflect each in the plugin source (or in knowledge when problem/environment
-  specific). Deciding how to generalize is the agent's job. Balance it against
-  the contest: in practice/validation reflect generously because accuracy of
-  the tooling is the goal; in competition score progress comes first, so record
-  and defer anything that does not pay back within the remaining time. Open
-  items are visible, not a gate.
+- Lessons learned while working a task or a validation get the same scope check
+  as human workflow advice (`skills/improve-workflow/SKILL.md`). Reflect
+  generously in practice/validation, where tooling accuracy is the goal; in
+  competition score progress comes first, so defer what does not pay back in
+  the remaining time. Open items are visible, never a gate.
 - Follow `team/docs/REGULATIONS.md` for per-operation automated/manual methods
   and isolated sandbox validation. Official target integration stays serial.
 - Use `skills/improve-workflow/SKILL.md` for recurring work: practice refines
