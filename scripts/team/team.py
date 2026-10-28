@@ -358,6 +358,13 @@ def dispatch(db, args):
                            (now(), row['id']))
             db.execute('UPDATE tasks SET status=?,reason=?,human_decision=?,human_question=?,updated_at=? WHERE id=?',
                        (args.result, args.reason, args.human_decision, args.question, now(), row['id']))
+        elif command == 'task-priority':
+            # Practice R2: the DB-bound host made the 3-host split the next thing to measure,
+            # but the only way to move it ahead was withdrawing three other READY candidates.
+            if row['status'] in ('ACCEPTED', 'REJECTED', 'DONE'):
+                raise ValueError('finished tasks keep their priority')
+            db.execute('UPDATE tasks SET priority=?,reason=?,updated_at=? WHERE id=?',
+                       (args.priority, args.reason, now(), row['id']))
         else:
             if row['owner'] != args.agent:
                 raise ValueError('task belongs to another session')
@@ -498,7 +505,7 @@ def parser():
     claim.add_argument('--agent', required=True)
     claim.add_argument('--id')
     claim.add_argument('--ready-limit', type=int, default=2)
-    for name in ('task-ready', 'task-withdraw', 'task-release', 'task-handoff', 'task-finish', 'task-resume', 'task-complete', 'task-quality-hold'):
+    for name in ('task-ready', 'task-withdraw', 'task-release', 'task-handoff', 'task-finish', 'task-resume', 'task-complete', 'task-quality-hold', 'task-priority'):
         c = commands.add_parser(name)
         c.add_argument('--id', required=True)
         c.add_argument('--agent', required=True)
@@ -509,6 +516,8 @@ def parser():
             c.add_argument('--review', required=True, choices=('auto', 'human'))
         if name == 'task-handoff':
             c.add_argument('--to', required=True)
+        if name == 'task-priority':
+            c.add_argument('--priority', type=int, required=True, choices=range(101), metavar='0..100')
         if name == 'task-quality-hold':
             c.add_argument('--token', required=True)
             c.add_argument('--evidence', required=True)
