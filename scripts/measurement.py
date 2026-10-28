@@ -230,7 +230,15 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
     else:
         q = quality(baseline, candidate, forbidden, tolerate=tolerate)
         blocked = q['status'] != 'pass'
-        if blocked and q.get('increasedKinds') and stabilize_gain_bp and len(b) >= minimum and len(c) >= minimum:
+        sample_again = False
+        if (blocked and q.get('increasedKinds') and stabilize_gain_bp and len(b) >= minimum and len(c) < minimum
+                and statistics.median(b) > 0 and c[0] > b[-1]
+                and (c[0] - statistics.median(b)) * 10000 // statistics.median(b) >= stabilize_gain_bp):
+            # Practice T-0001: one 3376 sample against ~992 stopped at "investigate" because the
+            # tolerance needs the minimum samples. Take them instead of holding the gain.
+            q = dict(q, reason=q['reason'] + '; multi-fold gain: sample again before deciding (STABILIZE_GAIN_BP)')
+            sample_again = True
+        elif blocked and q.get('increasedKinds') and stabilize_gain_bp and len(b) >= minimum and len(c) >= minimum:
             # A multi-fold gain raises load-driven freshness errors with it. When every
             # sample passed and no correctness type occurred, holding that gain stops
             # later candidates from stacking on it; adopt and stabilize instead.
@@ -241,7 +249,9 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
                          toleratedNewErrors={**q.get('toleratedNewErrors', {}),
                                              **{k: 'rate' for k in q['increasedKinds']}})
                 blocked = False
-        if q['status'] == 'failed':
+        if sample_again:
+            decision, reason, action = 'inconclusive', q['reason'], 'remeasure'
+        elif q['status'] == 'failed':
             decision, reason, action = 'reject', q['reason'], 'reject'
         elif blocked:
             decision, reason, action = 'inconclusive', q['reason'], 'investigate'

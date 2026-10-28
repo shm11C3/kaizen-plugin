@@ -74,6 +74,10 @@ class MeasurementTests(unittest.TestCase):
         result = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)
         self.assertEqual(result['decision'], 'promote')
         self.assertEqual(result['stabilizationRequired'], {'25': 'rate', '26': 1})
+        # One multi-fold sample asks for the second instead of stopping at "investigate".
+        one = m.assess(b, c[:1], 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)
+        self.assertEqual((one['decision'], one['nextAction']), ('inconclusive', 'remeasure'))
+        self.assertEqual(m.assess(b, c[:1], 'stable', 'bundle', tolerate=(2, 1))['nextAction'], 'investigate')
         # Below the gain, with a correctness type, or with an untolerated new type it still holds.
         small = [sample(n, 'candidate', 'map[25:16]', 50000) for n in (1500, 1600)]
         self.assertTrue(m.assess(b, small, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)['qualityBlockPromotion'])
