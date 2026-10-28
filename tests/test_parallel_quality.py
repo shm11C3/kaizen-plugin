@@ -223,6 +223,23 @@ class ParallelQualityTests(unittest.TestCase):
         self.assertEqual(followup['related_task'], task)
         self.assertEqual(self.cli('task-list')[0]['status'], 'ACCEPTED')
 
+    def test_failed_retest_supersedes_the_earlier_hold(self):
+        token = self.acquire('competition', 'integrator')
+        task = self.cli('task-create', '--title', 'index', '--evidence', 'e')['id']
+        self.cli('task-claim', '--id', task, '--agent', 'worker')
+        self.cli('task-ready', '--id', task, '--agent', 'worker', '--base', '1'*40, '--sha', '2'*40,
+                 '--review', 'auto', '--reason', 'candidate')
+        self.cli('task-quality-hold', '--id', task, '--agent', 'integrator', '--token', token,
+                 '--category', 'timeout', '--evidence', 'error25', '--reason', 'first')
+        self.cli('task-resume', '--id', task, '--agent', 'worker', '--reason', 'repair')
+        self.cli('task-ready', '--id', task, '--agent', 'worker', '--base', '1'*40, '--sha', '3'*40,
+                 '--review', 'auto', '--reason', 'repaired')
+        self.cli('task-quality-hold', '--id', task, '--agent', 'integrator', '--token', token,
+                 '--category', 'unknown', '--evidence', 'error25 again', '--reason', 'retest failed')
+        holds = sorted(self.cli('status')['quality_holds'], key=lambda h: h['id'])
+        self.assertEqual([(h['state'], h['source_sha'][:1]) for h in holds], [('SUPERSEDED', '2'), ('OPEN', '3')])
+        self.assertIn('#' + str(holds[1]['id']), holds[0]['retest_record'])
+
     def test_stacking_on_a_held_source_warns(self):
         # Practice: T-0007/T-0009 were built on T-0001's source while it sat in a quality hold.
         token = self.acquire('competition', 'integrator')

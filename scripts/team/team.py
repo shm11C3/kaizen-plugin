@@ -322,9 +322,15 @@ def dispatch(db, args):
                 raise ValueError('quality holds apply to submitted candidates; accepted history stays unchanged')
             if not args.evidence.strip() or not args.reason.strip():
                 raise ValueError('quality hold requires the observed evidence and investigation reason')
-            db.execute('INSERT INTO quality_holds(task_id,base_sha,source_sha,environment,category,evidence,reason,opened_at) '
-                       'VALUES (?,?,?,?,?,?,?,?)', (row['id'], row['base_sha'], row['source_sha'],
-                       args.environment, args.category, args.evidence, args.reason, now()))
+            cur = db.execute('INSERT INTO quality_holds(task_id,base_sha,source_sha,environment,category,evidence,reason,opened_at) '
+                             'VALUES (?,?,?,?,?,?,?,?)', (row['id'], row['base_sha'], row['source_sha'],
+                             args.environment, args.category, args.evidence, args.reason, now()))
+            # The retest of an earlier hold's repair just failed and opened this hold on the
+            # repair itself (practice: #2 stayed RETEST_PENDING beside #3). Keep one open line.
+            db.execute("UPDATE quality_holds SET state='SUPERSEDED',tested_sha=?,retest_record=?,closed_at=? "
+                       "WHERE task_id=? AND state='RETEST_PENDING' AND repair_sha=? AND id<>?",
+                       (row['source_sha'], 'superseded by hold #' + str(cur.lastrowid), now(),
+                        row['id'], row['source_sha'], cur.lastrowid))
             db.execute("UPDATE tasks SET status='NEEDS_MEASUREMENT',reason=?,updated_at=? WHERE id=?",
                        (args.reason, now(), row['id']))
         elif command == 'task-finish':
