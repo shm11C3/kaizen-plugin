@@ -223,6 +223,27 @@ class ParallelQualityTests(unittest.TestCase):
         self.assertEqual(followup['related_task'], task)
         self.assertEqual(self.cli('task-list')[0]['status'], 'ACCEPTED')
 
+    def test_stacking_on_a_held_source_warns(self):
+        # Practice: T-0007/T-0009 were built on T-0001's source while it sat in a quality hold.
+        token = self.acquire('competition', 'integrator')
+        held = self.cli('task-create', '--title', 'index', '--evidence', 'observation')['id']
+        self.cli('task-claim', '--id', held, '--agent', 'worker')
+        self.cli('task-ready', '--id', held, '--agent', 'worker', '--base', '1'*40, '--sha', '2'*40,
+                 '--review', 'auto', '--reason', 'candidate')
+        self.cli('task-quality-hold', '--id', held, '--agent', 'integrator', '--token', token,
+                 '--category', 'timeout', '--evidence', 'error25 rose', '--reason', 'freshness')
+        stacked = self.cli('task-create', '--title', 'nearby', '--evidence', 'e')['id']
+        self.cli('task-claim', '--id', stacked, '--agent', 'worker')
+        result = self.cli('task-ready', '--id', stacked, '--agent', 'worker', '--base', '2'*40, '--sha', '3'*40,
+                          '--review', 'auto', '--reason', 'stacked')
+        self.assertEqual(result['status'], 'READY')
+        self.assertEqual(len(result['warnings']), 1)
+        self.assertIn(held, result['warnings'][0])
+        free = self.cli('task-create', '--title', 'other', '--evidence', 'e')['id']
+        self.cli('task-claim', '--id', free, '--agent', 'worker')
+        self.assertNotIn('warnings', self.cli('task-ready', '--id', free, '--agent', 'worker', '--base', '1'*40,
+                                              '--sha', '4'*40, '--review', 'auto', '--reason', 'on stable'))
+
     def test_abandoned_quality_work_retains_failure_without_becoming_resolved(self):
         token = self.acquire('competition', 'integrator')
         task = self.cli('task-create', '--title', 'unsafe candidate', '--evidence', 'observation')['id']
