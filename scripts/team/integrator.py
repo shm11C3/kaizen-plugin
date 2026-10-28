@@ -336,7 +336,23 @@ class Integrator:
         rows = [row for row in self.team('task-list') if row['status'] == 'READY' and row.get('base_sha') and row.get('source_sha')]
         rows = [row for row in rows if row.get('review') != 'human' or self.settings['accept_human_review']]
         rows.sort(key=lambda row: (-int(row.get('priority') or 0), int(row['id'][2:])))
-        return rows[0] if rows else None
+        if not rows:
+            return None
+        # Only base..source is composed onto stable, so a candidate stacked on an unadopted
+        # base would be measured without it (practice: T-0002 matching built on T-0001's
+        # indexes ran on the index-less stable and failed CODE=32). Wait for that base.
+        try:
+            self.git('fetch', '--quiet', self.settings['remote'])
+        except StepError:
+            pass
+        stable = self.config.get('stable_branch') or 'main'
+        for row in rows:
+            known = subprocess.run(['git', '-C', str(self.project), 'merge-base', '--is-ancestor', row['base_sha'], stable],
+                                   capture_output=True, text=True)
+            if known.returncode == 0:
+                return row
+            self.ledger('skip', task=row['id'], reason='base ' + row['base_sha'][:7] + ' は ' + stable + ' に未採用。base の採用待ち')
+        return None
 
     # -- the candidate ---------------------------------------------------------------
 
