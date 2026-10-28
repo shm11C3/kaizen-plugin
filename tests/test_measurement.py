@@ -65,6 +65,21 @@ class MeasurementTests(unittest.TestCase):
         self.assertIsNone(m.parse_tolerance('0'))
         self.assertEqual(m.parse_tolerance('2:1'), (2, 1.0))
 
+    def test_multifold_gain_with_rising_known_errors_promotes_with_stabilization(self):
+        # Practice T-0001 index-only: 2946/3245 against ~992 with error25 16/10 and a new 26:1.
+        b = [sample(n, 'stable', e, 17000) for n, e in ((940, 'map[25:3]'), (992, 'none'), (1000, 'none'))]
+        c = [sample(n, 'candidate', e, 50000) for n, e in ((2946, 'map[25:16]'), (3245, 'map[25:10 26:1]'))]
+        held = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1))
+        self.assertTrue(held['qualityBlockPromotion'])
+        result = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)
+        self.assertEqual(result['decision'], 'promote')
+        self.assertEqual(result['stabilizationRequired'], {'25': 'rate', '26': 1})
+        # Below the gain, with a correctness type, or with an untolerated new type it still holds.
+        small = [sample(n, 'candidate', 'map[25:16]', 50000) for n in (1500, 1600)]
+        self.assertTrue(m.assess(b, small, 'stable', 'bundle', tolerate=(2, 1), stabilize_gain_bp=10000)['qualityBlockPromotion'])
+        self.assertEqual(m.assess(b, c, 'stable', 'bundle', forbidden=('25',), stabilize_gain_bp=10000)['decision'], 'reject')
+        self.assertTrue(m.assess(b, c, 'stable', 'bundle', stabilize_gain_bp=10000)['qualityBlockPromotion'])
+
     def test_unknown_errors_are_not_zero(self):
         self.assertIsNone(m.error_counts('unparsed warnings'))
         self.assertIsNone(m.error_counts(''))
