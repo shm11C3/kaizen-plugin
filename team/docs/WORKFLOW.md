@@ -50,6 +50,10 @@ python3 "$K/scripts/team/control.py" feedback-list --pending
 
 ## 時間を回収できる作業を選ぶ
 
+練習・本番とも、検証の効率と素早い実戦feedbackを優先する。plugin変更は変更した契約と
+最低限の稼働品質を確認して速く配布し、必要性のない全体テストや完璧さを待たない。
+具体的な失敗・影響範囲がある場合に確認を広げる。アプリの正しさ・環境排他は維持する。
+
 コマンド反復・ログ集計は小さなscript、判断や手動手順を含む作業はSkillにする。
 既存の道具を再利用し、新しい管理層や毎回の包括レビューを増やさない。
 候補の反復準備には[prepare-candidate](../../skills/prepare-candidate/SKILL.md)と

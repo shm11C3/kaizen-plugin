@@ -20,8 +20,11 @@ Rules that hold for any agent using this repository against a target:
 - When the human says stop: finish the running script, recover stable unless
   the last decision was promote, record, report.
 
-Codex: there is no hook adapter yet; follow the rules above by hand and run
-`tests/run.sh` after changing a script.
+Codex: there is no hook adapter yet; follow the rules above by hand.
+In practice and competition, prioritize a fast feedback loop. Check the
+changed contract and minimum operating quality; run the full `tests/run.sh`
+only when impact or a concrete failure warrants it. Do not make plugin
+perfection or broad validation a routine release gate.
 
 Prepare or stop sandbox EC2 lanes with `scripts/team/ec2_lanes.py` and
 `team/docs/PARALLEL_QUALITY.md` only at an idle boundary. Keep its operation
@@ -42,8 +45,9 @@ when structural or large; classify human review under `team/POLICY.md`, not by s
 Use the member's GitHub login as the branch prefix; keep session IDs distinct.
 Team procedures, coordination scripts, infrastructure and
 templates belong to this plugin; the competition repository holds source and
-minimal bootstrap guidance only. Run
-`python3 -m unittest discover -s tests -p test_team.py -v` after changing team mechanics.
+minimal bootstrap guidance only. Select focused team tests when changing team
+mechanics; expand only for a concrete risk. Preserve reservation and adoption
+invariants while keeping implementation, validation and rollout fast.
 
 Within each Discord-facing main session, follow `team/docs/PIPELINE.md`.
 Use native subagents when independent preparation can overlap: initially one
