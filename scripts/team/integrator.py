@@ -733,6 +733,15 @@ class Integrator:
             self.team('task-finish', '--id', tid, '--agent', self.agent, '--result', 'ACCEPTED', '--reason', reason,
                       '--record', str(record_path), '--tested-sha', candidate)
             result, advice = 'ACCEPTED', '採用。進行中の作業は新しい ' + self.config['stable_branch'] + ' に rebase'
+            stabilize = decision.get('stabilizationRequired')
+            if stabilize:
+                # The gain is kept; the rare new error types become the next task instead of a hold.
+                kinds = ','.join(f'{kind}x{n}' for kind, n in sorted(stabilize.items()))
+                follow = self.team('task-create', '--title', tid + ' 採用後の安定化: 新しいエラー種別 ' + kinds,
+                                   '--evidence', str(record_path.with_name('decision.json')), '--priority', '80',
+                                   '--hypothesis', 'stabilize-' + tid, '--related', tid)
+                self.ledger('stabilize', task=tid, experiment=experiment, follow=follow['id'], errors=kinds)
+                advice += '。新しいエラー種別 ' + kinds + ' の安定化を ' + follow['id'] + ' として起票'
             if self.settings['push']:
                 # The adoption is recorded; a push failure is an operations problem, not a measurement.
                 try:

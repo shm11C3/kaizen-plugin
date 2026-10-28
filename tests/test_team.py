@@ -46,6 +46,17 @@ class CoordinationTests(unittest.TestCase):
         self.assertEqual(sum(r.returncode == 0 for r in results), 1)
         self.assertEqual(len(self.call('task-list')), 1)
 
+    def test_related_creation_lists_active_work_around_the_same_task(self):
+        # Practice: T-0006 "index only" duplicated READY T-0001 under another key.
+        first = self.create()
+        sibling = self.call('task-create', '--title', 'Split arm', '--evidence', 'e', '--hypothesis', 'retry-only',
+                            '--related', first)
+        self.assertEqual([t['id'] for t in sibling['possibleDuplicates']], [first])
+        third = self.call('task-create', '--title', 'Index only', '--evidence', 'e', '--hypothesis', 'index-only',
+                          '--related', first)
+        self.assertEqual([t['id'] for t in third['possibleDuplicates']], [first, sibling['id']])
+        self.assertNotIn('possibleDuplicates', self.call('task-create', '--title', 'Unrelated', '--evidence', 'e'))
+
     def test_backlog_redirects_automatic_claims_and_research_can_complete(self):
         for i in range(2):
             task_id = self.create()

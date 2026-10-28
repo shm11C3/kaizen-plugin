@@ -54,7 +54,7 @@ def error_counts(value):
         return None
 
 
-def quality(baseline, candidate, forbidden=(), require_denominators=True):
+def quality(baseline, candidate, forbidden=(), require_denominators=True, tolerate=None):
     b = [error_counts(s.get('errorCounts', s.get('errors'))) for s in baseline]
     c = [error_counts(s.get('errorCounts', s.get('errors'))) for s in candidate]
     if any(row is None for row in b + c):
@@ -66,8 +66,12 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True):
     if not any(c):
         return {'status': 'pass', 'reason': 'candidate samples have no reported errors'}
     kinds = set().union(*b, *c)
-    if require_denominators and set().union(*c) - set().union(*b):
-        return {'status': 'unknown', 'reason': 'a new error type occurred; investigate'}
+    tolerated = {}
+    new_kinds = set().union(*c) - set().union(*b)
+    if require_denominators and new_kinds:
+        tolerated = tolerated_new_errors(candidate, c, new_kinds, tolerate)
+        if tolerated is None:
+            return {'status': 'unknown', 'reason': 'a new error type occurred; investigate'}
     # A higher request volume can increase counts; compare only known denominators.
     if not all(isinstance(s.get('requests'), int) and not isinstance(s['requests'], bool)
                and s['requests'] > 0 for s in baseline + candidate):
@@ -100,13 +104,52 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True):
         if any(n > denominator for n in totals.values()):
             return {'status': 'unknown', 'reason': 'an error count exceeds its request denominator'}
         rates.append({kind: n / denominator for kind, n in totals.items()})
-    increased = [kind for kind in kinds if rates[1][kind] > rates[0][kind]]
-    return {'status': 'unknown' if increased else 'pass',
-            'reason': 'error rate increased; investigate' if increased else 'known error rates did not increase',
-            'baselineRates': rates[0], 'candidateRates': rates[1]}
+    increased = [kind for kind in kinds if kind not in tolerated and rates[1][kind] > rates[0][kind]]
+    result = {'status': 'unknown' if increased else 'pass',
+              'reason': 'error rate increased; investigate' if increased else 'known error rates did not increase',
+              'baselineRates': rates[0], 'candidateRates': rates[1]}
+    if tolerated and not increased:
+        result['reason'] = 'known error rates did not increase; rare new error types need a stabilization task'
+        result['toleratedNewErrors'] = tolerated
+    return result
 
 
-def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=60, forbidden=(), rule='v2'):
+def tolerated_new_errors(samples, counts, new_kinds, tolerate):
+    """Counts of new error types small enough to adopt with a stabilization task, else None.
+
+    A new non-correctness error type in a passing run usually points at a fixable
+    edge (a slow endpoint answering stale data), and holding a large measured gain
+    for it costs more contest time than adopting and fixing it next. It is only
+    tolerated when request denominators exist and every new type stays within
+    both the absolute count and the per-10k-requests rate; anything larger is a
+    regression to investigate before adoption.
+    """
+    if not tolerate:
+        return None
+    max_count, max_per_10k = tolerate
+    if not all(isinstance(s.get('requests'), int) and not isinstance(s['requests'], bool)
+               and s['requests'] > 0 for s in samples):
+        return None
+    denominator = sum(s['requests'] for s in samples)
+    totals = {kind: sum(row.get(kind, 0) for row in counts) for kind in new_kinds}
+    if any(n > max_count or n * 10000 > max_per_10k * denominator for n in totals.values()):
+        return None
+    return totals
+
+
+def parse_tolerance(value):
+    """'COUNT:PER_10K' (e.g. '2:1'); empty or '0' disables tolerance."""
+    if not value or value.strip() in ('0', 'off', 'none'):
+        return None
+    count, rate = value.split(':', 1)
+    count, rate = int(count), float(rate)
+    if count < 0 or rate < 0:
+        raise ValueError('new error tolerance must be nonnegative')
+    return (count, rate) if count and rate else None
+
+
+def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=60, forbidden=(), rule='v2',
+           tolerate=None):
     if minimum < 1 or max_age < 1 or min_bp < 0:
         raise ValueError('sample count/age must be positive and improvement threshold nonnegative')
     if rule not in ('v2', 'v3'):
@@ -182,7 +225,7 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
             else:
                 decision, reason, action = 'inconclusive', f'median +{bp} bp but samples overlap the baseline band; remeasure within the budget or move on', 'remeasure'
     else:
-        q = quality(baseline, candidate, forbidden)
+        q = quality(baseline, candidate, forbidden, tolerate=tolerate)
         blocked = q['status'] != 'pass'
         if q['status'] == 'failed':
             decision, reason, action = 'reject', q['reason'], 'reject'
@@ -199,12 +242,17 @@ def assess(baseline, candidate, stable, bundle, min_bp=300, minimum=2, max_age=6
                 decision, reason, action = 'inconclusive', 'improvement/noise not separated; remeasure within the physical-run budget', 'remeasure'
             else:
                 decision, reason, action = 'promote', f'median improved {bp} bp and worst candidate {c[0]} > best baseline {b[-1]}', 'promote'
+    stabilize = q.get('toleratedNewErrors') if decision == 'promote' else None
+    if stabilize:
+        reason += '; adopt and open a related stabilization task for new error types ' + ','.join(
+            f'{kind}x{n}' for kind, n in sorted(stabilize.items()))
     if ignored:
         reason += f' ({ignored} observation samples were left out)'
     spread_bp = int((b[-1] - b[0]) * 10000 // statistics.median(b)) if len(b) >= 2 and statistics.median(b) > 0 else None
     return {'ruleVersion': 'plugin-rule-' + rule, 'decision': decision, 'reason': reason, 'nextAction': action,
             'baselineSpreadBasisPoints': spread_bp, 'singleSample': len(c) == 1,
-            'quality': q, 'qualityBlockPromotion': blocked, 'minimumImprovementBasisPoints': min_bp,
+            'quality': q, 'qualityBlockPromotion': blocked, 'stabilizationRequired': stabilize or None,
+            'minimumImprovementBasisPoints': min_bp,
             'minimumSamples': minimum, 'improvementBasisPoints': bp, 'baselineScores': b, 'candidateScores': c,
             'baselineRevisions': sorted({s.get('deployedRevision', '') for s in baseline}),
             'candidateRevisions': sorted({s.get('deployedRevision', '') for s in candidate}),
@@ -247,6 +295,7 @@ def main():
     sub = p.add_subparsers(dest='action', required=True)
     e = sub.add_parser('evaluate')
     e.add_argument('--rule', default='v2', choices=('v2', 'v3'))
+    e.add_argument('--tolerate-new-errors', default='', help="COUNT:PER_10K, e.g. '2:1'; empty disables")
     e.add_argument('out'); e.add_argument('stable'); e.add_argument('bundle')
     e.add_argument('min_bp', type=int); e.add_argument('minimum', type=int); e.add_argument('max_age', type=int)
     e.add_argument('forbidden'); e.add_argument('samples', nargs=argparse.REMAINDER)
@@ -262,7 +311,8 @@ def main():
         def load(paths):
             return [json.loads(Path(path).read_text()) for path in paths if Path(path).is_file()]
         result = assess(load(a.samples[:split]), load(a.samples[split + 1:]), a.stable, a.bundle,
-                        a.min_bp, a.minimum, a.max_age, tuple(filter(None, a.forbidden.split(','))), a.rule)
+                        a.min_bp, a.minimum, a.max_age, tuple(filter(None, a.forbidden.split(','))), a.rule,
+                        parse_tolerance(a.tolerate_new_errors))
         Path(a.out).write_text(json.dumps(result, indent=2) + '\n')
     elif a.action == 'reserve':
         result = reserve(Path(a.path), a.experiment or None, a.label, a.revision,

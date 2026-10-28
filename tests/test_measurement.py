@@ -42,6 +42,29 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(m.quality(b, [sample(3000, 'c', 'map[30:1]', 1000)])['status'], 'unknown')
         self.assertEqual(m.quality(b, c, ('25',))['status'], 'failed')
 
+    def test_rare_new_error_type_promotes_with_stabilization(self):
+        b = [sample(n, 'stable', 'map[25:3]', 17000) for n in (940, 1000)]
+        c = [sample(n, 'candidate', e, 17000) for n, e in ((1228, 'map[25:2]'), (1285, 'map[25:1 26:1]'))]
+        result = m.assess(b, c, 'stable', 'bundle', tolerate=(2, 1))
+        self.assertEqual(result['decision'], 'promote')
+        self.assertFalse(result['qualityBlockPromotion'])
+        self.assertEqual(result['stabilizationRequired'], {'26': 1})
+        self.assertIn('stabilization task', result['reason'])
+        # Disabled, too many, too frequent, a correctness type or no denominators still hold.
+        self.assertTrue(m.assess(b, c, 'stable', 'bundle')['qualityBlockPromotion'])
+        many = [sample(n, 'candidate', 'map[26:2]', 17000) for n in (1228, 1285)]
+        self.assertTrue(m.assess(b, many, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
+        dense = [sample(n, 'candidate', 'map[26:1]', 1000) for n in (1228, 1285)]
+        self.assertTrue(m.assess(b, dense, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
+        self.assertEqual(m.assess(b, c, 'stable', 'bundle', forbidden=('26',), tolerate=(2, 1))['decision'], 'reject')
+        bare = [sample(n, 'candidate', e) for n, e in ((1228, 'map[25:2]'), (1285, 'map[26:1]'))]
+        self.assertTrue(m.assess(b, bare, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
+        # A known type whose rate rises is still a regression, tolerated or not.
+        worse = [sample(n, 'candidate', 'map[25:30 26:1]', 17000) for n in (1228, 1285)]
+        self.assertTrue(m.assess(b, worse, 'stable', 'bundle', tolerate=(2, 1))['qualityBlockPromotion'])
+        self.assertIsNone(m.parse_tolerance('0'))
+        self.assertEqual(m.parse_tolerance('2:1'), (2, 1.0))
+
     def test_unknown_errors_are_not_zero(self):
         self.assertIsNone(m.error_counts('unparsed warnings'))
         self.assertIsNone(m.error_counts(''))

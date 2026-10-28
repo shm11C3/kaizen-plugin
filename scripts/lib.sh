@@ -79,6 +79,9 @@ load_config() {
   : "${STABLE_BRANCH:=main}" "${OVERLAY_DIR:=etc}" "${OVERLAY_SERVICES:=}" "${VERIFY_EXCLUDE_REGEX:=\.gz$}"
   : "${MIN_IMPROVEMENT_BP:=300}" "${MAX_BENCH_PER_EXP:=0}" "${MAX_EXP_MINUTES:=30}" "${MAX_EXP_PER_HOUR:=0}"
   : "${MIN_SAMPLES:=2}" "${BASELINE_MAX_AGE_MINUTES:=60}" "${CORRECTNESS_ERROR_TYPES:=}"
+  # v2: a passing gain with a rare new non-correctness error type is adopted with a
+  # stabilization task instead of held. COUNT:PER_10K_REQUESTS per type; 0 disables.
+  : "${NEW_ERROR_TOLERANCE:=2:1}"
   # v2: practice, two samples per side, error rates need request denominators.
   # v3: contest (opt-in), sequential by effect size against the baseline spread.
   : "${EVALUATION_RULE:=v2}" "${REQUEST_COUNT_CMD:=}" "${NGINX_HOST:=${APP_HOSTS%% *}}"

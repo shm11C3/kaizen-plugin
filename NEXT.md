@@ -37,6 +37,16 @@ pluginは差し替えておらず、版も上げていない（版を上げる�
 
 - `watch.py`: 自分のタスクの変化（差し戻し・終了・引継ぎ）を読み取り専用`task-list`で待ち、最初の変化で終了する。
   練習でAgent1がT-0001をNEEDS_MEASUREMENTで返したが、待機中のAgent2は気づかず止まっていた。実台帳でSSM経由の取得を確認。
+- 採否ルールv2の`NEW_ERROR_TOLERANCE`（既定`2:1`）: 全サンプルpassで得点が閾値を超え、基準になかった
+  非致命のエラー種別が「件数2以下かつ1万リクエストあたり1件以下」なら保留せず採用し、
+  `stabilizationRequired`を付ける。統合Agentは関連の安定化タスクを自動で起票する。既知種別の率上昇、
+  分母なし、正しさ種別、上限超えは従来どおり保留。（人間の指摘「安定化の余地があるなら採用する価値は
+  あるのでは」。T-0004 retry単独は1228/1285・+26.7%だったが、error26が1件出て保留になった）
+- `task-create --related`: 同じタスクの周辺にある進行中タスクを`possibleDuplicates`で返す。仮説キーは
+  自由記述なので、T-0006「index単独」がREADYのT-0001と重複しても検出できなかった。
+- POLICY: 連絡は速く・方向は入念・修正は速く・検証は仕組みへ、refactorも同じ基準で評価、
+  上記の採用方針、FBと気づきの記録と反映（練習では厚めに、本番は得点優先で、未反映は可視化するがgateにしない）。
+  FBの記録先はAgent1が実装中の共有台帳registry（T-0005）に合わせる。
 
 - teamスキル: 1〜2分ごとに環境の全Discordチャンネルを読む（Subagent可）、control.pyはstdoutだけを解析する（stderrは`SSM Command ID:`と`environment:`）。（指摘14: Agent2はAgent1の返答4件を約10分見逃し、監視scriptはstderrの行をJSONとして読もうとして毎回失敗していた）
 - 未対応（観察）: 練習環境の準備をAgent1が手書きscript 6本（制御ホストの専用dir、plugin/repoのclone、deploy key、ssh_config、control-host.json、target.json、env-acquire）で行った。生成したcontrol-host.jsonには`name`も`discord`もない。環境名・repo・host一覧から一式を出す`practice-init`があれば、state_dbとtarget_configの組のずれと、targetの`environment: competition`による取り違えを防げる。また占有tokenがローカルのscriptファイルに平文で残った。
