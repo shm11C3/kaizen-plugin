@@ -141,14 +141,33 @@ def main():
             else:
                 result = json.loads(response.stdout)
                 if result['Status'] in ('Success', 'Failed', 'Cancelled', 'TimedOut', 'Undeliverable', 'Terminated'):
-                    sys.stdout.write(result.get('StandardOutputContent', ''))
+                    stdout = result.get('StandardOutputContent', '')
+                    sys.stdout.write(stdout)
                     sys.stderr.write(result.get('StandardErrorContent', ''))
+                    truncated = output_truncated(stdout, result.get('StandardOutputUrl', ''))
+                    if truncated:
+                        print(truncated, file=sys.stderr)
+                        return 3
                     return 0 if result['Status'] == 'Success' else 2
             time.sleep(1)
         raise ValueError('result is still pending; use result ' + command_id + '; do not blindly repeat a mutation')
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         print(str(error), file=sys.stderr)
         return 2
+
+
+# get-command-invocation returns at most 24,000 characters of standard output
+# and drops the rest without an error, so a large ledger answer arrives as cut
+# JSON (R3: status and the full task-list broke this way).
+SSM_OUTPUT_LIMIT = 24000
+
+
+def output_truncated(stdout, output_url=''):
+    if len(stdout) >= SSM_OUTPUT_LIMIT or output_url:
+        return ('output was cut at the SSM limit of %d characters; read less at once: '
+                'task-list --summary --limit N --after-id T-XXXX, or task-get --id T-XXXX'
+                % SSM_OUTPUT_LIMIT)
+    return ''
 
 
 if __name__ == '__main__':

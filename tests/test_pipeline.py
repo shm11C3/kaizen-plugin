@@ -11,7 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts/team'))
-from control import remote_command
+from control import output_truncated, remote_command
 from pipeline import summarize
 
 
@@ -148,6 +148,11 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(self.call('pipeline-status', '--agent', 'worker')['tasks'], [])
         rows = self.call('pipeline-status', '--agent', 'next')['tasks']
         self.assertEqual([s['actor'] for s in rows[0]['stageObservations']], ['worker', 'next'])
+
+    def test_control_reports_output_cut_at_the_ssm_limit(self):
+        self.assertEqual(output_truncated('{"ok": true}'), '')
+        self.assertIn('task-get', output_truncated('x' * 24000))
+        self.assertIn('SSM limit', output_truncated('{}', 's3://bucket/key'))
 
     def test_control_client_passes_through_without_special_dispatch(self):
         config = {'remote_plugin_root': '/srv/plugin', 'state_db': '/srv/state/team.sqlite3',
