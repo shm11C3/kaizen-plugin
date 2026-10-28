@@ -78,17 +78,36 @@ def inherited_holds(db, proof, candidate):
 SOFT_CATEGORIES = ('warning', 'timeout', 'unknown')
 
 
-def guard_holds(db, proof, candidate, stabilized=False):
+def hold_stable(hold):
+    """The stable revision the held failure was measured on, from its decision evidence."""
+    try:
+        manifest = json.loads((Path(hold['evidence']).parent / 'manifest.json').read_text())
+    except (OSError, TypeError, ValueError):
+        return None
+    return manifest.get('stableRevision')
+
+
+def guard_holds(db, proof, candidate, stabilized=False, stable=None):
     """stabilized: the fixed rule adopted this measurement with a stabilization task.
 
     A soft (non-correctness) hold is then carried by that task instead of requiring
     changed repair content: practice T-0004 was judged promote (+35%, worst sample
     above the best baseline) twice and blocked twice on the same-content check.
+
+    stable: the stable revision this candidate was integrated on. The same content
+    may retest a hold once stable has moved since the failing run: practice R2
+    T-0004 failed CODE=32 (matching supply) on a stable that matched one ride per
+    0.5s, then passed clean twice after the matcher fix was adopted. Re-rolling on
+    the stable that failed is still refused; fresh_retest_samples still applies.
     """
     holds = inherited_holds(db, proof, candidate)
     for hold in holds:
         repair = hold['repair_sha']
         if stabilized and hold['category'] in SOFT_CATEGORIES:
+            continue
+        if (stable and hold['state'] == 'RETEST_PENDING' and repair and proof.same(hold['source_sha'], repair)
+                and hold_stable(hold) not in (None, stable)
+                and proof.contains(hold['base_sha'], hold['source_sha'], candidate)):
             continue
         if (hold['state'] != 'RETEST_PENDING' or not repair
                 or not proof.contains(hold['source_sha'], repair, candidate)):

@@ -107,11 +107,13 @@ def resolve_quality_holds(db, args, row):
     if not proof.contains(row['base_sha'], row['source_sha'], args.tested_sha):
         raise ValueError('tested source does not preserve submitted changed blobs; resubmit the actual integrated SHA')
     try:
-        rule = json.loads(Path(args.record).read_text()).get('ruleDecision') or {}
+        record = json.loads(Path(args.record).read_text())
     except (OSError, ValueError):
-        rule = {}
+        record = {}
+    rule = record.get('ruleDecision') or {}
     holds = guard_holds(db, proof, args.tested_sha,
-                        stabilized=rule.get('decision') == 'promote' and bool(rule.get('stabilizationRequired')))
+                        stabilized=rule.get('decision') == 'promote' and bool(rule.get('stabilizationRequired')),
+                        stable=record.get('stableBefore'))
     own = db.execute("SELECT * FROM quality_holds WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
                      (row['id'],)).fetchall()
     if any(h['state'] != 'RETEST_PENDING' or h['repair_sha'] != row['source_sha'] for h in own):

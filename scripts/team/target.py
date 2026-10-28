@@ -107,7 +107,8 @@ def main():
                             except (OSError, ValueError):
                                 decision = {}
                             holds = guard_holds(db, SourceProof(project), candidate,
-                                                stabilized=decision.get('decision') == 'promote' and bool(decision.get('stabilizationRequired')))
+                                                stabilized=decision.get('decision') == 'promote' and bool(decision.get('stabilizationRequired')),
+                                                stable=state0.get('STABLE_REV'))
                         except ValueError as error:
                             raise ValueError(str(error) + '; to close/recover without promotion use '
                                              '--override inconclusive or --override reject') from error
