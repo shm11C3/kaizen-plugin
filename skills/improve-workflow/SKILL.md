@@ -7,6 +7,10 @@ description: "Improve recurring ISUCON operations. Refine reusable skills and su
 
 Read `../../team/docs/WORKFLOW.md`. Keep the competition source and plugin
 source repositories distinct. Never edit an installed plugin cache.
+Human workflow advice also triggers this skill's scope check: decide whether it
+belongs in reusable guidance, session strategy, or problem-specific knowledge.
+Check existing coverage first; implement the smallest justified reusable change
+without turning each suggestion into a new approval wait or mandatory plugin edit.
 
 1. Establish `practice` or `competition` from the human's instruction or session
    record. Classify the operation as reusable or problem/environment-specific.

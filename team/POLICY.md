@@ -113,7 +113,10 @@ contains source and minimal bootstrap files, not these rules or management tools
   checks, push the branch, and submit its immutable full SHA.
 - Only the integration owner may update `main`, using the measured integrated
   candidate. Use fast-forward updates; never force-push `main`.
-- Do not create PRs or wait for PR approval during the competition.
+- The default competition path does not create PRs or wait for PR approval.
+  If the team switches its conversation medium under `team/docs/DISCORD.md`,
+  Issue/PR use must retain ledger ownership, measured adoption, and the single
+  integration owner; a PR merge alone never establishes adoption.
 - Keep secrets, cookies, private keys, database dumps, and large artifacts out
   of Git and Discord. `.local/`, `.kaizen/`, and runtime databases are untracked.
 
