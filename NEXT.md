@@ -18,6 +18,31 @@ Go JSON用集計はDB区間のsum/unionと未知coverageを区別する。Rust�
 [証拠票](knowledge/validation/profile-tools-20261019.json)を参照する。
 公式ベンチの新得点、Rust実アプリ/実DB・OTLP、Discord連携は今回の検証範囲外。
 
+## 2026-10-29 ISUCON14チーム練習R1：常駐統合Agentでの結果と、その場で直したplugin
+
+手動統合（主セッションが工程ごとに中継）では1候補7〜9分・採用0件だった。中間レトロ後に常駐integrator
+（review=none）へ切り替え、1候補あたり配備約10秒＋ベンチ約73秒×サンプル数になった。
+得点（stable）: 初期992 → T-0001（index＋nearby＋coordinate＋owner絞込み）3266/3541 → T-0002（マッチング）
+7763/8055 → T-0009（通知経路のN+1）8518/8999。T-0011（総距離の非正規化）は8179で新しいerror（CODE=1×32,
+CODE=22×3）が出て見送り。3台分割はconfig.shを変える候補で毎回env-registerが要るため締切前は見送り。
+
+練習中にmainへ入れた修正（実データの失敗→修正→配布の順。全部、実際に止まった箇所）:
+- 採否ルールv2: 少数の新しい非致命error（NEW_ERROR_TOLERANCE）と、既知errorの率上昇・許容外の新種
+  （STABILIZE_GAIN_BP、既定は採用閾値の300）を「採用＋安定化タスク自動起票」へ。1サンプル目で伸びていれば
+  2サンプル目を取る。許容後のノイズ分離は通常ルールに任せ、分離できなければremeasure。T-0002は
+  error26の率上昇を許容して採用され、T-0011が自動起票された（設計どおりの初例）。
+- integrator: 未採用のbaseに積んだ候補を待たせる（base..sourceだけ合成するため）。cherry-pickで採用された
+  baseは`git cherry`で採用済みと判定。待っている理由を状態に表示。baselineは今のbundle IDの標本だけ数える。
+- 採用時に全RESOURCE_HOSTSを新stableのsqlで揃えてからbundleを取る（ベンチのinitializeは計測ホストだけ）。
+- 品質保留: 修正SHAの再試験が失敗して新しい保留が開いたら、旧保留をSUPERSEDEDにする。
+- 台帳: task-readyのbaseが保留中のsourceなら警告、join済みでないagent名でのclaim/ready/handoffを警告、
+  task-create --relatedで周辺の進行中タスクを返す、task-withdraw。
+- 練習用の対象設定（競技repo側）: RECOVERY_CMDはDBを作り直してからstableのinit.shを流す（候補が足した
+  テーブルがreject後に残り、復旧の指紋照合で3回止まった）。RESOURCE_HOSTSは実負荷のDB_HOSTだけ。
+未対応: config.shを変える候補（3台分割など）の採用経路（env-registerとbundle取り直しの自動化）。
+practice-init（環境準備の1コマンド化）。練習用pluginのcloneのremoteがdeploy鍵の別名を向いていない件。
+v2で1サンプルが全baselineを下回り新しいerrorも出た場合は、investigateより早いrejectにできる。
+
 ## 未リリース: 2026-10-29 ISUCON14チーム練習（Codex=Agent1、Claude=Agent2）の指摘
 
 練習中にAgent2が記録した13件のうち、plugin側で直せるものを反映した。練習中の共通ホストの
