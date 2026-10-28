@@ -22,6 +22,11 @@ coordinates with other members through Discord.
    member's GitHub login. A native subagent may own the complete preparation;
    otherwise the main session does it. Do not split every phase into a new
    instruction wait.
+   When cloning a local checkout for speed, check its `origin` once: a cached
+   peer branch is not the canonical competition remote. Set the canonical URL
+   in the new clone and fetch its explicit main ref before selecting the base;
+   never change the source checkout's remote or treat a missing local ref as an
+   authentication failure.
 2. Implement the bounded mechanism. In parallel, independent work may inspect
    the specification, prior failures or test cases; it must not edit the writer's
    worktree. Use `../prepare-tests/SKILL.md` or `../refactor/SKILL.md` only for a
@@ -37,6 +42,11 @@ coordinates with other members through Discord.
    If a repair is needed, finish pending checks, make a new commit and rerun
    the affected scope against its full SHA. Never move HEAD during a running
    check/build or bind a pre-commit result to a later untested commit.
+   For a Go main module, write build output to a task-specific path outside the
+   watched source tree, e.g. `go build -o /tmp/kaizen-T0001-app .`. Otherwise a
+   generated executable can trip the source-change guard. Preserve that failure
+   and repair the output path; do not repeat the same command merely until its
+   cached output stops changing.
 4. Verify that check records name the actual tested SHA, scope, versions,
    conditions and durations, and match the source being submitted. If subsequent
    composition changes relevant source, the integrator checks that actual
