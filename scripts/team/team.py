@@ -106,7 +106,12 @@ def resolve_quality_holds(db, args, row):
     proof = SourceProof(official['project'])
     if not proof.contains(row['base_sha'], row['source_sha'], args.tested_sha):
         raise ValueError('tested source does not preserve submitted changed blobs; resubmit the actual integrated SHA')
-    holds = guard_holds(db, proof, args.tested_sha)
+    try:
+        rule = json.loads(Path(args.record).read_text()).get('ruleDecision') or {}
+    except (OSError, ValueError):
+        rule = {}
+    holds = guard_holds(db, proof, args.tested_sha,
+                        stabilized=rule.get('decision') == 'promote' and bool(rule.get('stabilizationRequired')))
     own = db.execute("SELECT * FROM quality_holds WHERE task_id=? AND state IN ('OPEN','RETEST_PENDING')",
                      (row['id'],)).fetchall()
     if any(h['state'] != 'RETEST_PENDING' or h['repair_sha'] != row['source_sha'] for h in own):

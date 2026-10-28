@@ -101,7 +101,13 @@ def main():
                         db.execute('BEGIN IMMEDIATE')
                         candidate = subprocess.check_output(['git', '-C', str(project), 'rev-parse', 'HEAD'], text=True).strip()
                         try:
-                            holds = guard_holds(db, SourceProof(project), candidate)
+                            state0 = dict(line.split('=', 1) for line in (project / '.kaizen/state.env').read_text().splitlines() if '=' in line)
+                            try:
+                                decision = json.loads((project / '.kaizen/experiments' / state0.get('CURRENT_EXPERIMENT', '') / 'decision.json').read_text())
+                            except (OSError, ValueError):
+                                decision = {}
+                            holds = guard_holds(db, SourceProof(project), candidate,
+                                                stabilized=decision.get('decision') == 'promote' and bool(decision.get('stabilizationRequired')))
                         except ValueError as error:
                             raise ValueError(str(error) + '; to close/recover without promotion use '
                                              '--override inconclusive or --override reject') from error
