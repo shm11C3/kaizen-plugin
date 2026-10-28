@@ -84,6 +84,7 @@ it is refused while the integration owner holds the environment for that task.
 While waiting on submitted work, run `scripts/team/watch.py --env NAME --agent
 SESSION` in the background; it exits with the first change to your tasks
 (returned, finished, handed over) so you do not miss a NEEDS_MEASUREMENT return.
+Use `--task T-nnnn` when monitoring one known task to avoid polling the full task list.
 The ledger is not the conversation: every one to two minutes, read new
 messages in all of the environment's Discord channels (a subagent may patrol),
 not only #ops. When scripting `control.py`, parse stdout only; it carries the

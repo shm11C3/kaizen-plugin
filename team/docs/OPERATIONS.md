@@ -26,11 +26,21 @@
 
 ```bash
 python3 "$K/scripts/team/control.py" task-list
+python3 "$K/scripts/team/control.py" task-list --summary --limit 20
+python3 "$K/scripts/team/control.py" task-list --summary --limit 20 --after-id T-0020
+python3 "$K/scripts/team/control.py" task-get --id T-0021
 python3 "$K/scripts/team/control.py" task-create --title '履歴クエリの総時間を削減する' \
   --evidence '/srv/isucon/artifacts/observe-001.txt:history-query' --priority 80 \
   --hypothesis history-query-index --kind implementation
 python3 "$K/scripts/team/control.py" task-claim --agent "$KAIZEN_SESSION"
 ```
+
+`task-list` without options keeps its full legacy JSON and priority order. For queue scans,
+`--summary` returns compact fields in ascending task-ID order (20 rows by default); pass
+`--limit 1..100` and `--after-id T-nnnn` to page. `task-get --id T-nnnn` returns one full
+task record, including evidence and reason, without reading the full queue into SSM output.
+These reads use the read-only ledger connection and remain available while a writer holds
+its reservation.
 
 `task-claim`の成功が担当確定です。取得後にDiscordへ `CLAIM T-0001 by <実際のセッションID>` と通知します。別IDのタスクでも、同じDBテーブル・APIの意味・キャッシュ・設定へ影響するなら調整します。必要な前提変更が未採用なら待ち、無関係な作業を進めます。
 

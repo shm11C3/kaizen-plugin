@@ -194,6 +194,20 @@ def public_task(row):
     return result
 
 
+def public_task_summary(row):
+    """Fields useful for queue scans; keep potentially large evidence/reasons out."""
+    result = {key: row[key] for key in ('title', 'status', 'owner', 'priority', 'work_kind',
+                                         'related_task', 'base_sha', 'source_sha', 'review', 'updated_at')}
+    result['id'] = 'T-{:04d}'.format(row['id'])
+    return result
+
+
+def task_id_number(value):
+    if not isinstance(value, str) or not re.fullmatch(r'T-\d+', value):
+        raise ValueError('task id must be T-0001 or equivalent')
+    return int(value[2:])
+
+
 def public_feedback(row):
     result = dict(row)
     result['id'] = 'F-{:04d}'.format(row['id'])
@@ -287,11 +301,30 @@ def dispatch(db, args):
         db.execute('UPDATE feedback SET decision=?,reason=?,artifact=?,next_action=?,decided_at=? WHERE id=?',
                    (args.decision, reason, artifact, next_action, now(), row['id']))
         return public_feedback(db.execute('SELECT * FROM feedback WHERE id=?', (row['id'],)).fetchone())
+    if command == 'task-get':
+        return public_task(task(db, args.id))
     if command == 'task-list':
+        clauses, parameters = [], []
         if args.agent:
-            rows = db.execute('SELECT * FROM tasks WHERE owner=? ORDER BY priority DESC,id', (args.agent,))
+            clauses.append('owner=?')
+            parameters.append(args.agent)
+        if args.after_id:
+            clauses.append('id>?')
+            parameters.append(task_id_number(args.after_id))
+        where = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
+        if args.limit is not None and not 1 <= args.limit <= 100:
+            raise ValueError('limit must be between 1 and 100')
+        if args.summary:
+            limit = args.limit if args.limit is not None else 20
+            rows = db.execute('SELECT * FROM tasks' + where + ' ORDER BY id LIMIT ?',
+                              (*parameters, limit))
+            return [public_task_summary(r) for r in rows]
+        if args.after_id or args.limit is not None:
+            rows = db.execute('SELECT * FROM tasks' + where + ' ORDER BY id' +
+                              (' LIMIT ?' if args.limit is not None else ''),
+                              (*parameters, *((args.limit,) if args.limit is not None else ())))
         else:
-            rows = db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')
+            rows = db.execute('SELECT * FROM tasks' + where + ' ORDER BY priority DESC,id', parameters)
         return [public_task(r) for r in rows]
     if command == 'task-create':
         if args.related:
@@ -499,6 +532,11 @@ def parser():
     commands.add_parser('status')
     task_list = commands.add_parser('task-list')
     task_list.add_argument('--agent', help='only return tasks owned by this agent')
+    task_list.add_argument('--summary', action='store_true', help='return compact fields in ID order (default limit: 20)')
+    task_list.add_argument('--limit', type=int, help='maximum number of rows (1..100)')
+    task_list.add_argument('--after-id', help='continue after this task ID in ID order')
+    task_get = commands.add_parser('task-get', help='read one complete task without scanning the queue')
+    task_get.add_argument('--id', required=True)
     feedback_list = commands.add_parser('feedback-list', help='list recorded advice and its decisions')
     feedback_list.add_argument('--pending', action='store_true', help='only advice without a decision')
     feedback_add = commands.add_parser('feedback-add', help='record advice before deciding its reusable scope')
@@ -588,7 +626,7 @@ def main():
             # connect() creates/migrates schema; this observer must never call it.
             print(json.dumps(pipeline_status(args.db, args.agent), ensure_ascii=False, indent=2))
             return 0
-        read_only = args.command in ('status', 'task-list', 'feedback-list')
+        read_only = args.command in ('status', 'task-list', 'task-get', 'feedback-list')
         connector = connect_readonly if read_only else connect
         with lock, contextlib.closing(connector(args.db)) as db, db:
             db.execute('BEGIN' if read_only else 'BEGIN IMMEDIATE')
@@ -601,7 +639,7 @@ def main():
                         'SELECT 1 FROM members WHERE agent=?', (who,)).fetchone():
                     result.setdefault('warnings', []).append(
                         who + ' has not joined; use the joined session ID so returns reach its watch (task-handoff to fix)')
-            if args.command not in ('status', 'task-list', 'feedback-list'):
+            if args.command not in ('status', 'task-list', 'task-get', 'feedback-list'):
                 event(db, args, result)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0

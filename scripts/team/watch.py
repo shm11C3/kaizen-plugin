@@ -29,14 +29,16 @@ def changes(before, after):
     return result
 
 
-def task_list(where, agent):
+def read_tasks(where, agent, task_id=None):
+    command = ['task-get', '--id', task_id] if task_id else ['task-list', '--agent', agent]
     out = subprocess.run([sys.executable, str(ROOT / 'scripts/team/control.py'), *where,
-                          'task-list', '--agent', agent],
+                          *command],
                          capture_output=True, text=True, timeout=120)
     if out.returncode:
         detail = (out.stderr or out.stdout).strip()
-        raise ValueError(f'task-list failed (exit {out.returncode}): {detail[-2000:]}')
-    return json.loads(out.stdout)
+        raise ValueError(f'{command[0]} failed (exit {out.returncode}): {detail[-2000:]}')
+    result = json.loads(out.stdout)
+    return [result] if task_id else result
 
 
 def main():
@@ -45,16 +47,17 @@ def main():
     where.add_argument('--host-config')
     where.add_argument('--env')
     p.add_argument('--agent', required=True)
+    p.add_argument('--task', help='watch only one task ID instead of listing every task owned by the agent')
     p.add_argument('--interval', type=int, default=60, help='seconds between polls (minimum 15)')
     p.add_argument('--max-minutes', type=int, default=60)
     a = p.parse_args()
     flags = ['--host-config', a.host_config] if a.host_config else ['--env', a.env] if a.env else []
     deadline = time.monotonic() + a.max_minutes * 60
     try:
-        before = mine(task_list(flags, a.agent), a.agent)
+        before = mine(read_tasks(flags, a.agent, a.task), a.agent)
         while time.monotonic() < deadline:
             time.sleep(max(15, a.interval))
-            found = changes(before, mine(task_list(flags, a.agent), a.agent))
+            found = changes(before, mine(read_tasks(flags, a.agent, a.task), a.agent))
             if found:
                 print(json.dumps({'agent': a.agent, 'changes': found}, ensure_ascii=False))
                 return 0

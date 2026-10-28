@@ -82,6 +82,8 @@ class CoordinationTests(unittest.TestCase):
         before = self.db.read_bytes()
         try:
             for args in (('status',), ('task-list', '--agent', 'worker'),
+                         ('task-list', '--summary', '--limit', '20'),
+                         ('task-get', '--id', task_id),
                          ('feedback-list', '--pending')):
                 with self.subTest(command=args[0]):
                     started = time.monotonic()
@@ -96,6 +98,35 @@ class CoordinationTests(unittest.TestCase):
             release.set()
             writer.join(timeout=2)
         self.assertFalse(writer.is_alive())
+
+    def test_task_reads_are_scoped_and_paged_without_changing_legacy_list(self):
+        task_ids = [self.create() for _ in range(60)]
+        with sqlite3.connect(self.db) as db:
+            db.executemany('UPDATE tasks SET evidence=?,reason=? WHERE id=?',
+                           [('e' * 700, 'r' * 700, int(task_id[2:])) for task_id in task_ids])
+
+        legacy = self.call('task-list')
+        self.assertEqual(len(legacy), 60)
+        self.assertIn('evidence', legacy[0])
+        self.assertIn('reason', legacy[0])
+
+        first = self.call('task-list', '--summary', '--limit', '20')
+        self.assertEqual(len(first), 20)
+        self.assertEqual([row['id'] for row in first], task_ids[:20])
+        self.assertNotIn('evidence', first[0])
+        self.assertNotIn('reason', first[0])
+        self.assertLess(len(json.dumps(first).encode()), 24 * 1024)
+        second = self.call('task-list', '--summary', '--limit', '20', '--after-id', first[-1]['id'])
+        self.assertEqual([row['id'] for row in second], task_ids[20:40])
+
+        detail = self.call('task-get', '--id', task_ids[-1])
+        self.assertEqual(detail['id'], task_ids[-1])
+        self.assertEqual(detail['evidence'], 'e' * 700)
+        self.assertEqual(detail['reason'], 'r' * 700)
+
+        self.assertNotEqual(self.run_cli('task-get', '--id', 'T-9999').returncode, 0)
+        self.assertNotEqual(self.run_cli('task-get', '--id', 'bad-id').returncode, 0)
+        self.assertNotEqual(self.run_cli('task-list', '--summary', '--limit', '101').returncode, 0)
 
     def test_deferred_feedback_retains_next_action_and_decision_history(self):
         feedback = self.add_feedback()
