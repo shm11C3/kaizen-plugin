@@ -12,6 +12,7 @@ import re
 import sqlite3
 import sys
 import uuid
+from urllib.parse import quote
 
 from environments import OFFICIAL, environment_name, register, schema, state_path
 from record_proof import promoted_record
@@ -75,6 +76,24 @@ def connect(path):
             except sqlite3.OperationalError:
                 if column not in {r['name'] for r in db.execute('PRAGMA table_info(tasks)')}:
                     raise
+    return db
+
+
+def connect_readonly(path):
+    """Open existing ledgers without migration or a write reservation."""
+    path = Path(path)
+    if not path.exists():
+        # Preserve the original first-command bootstrap behavior.
+        return connect(path)
+    uri = 'file:' + quote(str(path.resolve()), safe='/') + '?mode=ro'
+    db = sqlite3.connect(uri, uri=True, timeout=10)
+    db.row_factory = sqlite3.Row
+    columns = {row['name'] for row in db.execute('PRAGMA table_info(tasks)')}
+    required = {'human_question', 'hypothesis_key', 'work_kind', 'related_task'}
+    missing = required - columns
+    if missing:
+        db.close()
+        raise ValueError('team ledger schema needs migration; run a write command while the ledger is idle')
     return db
 
 
@@ -269,7 +288,11 @@ def dispatch(db, args):
                    (args.decision, reason, artifact, next_action, now(), row['id']))
         return public_feedback(db.execute('SELECT * FROM feedback WHERE id=?', (row['id'],)).fetchone())
     if command == 'task-list':
-        return [public_task(r) for r in db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')]
+        if args.agent:
+            rows = db.execute('SELECT * FROM tasks WHERE owner=? ORDER BY priority DESC,id', (args.agent,))
+        else:
+            rows = db.execute('SELECT * FROM tasks ORDER BY priority DESC,id')
+        return [public_task(r) for r in rows]
     if command == 'task-create':
         if args.related:
             task(db, args.related)
@@ -474,7 +497,8 @@ def parser():
     p.add_argument('--environment', default=OFFICIAL, type=environment_name)
     commands = p.add_subparsers(dest='command', required=True)
     commands.add_parser('status')
-    commands.add_parser('task-list')
+    task_list = commands.add_parser('task-list')
+    task_list.add_argument('--agent', help='only return tasks owned by this agent')
     feedback_list = commands.add_parser('feedback-list', help='list recorded advice and its decisions')
     feedback_list.add_argument('--pending', action='store_true', help='only advice without a decision')
     feedback_add = commands.add_parser('feedback-add', help='record advice before deciding its reusable scope')
@@ -564,8 +588,10 @@ def main():
             # connect() creates/migrates schema; this observer must never call it.
             print(json.dumps(pipeline_status(args.db, args.agent), ensure_ascii=False, indent=2))
             return 0
-        with lock, contextlib.closing(connect(args.db)) as db, db:
-            db.execute('BEGIN IMMEDIATE')
+        read_only = args.command in ('status', 'task-list', 'feedback-list')
+        connector = connect_readonly if read_only else connect
+        with lock, contextlib.closing(connector(args.db)) as db, db:
+            db.execute('BEGIN' if read_only else 'BEGIN IMMEDIATE')
             result = dispatch(db, args)
             if args.command in ('task-claim', 'task-ready', 'task-handoff') and isinstance(result, dict) and result.get('id'):
                 # Practice: a subagent claimed and submitted T-0010 as "parent"; its return

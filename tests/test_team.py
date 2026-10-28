@@ -5,6 +5,8 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 import sqlite3
 
@@ -60,6 +62,40 @@ class CoordinationTests(unittest.TestCase):
             self.assertEqual(record['artifact'], 'shared-evidence')
             self.assertTrue(record['decided_at'])
         self.assertEqual(self.call('feedback-list', '--pending'), [])
+
+    def test_read_only_queries_do_not_wait_for_writer_reservation_or_mutate_db(self):
+        task_id = self.create()
+        self.call('task-claim', '--id', task_id, '--agent', 'worker')
+        self.add_feedback()
+        locked = threading.Event()
+        release = threading.Event()
+
+        def hold_writer_reservation():
+            with sqlite3.connect(self.db, timeout=5) as writer:
+                writer.execute('BEGIN IMMEDIATE')
+                locked.set()
+                release.wait(5)
+
+        writer = threading.Thread(target=hold_writer_reservation)
+        writer.start()
+        self.assertTrue(locked.wait(2), 'writer did not acquire BEGIN IMMEDIATE')
+        before = self.db.read_bytes()
+        try:
+            for args in (('status',), ('task-list', '--agent', 'worker'),
+                         ('feedback-list', '--pending')):
+                with self.subTest(command=args[0]):
+                    started = time.monotonic()
+                    result = subprocess.run([sys.executable, str(ROOT / 'scripts/team/team.py'),
+                                             '--db', str(self.db), *args],
+                                            capture_output=True, text=True, timeout=2)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertLess(time.monotonic() - started, 1.0)
+                    json.loads(result.stdout)
+            self.assertEqual(self.db.read_bytes(), before)
+        finally:
+            release.set()
+            writer.join(timeout=2)
+        self.assertFalse(writer.is_alive())
 
     def test_deferred_feedback_retains_next_action_and_decision_history(self):
         feedback = self.add_feedback()
@@ -252,6 +288,11 @@ class CoordinationTests(unittest.TestCase):
             db.execute('INSERT INTO tasks(title,evidence,priority,status,owner,updated_at) VALUES (?,?,?,?,?,?)',
                        ('existing work', 'old observation', 80, 'READY', 'worker', '2026-10-17'))
         self.db = legacy
+        readonly = self.run_cli('task-list')
+        self.assertNotEqual(readonly.returncode, 0, 'read-only query must not run schema migrations')
+        self.assertIn('schema needs migration', readonly.stderr)
+        lease = self.call('env-acquire', '--agent', 'migrator', '--purpose', 'exercise schema migration')['token']
+        self.call('env-release', '--agent', 'migrator', '--token', lease, '--reason', 'migration complete')
         row = self.call('task-list')[0]
         self.assertEqual((row['title'], row['status'], row['owner']), ('existing work', 'READY', 'worker'))
         self.assertIsNone(row['human_question'])

@@ -29,11 +29,13 @@ def changes(before, after):
     return result
 
 
-def task_list(where):
-    out = subprocess.run([sys.executable, str(ROOT / 'scripts/team/control.py'), *where, 'task-list'],
+def task_list(where, agent):
+    out = subprocess.run([sys.executable, str(ROOT / 'scripts/team/control.py'), *where,
+                          'task-list', '--agent', agent],
                          capture_output=True, text=True, timeout=120)
     if out.returncode:
-        raise ValueError('task-list failed; check AWS login and the host config')
+        detail = (out.stderr or out.stdout).strip()
+        raise ValueError(f'task-list failed (exit {out.returncode}): {detail[-2000:]}')
     return json.loads(out.stdout)
 
 
@@ -49,10 +51,10 @@ def main():
     flags = ['--host-config', a.host_config] if a.host_config else ['--env', a.env] if a.env else []
     deadline = time.monotonic() + a.max_minutes * 60
     try:
-        before = mine(task_list(flags), a.agent)
+        before = mine(task_list(flags, a.agent), a.agent)
         while time.monotonic() < deadline:
             time.sleep(max(15, a.interval))
-            found = changes(before, mine(task_list(flags), a.agent))
+            found = changes(before, mine(task_list(flags, a.agent), a.agent))
             if found:
                 print(json.dumps({'agent': a.agent, 'changes': found}, ensure_ascii=False))
                 return 0
