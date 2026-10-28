@@ -77,6 +77,20 @@ class JoinTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 control.host_config_path('../competition')
 
+    def test_watch_reports_only_this_sessions_task_changes(self):
+        watch = module('watch')
+        tasks = [{'id': 'T-0001', 'owner': 'me', 'status': 'READY', 'reason': 'candidate', 'source_sha': 'a'},
+                 {'id': 'T-0002', 'owner': 'other', 'status': 'READY', 'reason': 'x', 'source_sha': 'b'}]
+        before = watch.mine(tasks, 'me')
+        self.assertEqual(watch.changes(before, before), [])
+        tasks[1]['status'] = 'ACCEPTED'
+        self.assertEqual(watch.changes(before, watch.mine(tasks, 'me')), [])
+        tasks[0].update(status='NEEDS_MEASUREMENT', reason='integrator: split index and retry')
+        found = watch.changes(before, watch.mine(tasks, 'me'))
+        self.assertEqual([(c['id'], c['after']['status']) for c in found], [('T-0001', 'NEEDS_MEASUREMENT')])
+        tasks[1]['owner'] = 'me'
+        self.assertIn('T-0002', [c['id'] for c in watch.changes(before, watch.mine(tasks, 'me'))])
+
     def test_configurable_remote_paths_need_no_dispatch_adapter(self):
         control = module('control')
         config = {'remote_plugin_root': '/srv/test/plugin', 'state_db': '/srv/test/state.sqlite3',
