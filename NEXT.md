@@ -18,6 +18,26 @@ Go JSON用集計はDB区間のsum/unionと未知coverageを区別する。Rust�
 [証拠票](knowledge/validation/profile-tools-20261019.json)を参照する。
 公式ベンチの新得点、Rust実アプリ/実DB・OTLP、Discord連携は今回の検証範囲外。
 
+## 未リリース: 2026-10-29 ISUCON14チーム練習（Codex=Agent1、Claude=Agent2）の指摘
+
+練習中にAgent2が記録した13件のうち、plugin側で直せるものを反映した。練習中の共通ホストの
+pluginは差し替えておらず、版も上げていない（版を上げるとjoinの版一致で練習中のメンバーが止まる）。
+
+- `task-withdraw`: 提出者が統合前のREADYをCLAIMEDへ戻す。統合担当がその候補IDで占有中なら拒否。
+  RETEST_PENDINGの保留はOPENへ戻す。1候補1機構の粒度をteamスキルとOPERATIONSに明記した。
+  （指摘12: 統合担当に「機構ごとに分けて」と言われても取り下げる手段がなかった）
+- `join.py`: モデル確認の失敗を`auth`/`model_unavailable`/`mismatch`/`cli_error`/`timeout`に分類
+  （本文は出さない）。セッションIDの先頭がGitHub loginと大文字小文字だけ違えば警告する。（指摘10・3）
+- `--env NAME`（join/control）: `team/environments/NAME`、なければ`~/.config/kaizen/NAME/control-host.json`。
+  host-configの`name`を出力とstderrに出す。（指摘11・13）
+- host-configの`discord`ブロック（guild_idと5チャンネル）をjoinが表示する。練習用host-configの雛形と
+  新規リポジトリ用`AGENTS.md`/`CLAUDE.md`雛形を`team/templates/`に追加した。（指摘1・4・6・7・9）
+- DISCORD.md: 共有Botの投稿は`[セッションID]`で始める、参加時は全チャンネルの新着を読む、
+  旧チャンネルに移動先を残す、読取位置の記録書式。（指摘2・8・9）
+
+残り: MCPにチャンネル名変更・カテゴリ移動がない（指摘5）、新着でのセッション起動（指摘8の本体）は
+plugin外。練習後に共通ホストへ入れ、実際のjoin出力とwithdrawを確かめる。
+
 ## 0.9.0: 必要な事前確認と実ベンチ、回数上限の見直し
 
 [検証方針](team/docs/VALIDATION.md)へ集約した。事前は必要なbuild/smoke、変更契約・

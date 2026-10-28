@@ -35,6 +35,48 @@ class JoinTests(unittest.TestCase):
             self.assertNotIn('--dangerously-skip-permissions', cmd)
             self.assertNotIn('--dangerously-bypass-approvals-and-sandbox', cmd)
 
+    def test_probe_failures_are_classified_without_provider_text(self):
+        join = module('join')
+        done = lambda code, out, err='': subprocess.CompletedProcess([], code, out, err)
+        expired = done(1, json.dumps({'result': 'Failed to authenticate. OAuth token has expired', 'is_error': True}))
+        self.assertEqual(join.probe_failure('claude', expired), 'auth')
+        self.assertEqual(join.probe_failure('codex', done(1, '', 'error: model gpt-x not found')), 'model_unavailable')
+        self.assertEqual(join.probe_failure('claude', done(0, json.dumps({'result': 'hello', 'is_error': False}))), 'mismatch')
+        self.assertEqual(join.probe_failure('codex', done(3, '', 'segfault')), 'cli_error')
+        self.assertTrue(all(k in join.PROBE_ADVICE[k] for k in join.PROBE_ADVICE))
+        self.assertNotIn('OAuth token', join.PROBE_ADVICE['auth'])
+
+    def test_session_prefix_case_slip_against_github_login_warns(self):
+        join = module('join')
+        original = join.run
+        self.addCleanup(setattr, join, 'run', original)
+        join.run = lambda *a, **k: subprocess.CompletedProcess([], 0, 'shm11C3\n', '')
+        self.assertIn('shm11C3-claude-01', join.github_login_warning('shm11c3-claude-01', '.'))
+        self.assertIsNone(join.github_login_warning('shm11C3-claude-01', '.'))
+        self.assertIsNone(join.github_login_warning('agent2-claude', '.'))
+        join.run = lambda *a, **k: subprocess.CompletedProcess([], 1, '', 'gh: not logged in')
+        self.assertIsNone(join.github_login_warning('shm11c3-claude-01', '.'))
+
+    def test_env_name_resolves_bundled_then_per_pc_config(self):
+        import os, tempfile
+        control = module('control')
+        self.assertEqual(control.host_config_path('competition').parent.name, 'competition')
+        self.assertEqual(control.host_config_path('x', '/explicit.json'), Path('/explicit.json'))
+        with tempfile.TemporaryDirectory() as directory:
+            old = os.environ.get('KAIZEN_CONFIG_DIR')
+            os.environ['KAIZEN_CONFIG_DIR'] = directory
+            self.addCleanup(lambda: os.environ.pop('KAIZEN_CONFIG_DIR') if old is None else os.environ.update(KAIZEN_CONFIG_DIR=old))
+            with self.assertRaisesRegex(ValueError, 'isu14-practice/control-host.json'):
+                control.host_config_path('isu14-practice')
+            path = Path(directory) / 'isu14-practice/control-host.json'
+            path.parent.mkdir()
+            path.write_text('{}')
+            self.assertEqual(control.host_config_path('isu14-practice'), path)
+            self.assertEqual(control.environment_label({}, path), 'isu14-practice')
+            self.assertEqual(control.environment_label({'name': 'practice-1029'}, path), 'practice-1029')
+            with self.assertRaises(ValueError):
+                control.host_config_path('../competition')
+
     def test_configurable_remote_paths_need_no_dispatch_adapter(self):
         control = module('control')
         config = {'remote_plugin_root': '/srv/test/plugin', 'state_db': '/srv/test/state.sqlite3',
