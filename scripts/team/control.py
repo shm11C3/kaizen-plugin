@@ -90,6 +90,21 @@ def source_push_command(config, arguments):
     return script
 
 
+def check_ready_shas(arguments):
+    """Practice R3: a mistyped --base (one digit off) was accepted and recorded; check both SHAs in the local clone."""
+    q = argparse.ArgumentParser(add_help=False)
+    q.add_argument('--base')
+    q.add_argument('--sha')
+    a, _ = q.parse_known_args(arguments)
+    if not a.base or not a.sha or subprocess.run(['git', 'rev-parse', '--git-dir'], capture_output=True).returncode:
+        return
+    for name, sha in (('--base', a.base), ('--sha', a.sha)):
+        if subprocess.run(['git', 'cat-file', '-e', sha + '^{commit}'], capture_output=True).returncode:
+            raise ValueError(name + ' ' + sha + ' is not a commit in this clone; copy it from git rev-parse')
+    if subprocess.run(['git', 'merge-base', '--is-ancestor', a.base, a.sha], capture_output=True).returncode:
+        raise ValueError('--base ' + a.base[:7] + ' is not an ancestor of --sha ' + a.sha[:7])
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     where = p.add_mutually_exclusive_group()
@@ -123,6 +138,8 @@ def main():
                 raise ValueError('result requires the previous SSM Command ID')
             command_id = args.arguments[0]
         else:
+            if args.command == 'task-ready':
+                check_ready_shas(args.arguments)
             command = (source_push_command(config, args.arguments) if args.command == 'source-push'
                        else remote_command(config, args.command, args.arguments))
             response = aws('ssm', 'send-command', '--document-name', 'AWS-RunShellScript',
