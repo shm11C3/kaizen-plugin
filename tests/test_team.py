@@ -304,6 +304,22 @@ class CoordinationTests(unittest.TestCase):
         self.assertNotEqual(self.run_cli('task-withdraw', '--id', self.create(), '--agent', 'worker',
                                         '--reason', 'never submitted').returncode, 0)
 
+    def test_release_clears_old_source_but_keeps_human_review(self):
+        task_id = self.create()
+        self.call('task-claim', '--id', task_id, '--agent', 'worker')
+        self.call('task-ready', '--id', task_id, '--agent', 'worker', '--base', '1'*40,
+                  '--sha', '2'*40, '--review', 'human', '--reason', 'tradeoff')
+        self.call('task-withdraw', '--id', task_id, '--agent', 'worker', '--reason', 'rethink')
+        released = self.call('task-release', '--id', task_id, '--agent', 'worker', '--reason', 'giving up')
+        self.assertEqual((released['status'], released['owner'], released['source_sha'], released['base_sha']),
+                         ('TODO', None, None, None))
+        self.assertIn('2'*40, released['reason'])
+        self.assertEqual(released['review'], 'human')
+        self.call('task-claim', '--id', task_id, '--agent', 'next')
+        auto = self.run_cli('task-ready', '--id', task_id, '--agent', 'next', '--base', '1'*40,
+                            '--sha', '3'*40, '--review', 'auto', '--reason', 'retry')
+        self.assertNotEqual(auto.returncode, 0)
+
     def test_join_release_alignment_and_queue_do_not_disclose_reservation_token(self):
         version = json.loads((ROOT / '.claude-plugin/plugin.json').read_text())['version']
         self.call('env-acquire', '--agent', 'integrator', '--purpose', 'work')

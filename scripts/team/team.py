@@ -479,8 +479,12 @@ def dispatch(db, args):
             elif command == 'task-release':
                 if row['status'] not in ('CLAIMED', 'BLOCKED'):
                     raise ValueError('only CLAIMED/BLOCKED tasks may return to TODO')
-                db.execute("UPDATE tasks SET status='TODO',owner=NULL,reason=?,updated_at=? WHERE id=?",
-                           (args.reason, now(), row['id']))
+                # Practice: T-0038 sat in TODO with no owner but its old SHA, which the
+                # next claimer could take for its own submission. Keep review (a release
+                # must not shed a human-review requirement) and name the old source.
+                reason = args.reason + ('; released source ' + row['source_sha'] if row['source_sha'] else '')
+                db.execute("UPDATE tasks SET status='TODO',owner=NULL,base_sha=NULL,source_sha=NULL,reason=?,updated_at=? WHERE id=?",
+                           (reason, now(), row['id']))
             elif command == 'task-handoff':
                 if row['status'] not in ('CLAIMED', 'BLOCKED', 'READY', 'NEEDS_HUMAN', 'NEEDS_MEASUREMENT'):
                     raise ValueError('cannot hand off a finished task')
