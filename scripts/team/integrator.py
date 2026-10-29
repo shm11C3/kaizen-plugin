@@ -33,6 +33,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -42,6 +43,9 @@ ROOT = Path(__file__).resolve().parents[2]
 TEAM = ROOT / 'scripts/team/team.py'
 TARGET = ROOT / 'scripts/team/target.py'
 DASHBOARD = ROOT / 'scripts/team/dashboard.py'
+sys.path.insert(0, str(ROOT / 'scripts/team'))
+from source_proof import SourceProof, guard_holds  # noqa: E402
+
 GIT_IDENTITY = ['-c', 'user.name=kaizen-integrator', '-c', 'user.email=integrator@control-host.invalid',
                 '-c', 'commit.gpgsign=false']
 DEFAULTS = {
@@ -418,6 +422,10 @@ class Integrator:
             if composed['status'] != 'ok':
                 self.return_task(task, composed['message'])
                 return
+            blocked = self.inherited_hold_block(task, composed)
+            if blocked:
+                self.return_task(task, blocked)
+                return
             self.status('working', '契約レビュー', task=tid, step='review')
             verdict = self.review(task, composed)
             if verdict and not verdict.get('proceed'):
@@ -557,6 +565,24 @@ class Integrator:
                     outputTokens=usage.get('output_tokens'), cacheReadTokens=usage.get('cache_read_input_tokens'),
                     durationSeconds=duration)
         return verdict
+
+    def inherited_hold_block(self, task, composed):
+        """Practice R3: T-0045 and T-0046 combined held candidates and each spent a
+        baseline and a candidate bench before promotion refused the inherited holds.
+        Check with the most lenient rule promotion can apply (a stabilized soft
+        hold passes); what it still refuses can never be adopted, so skip the bench."""
+        db = sqlite3.connect('file:%s?mode=ro' % self.db, uri=True)
+        db.row_factory = sqlite3.Row
+        try:
+            guard_holds(db, SourceProof(self.project), task['source_sha'], stabilized=True, stable=composed.get('stable'))
+        except ValueError as error:
+            # Only a refusal blocks; a proof that cannot be established is left to promotion.
+            if str(error).startswith(('candidate inherits', 'quality hold')):
+                return 'ベンチ前に停止: ' + str(error)
+            self.ledger('error', task=task['id'], message='hold pre-check skipped: ' + str(error)[-300:])
+        finally:
+            db.close()
+        return None
 
     def return_task(self, task, reason):
         self.team('task-finish', '--id', task['id'], '--agent', self.agent, '--result', 'NEEDS_MEASUREMENT',
