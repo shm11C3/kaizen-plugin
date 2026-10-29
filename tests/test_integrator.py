@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import sqlite3
 import stat
 import subprocess
 import sys
@@ -334,6 +335,56 @@ class IntegratorLoop(IntegratorFixture):
         self.assertIn('CREATE INDEX', clean['diff'])
         self.assertEqual(self.git(self.project, 'worktree', 'list').count('\n'), 1)
         self.assertEqual(self.sha(self.project, 'main'), self.sha(self.project))
+
+    def hold(self, task_id, base, source, state='OPEN', repair=None, category='correctness'):
+        db = sqlite3.connect(self.db)
+        db.execute('INSERT INTO quality_holds(task_id,base_sha,source_sha,environment,category,evidence,reason,opened_at,state,repair_sha) '
+                   "VALUES (?,?,?,'competition',?,'decision.json','pass=false',?,?,?)",
+                   (task_id, base, source, category, '2026-10-29T00:00:00+00:00', state, repair))
+        db.commit()
+        db.close()
+
+    def test_inherited_hold_returns_the_candidate_before_any_benchmark(self):
+        # Practice R3: T-0045/T-0046 stacked on held T-0041/T-0042 and spent a baseline
+        # and a candidate bench before promotion refused them.
+        base = self.sha(self.project, 'main')
+        self.git(self.worker, 'switch', '-q', '-c', 'worker/held', base)
+        (self.worker / 'sql/1-schema.sql').write_text('CREATE TABLE t (id INT PRIMARY KEY, v INT);\n')
+        self.git(self.worker, 'commit', '-qam', 'held change')
+        self.git(self.worker, 'push', '-q', '-u', 'origin', 'worker/held')
+        self.hold(99, base, self.sha(self.worker))
+        # As in R3: the stacked source carries the held commit but declares the stable base.
+        self.git(self.worker, 'switch', '-q', '-c', 'worker/stacked')
+        (self.worker / 'go/score').write_text('1200\n')
+        self.git(self.worker, 'commit', '-qam', 'stacked on held')
+        self.git(self.worker, 'push', '-q', '-u', 'origin', 'worker/stacked')
+        task = self.team('task-create', '--title', 'stacked on held', '--evidence', 'observe-001.txt', '--hypothesis', 'stacked')['id']
+        self.team('task-claim', '--id', task, '--agent', 'worker-claude-01')
+        self.team('task-ready', '--id', task, '--agent', 'worker-claude-01', '--base', base, '--sha', self.sha(self.worker),
+                  '--review', 'auto', '--reason', 'stacked')
+        self.once()
+        row = self.tasks()[task]
+        self.assertEqual(row['status'], 'NEEDS_MEASUREMENT')
+        self.assertIn('integrator: ベンチ前に停止', row['reason'])
+        self.assertEqual([r['event'] for r in self.ledger(task) if r['event'] in ('open', 'baseline', 'bench', 'deploy')], [])
+
+    def test_repair_of_the_held_task_still_reaches_measurement(self):
+        args = type('Args', (), {'db': str(self.db), 'config': str(self.target), 'state': str(self.state), 'settings': None})()
+        engine = module.Integrator(args)
+        engine.project = self.project
+        base = self.sha(self.project, 'main')
+        self.git(self.worker, 'switch', '-q', '-c', 'worker/failed', base)
+        (self.worker / 'go/score').write_text('900\n')
+        self.git(self.worker, 'commit', '-qam', 'failed change')
+        failed = self.sha(self.worker)
+        (self.worker / 'go/score').write_text('1100\n')
+        self.git(self.worker, 'commit', '-qam', 'repair')
+        repair = self.sha(self.worker)
+        self.git(self.project, 'fetch', '-q', str(self.worker), 'worker/failed')
+        self.hold(7, base, failed, state='RETEST_PENDING', repair=repair)
+        self.assertIsNone(engine.inherited_hold_block({'id': 'T-0007', 'base_sha': base, 'source_sha': repair}, {'stable': base}))
+        # The failed content itself, resubmitted unchanged, is still refused.
+        self.assertIn('H-', engine.inherited_hold_block({'id': 'T-0007', 'base_sha': base, 'source_sha': failed}, {'stable': base}))
 
 
 class Helpers(unittest.TestCase):
