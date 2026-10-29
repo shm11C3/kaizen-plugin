@@ -101,7 +101,12 @@ def main():
                         db.execute('BEGIN IMMEDIATE')
                         candidate = subprocess.check_output(['git', '-C', str(project), 'rev-parse', 'HEAD'], text=True).strip()
                         try:
-                            state0 = dict(line.split('=', 1) for line in (project / '.kaizen/state.env').read_text().splitlines() if '=' in line)
+                            # A project without state.env has no stable or decision to relax a hold;
+                            # the hold guard below still applies (it used to read state only with holds).
+                            try:
+                                state0 = dict(line.split('=', 1) for line in (project / '.kaizen/state.env').read_text().splitlines() if '=' in line)
+                            except OSError:
+                                state0 = {}
                             try:
                                 decision = json.loads((project / '.kaizen/experiments' / state0.get('CURRENT_EXPERIMENT', '') / 'decision.json').read_text())
                             except (OSError, ValueError):
