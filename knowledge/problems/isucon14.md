@@ -10,6 +10,10 @@ external-service-idempotency, db-busy-separate-host, auth-lookup-per-request.
 Constraints from the manual and code: `/initialize` 30s, tables recreated
 on initialize (indexes go in the schema), location visible within 3s but
 availability immediate, `isuride-matcher` must run on one host only.
+A new chair counts as free from the moment its activation returns: every
+position buffer or nearby-chairs cache delays it and raises code 31, and more
+sales add more chairs, so faster turnover hits the 200 soft-error limit
+(practice R3, see lessons/20261029-bench-soft-error-probe.md).
 
 Experiments in the order they were run.
 
