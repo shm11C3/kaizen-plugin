@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import json
+import math
 from pathlib import Path
 import re
 import statistics
@@ -111,7 +112,17 @@ def quality(baseline, candidate, forbidden=(), require_denominators=True, tolera
         if any(n > denominator for n in totals.values()):
             return {'status': 'unknown', 'reason': 'an error count exceeds its request denominator'}
         rates.append({kind: n / denominator for kind, n in totals.items()})
-    increased = [kind for kind in kinds if kind not in tolerated and rates[1][kind] > rates[0][kind]]
+    # A known kind counts as increased only beyond about two Poisson deviations of the
+    # count the baseline rate predicts for the candidate's requests. Practice R3: T-0044 cut
+    # code 31 by 89% (66-92 to 14) and was stopped because code 26 went 3 -> 3 at a
+    # rate of 5.2e-6 against 4.3e-6, i.e. 3 seen where 2.5 were expected.
+    c_requests = sum(s['requests'] for s in candidate)
+    def beyond_noise(kind):
+        expected = rates[0][kind] * c_requests
+        seen = rates[1][kind] * c_requests
+        return seen > expected + max(2, 2 * math.sqrt(expected))
+    increased = [kind for kind in kinds if kind not in tolerated and rates[1][kind] > rates[0][kind]
+                 and (kind in new_kinds or beyond_noise(kind))]
     result = {'status': 'unknown' if increased else 'pass',
               'reason': ('a new error type occurred; investigate' if set(increased) & new_kinds
                          else 'error rate increased; investigate') if increased else 'known error rates did not increase',

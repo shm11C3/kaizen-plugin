@@ -42,6 +42,14 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(m.quality(b, [sample(3000, 'c', 'map[30:1]', 1000)])['status'], 'unknown')
         self.assertEqual(m.quality(b, c, ('25',))['status'], 'failed')
 
+    def test_one_more_rare_known_error_is_noise(self):
+        # Practice R3 T-0044: code 26 at 3 where its baseline rate predicted 2.5.
+        b = [sample(n, 's', 'map[26:3 31:92]', 690000) for n in (220123, 228605)]
+        c = [sample(225179, 'c', 'map[26:3 31:14]', 571000)]
+        self.assertEqual(m.quality(b, c)['status'], 'pass')
+        c = [sample(210494, 'c', 'map[26:2 31:140]', 571000)]
+        self.assertEqual(m.quality(b, c)['status'], 'unknown')
+
     def test_rare_new_error_type_promotes_with_stabilization(self):
         b = [sample(n, 'stable', 'map[25:3]', 17000) for n in (940, 1000)]
         c = [sample(n, 'candidate', e, 17000) for n, e in ((1228, 'map[25:2]'), (1285, 'map[25:1 26:1]'))]
