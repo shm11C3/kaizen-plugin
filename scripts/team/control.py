@@ -90,6 +90,36 @@ def source_push_command(config, arguments):
     return script
 
 
+def plugin_push_command(config, arguments):
+    """Practice R3: a measurement fix had no way onto the host the integrator runs from.
+    Fast-forward the host plugin checkout to this clone's HEAD while the integrator is idle."""
+    q = argparse.ArgumentParser(prog='control.py plugin-push')
+    q.add_argument('--since', required=True, help='commit the host plugin is at now (control.py shows it on a mismatch)')
+    a = q.parse_args(arguments)
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+    if subprocess.run(['git', 'merge-base', '--is-ancestor', a.since, head], capture_output=True).returncode:
+        raise ValueError('HEAD does not descend from --since ' + a.since[:7])
+    data = subprocess.check_output(['git', 'bundle', 'create', '-', 'HEAD', '--not', a.since], stderr=subprocess.DEVNULL)
+    encoded = base64.b64encode(data).decode()
+    if len(encoded) > 48000:
+        raise ValueError('bundle is %d bytes; push fewer commits at a time' % len(data))
+    root = config['remote_plugin_root']
+    state = str(Path(config.get('target_config', '/srv/isucon/state/target.json')).parent / 'integrator' / 'status.json')
+    script = 'set -eu\n' \
+        'P=%s; G="git -c safe.directory=$P -C $P"\n' \
+        'cur=$(runuser -u isucon -- $G rev-parse HEAD)\n' \
+        'case "$cur" in %s*) ;; *) echo "host plugin is at $cur, not %s" >&2; exit 3;; esac\n' \
+        '[ -z "$(runuser -u isucon -- $G status --short)" ] || { echo "host plugin has local changes" >&2; exit 3; }\n' \
+        'if [ -f %s ] && grep -q \'"state": "working"\' %s; then echo "integrator is working; retry when idle" >&2; exit 3; fi\n' \
+        'F=$(mktemp /tmp/kaizen-plugin-XXXXXX.bundle); trap \'rm -f "$F"\' EXIT\n' \
+        'echo %s | base64 -d > "$F"; chmod 644 "$F"\n' \
+        'runuser -u isucon -- $G fetch -q "$F" HEAD\n' \
+        'runuser -u isucon -- $G checkout -q --detach %s\n' \
+        'echo "host plugin $(runuser -u isucon -- $G log --oneline -1)"\n' % (
+            shlex.quote(root), a.since, a.since[:7], shlex.quote(state), shlex.quote(state), encoded, head)
+    return script
+
+
 def check_ready_shas(arguments):
     """Practice R3: a mistyped --base (one digit off) was accepted and recorded; check both SHAs in the local clone."""
     q = argparse.ArgumentParser(add_help=False)
@@ -110,7 +140,7 @@ def main():
     where = p.add_mutually_exclusive_group()
     where.add_argument('--host-config', help='explicit host config path')
     where.add_argument('--env', help='environment name: team/environments/NAME or ~/.config/kaizen/NAME/control-host.json')
-    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, source-push [--since BASE] BRANCH..., or result COMMAND_ID')
+    p.add_argument('command', help='team.py command, target TARGET_ARGUMENTS, integrator ARGUMENTS, dashboard [--open], shell, source-push [--since BASE] BRANCH..., plugin-push --since HOST_REV, or result COMMAND_ID')
     p.add_argument('arguments', nargs=argparse.REMAINDER)
     args = p.parse_args()
     try:
@@ -141,6 +171,7 @@ def main():
             if args.command == 'task-ready':
                 check_ready_shas(args.arguments)
             command = (source_push_command(config, args.arguments) if args.command == 'source-push'
+                       else plugin_push_command(config, args.arguments) if args.command == 'plugin-push'
                        else remote_command(config, args.command, args.arguments))
             response = aws('ssm', 'send-command', '--document-name', 'AWS-RunShellScript',
                            '--instance-ids', config['instance_id'], '--timeout-seconds', '60',
