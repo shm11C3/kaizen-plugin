@@ -1,0 +1,16 @@
+# Practice 2026-10-29: pushes to main ran only targeted tests and left
+# test_source_proof red (5 failures) for hours. Every push now runs the full
+# suite and the fake-remote loop, so a red main shows up without anyone asking.
+name: tests
+on:
+  push:
+  pull_request:
+jobs:
+  all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: git config --global user.email ci@example.invalid && git config --global user.name ci
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - run: bash tests/run.sh
