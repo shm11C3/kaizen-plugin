@@ -208,6 +208,11 @@ def task_id_number(value):
     return int(value[2:])
 
 
+def purpose_task_numbers(purpose):
+    """Task numbers a reservation purpose names, in any wording ('integrate T-0012', 'retest T-12')."""
+    return {int(n) for n in re.findall(r'\bT-(\d+)\b', purpose or '')}
+
+
 def public_feedback(row):
     result = dict(row)
     result['id'] = 'F-{:04d}'.format(row['id'])
@@ -463,8 +468,7 @@ def dispatch(db, args):
                 if row['status'] != 'READY':
                     raise ValueError('only READY candidates may be withdrawn; measured results are finished by the integrator')
                 env = reservation(db)
-                tid = public_task(row)['id']
-                if env and env['owner'] != args.agent and env['purpose'] in (tid, 'integrate ' + tid):
+                if env and env['owner'] != args.agent and row['id'] in purpose_task_numbers(env['purpose']):
                     raise ValueError('integration of this candidate is in progress; ask ' + env['owner'] + ' to finish or release it first')
                 # The repair stays unsubmitted until the next task-ready names a new SHA.
                 db.execute("UPDATE quality_holds SET state='OPEN',repair_sha=NULL,repair_submitted_at=NULL "
