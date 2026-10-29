@@ -7,7 +7,7 @@ on:
   pull_request:
 jobs:
   all:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # run.sh uses BSD sed and must pass on the bash 3.2 the plugin targets
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
