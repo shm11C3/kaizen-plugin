@@ -1,5 +1,8 @@
 # Discordで連携する
 
+Bot作成・招待・token保存・各PCへのMCP登録・実接続確認は
+[Discord導入手順](DISCORD_SETUP.md)を参照する。kaizenのjoinだけではDiscord接続は完了しない。
+
 各メンバーが自分のPCでClaude/Codexを起動し、非公開のチームDiscordで
 議論・発見・作業調整を共有する。各セッションは自身で共有情報を読み、作業を選ぶ。
 参加時の指示や他セッションの会話履歴が自動共有されるとは扱わない。
