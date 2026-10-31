@@ -10,6 +10,11 @@ PLUGIN=$(cd "$(dirname "$0")/.." && pwd)
 # into the tests: every script would then act on that project with the fake
 # remote (seen 2026-10-17: friction rows and a failed "deploy" in the live repo).
 unset KAIZEN_PROJECT KAIZEN_PLUGIN_ROOT KAIZEN_TEAM_MODE
+# Git hooks and caller wrappers can export GIT_DIR/GIT_CONFIG, which override
+# this suite's temporary cwd. Never configure or commit in the caller's repo.
+while IFS= read -r git_variable; do
+  case "$git_variable" in GIT_*) unset "$git_variable" ;; esac
+done < <(compgen -e)
 T=$(mktemp -d "${TMPDIR:-/tmp}/kaizen-test.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 export KAIZEN_FAKE_REMOTE="$T/remote"

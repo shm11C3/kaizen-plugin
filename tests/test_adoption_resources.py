@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import _git_test_env  # Keep fixture Git commands independent of the invoking repository.
 import unittest
 
 import test_initialize

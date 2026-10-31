@@ -5,6 +5,7 @@ from pathlib import Path
 import sqlite3
 import stat
 import subprocess
+import _git_test_env  # Keep fixture Git commands independent of the invoking repository.
 import sys
 import tempfile
 import unittest

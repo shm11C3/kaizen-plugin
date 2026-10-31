@@ -8,6 +8,7 @@ from pathlib import Path
 import platform
 import shutil
 import subprocess
+import _git_test_env  # Keep fixture Git commands independent of the invoking repository.
 import sys
 import time
 
