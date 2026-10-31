@@ -13,5 +13,16 @@
   "access": "ssm",
   "target_configured": false,
   "state_db": "/srv/isucon/state/team.sqlite3",
-  "target_config": "/srv/isucon/state/target.json"
+  "target_config": "/srv/isucon/state/target.json",
+  "discord": {
+    "guild_id": "1560981538785599529",
+    "channels": {
+      "ops": "1565027592774484118",
+      "discoveries": "1565027594942947338",
+      "tasks": "1565027597195157685",
+      "benchmarks": "1565027599170797588",
+      "decisions": "1565027600353595514"
+    },
+    "post_prefix": "[SESSION_ID]"
+  }
 }
