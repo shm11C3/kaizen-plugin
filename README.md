@@ -4,7 +4,7 @@ ISUCON の改善ループを Claude Code・Codex のプラグインとして回�
 
 ## チームでの利用
 
-各メンバーは [競技用リポジトリ](https://github.com/shm11C3/isucon-competition) をcloneし、このプラグインをインストールします。運用規約・共通ホスト管理・調整用コマンド・テンプレートはプラグインが持ちます。
+各メンバーはチームの競技用リポジトリをcloneし、このプラグインをインストールします。[ISUCON2026で使用したリポジトリ](https://github.com/shm11C3/isucon-competition)は利用例です。運用規約・共通ホスト管理・調整用コマンド・テンプレートはプラグインが持ちます。
 
 - [設計レビュー（2026-10-18）](DESIGN_REVIEW.md)と[実測結果と次の改善案](NEXT.md)
 - [参加・インストール手順](team/docs/ONBOARDING.md)
@@ -172,3 +172,15 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Go／RustのLint検出と実行時間は`python3 tests/measure_lint.py --output .local/lint-validation-new`で
 再測定できます。出力先は新規にし、native Go／Rustとfmt／Clippyを用意します。
 [実測記録](knowledge/lessons/20261018-lint-validation.md)は小さなfixtureの結果です。
+
+## ライセンス
+
+[MIT License](LICENSE)。依存ツールやライブラリには、それぞれのライセンスが適用されます。[依存ライセンスの扱い](THIRD_PARTY_NOTICES.md)も参照してください。
+
+## 公開版の設定と実績
+
+`team/environments/competition/` は設定の雛形です。`YOUR_...` の値を自身のAWS・Discord環境に合わせて設定してください。環境別の設定は `~/.config/kaizen/<環境名>/control-host.json` に保存し、`--env <環境名>` で選ぶこともできます。認証トークン・秘密鍵・実環境の設定はGitへ追加しません。[構築手順](team/infra/README.md)を参照してください。
+
+ISUCON2026では、Claude Code・Codexの協調、Discord連絡、候補の並列準備、単一担当による配備・公式ベンチ・復旧に使用しました。最終の公式走行は100,096点・PASSでした。この結果は今回のチーム・競技環境での記録であり、プラグイン単体の改善効果や他方式に対する優位性を示す比較実験ではありません。常駐統合や正式な採用台帳を含む全機能が、この本番で一貫して使われたわけではありません。
+
+過去の検証記録には当時のローカルパスや環境情報が残っています。現在の設定例の匿名化は、Git履歴を書き換えるものではありません。

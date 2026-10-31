@@ -66,7 +66,7 @@ python3 "$K/scripts/team/control.py" queue
 
 plugin更新時はメンバーと共通ホストの版を揃えます。競技中の自動更新は行いません。共通ホスト管理者が占有なし・実行中なしを確認して固定releaseへ更新し、[復旧bundle](RECOVERY.md)を作り直します。
 
-`team/environments/competition/control-host.json`とAWS accountが異なれば止まります。別profileは各自の `AWS_PROFILE` で指定します。台帳と対象操作はSSM Run Commandなので、Session Manager pluginは不要です。対話shellにはSession Manager plugin、またはAWSコンソールを使います。
+同梱の`team/environments/competition/control-host.json`は`YOUR_...`を含む雛形です。自分の環境のhost-configを用意してください。選択したhost-configとAWS accountが異なれば止まります。別profileは各自の `AWS_PROFILE` で指定します。台帳と対象操作はSSM Run Commandなので、Session Manager pluginは不要です。対話shellにはSession Manager plugin、またはAWSコンソールを使います。
 
 練習・検証の環境は、作成者が[雛形](../templates/control-host.practice.example.json)から
 host-configを作り、Discordの`#ops`でJSONを共有します。受け取った各自は
