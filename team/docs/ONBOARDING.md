@@ -21,7 +21,7 @@ export KAIZEN_SESSION="${KAIZEN_GITHUB_USER}-codex-01"
 ```
 
 `<github-login>/T-0001-query-index`が実装ブランチの形式です。
-[Discord連携手順](DISCORD.md)に従って非公開サーバーと接続を確認し、
+[Discord導入手順](DISCORD_SETUP.md)でBot/MCPを準備し、[Discord連携手順](DISCORD.md)で非公開サーバーと接続を確認し、
 GitHubユーザー名・セッションID・Discord表示名の対応を共有します。
 各自の独立セッションが同じ方針と議論を読み、共有台帳で担当を取得します。
 
