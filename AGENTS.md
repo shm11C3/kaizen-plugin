@@ -4,6 +4,16 @@ An ISUCON improvement loop. The procedures are in `skills/<name>/SKILL.md`
 (setup, observe, hypothesize, experiment, recover, status); the mechanics are
 in `scripts/`; `hooks/guard.py` refuses what bypasses them.
 
+Git identity and test isolation:
+
+- Keep real commits under the operator's Git identity. Check `git var GIT_AUTHOR_IDENT`
+  and `git var GIT_COMMITTER_IDENT` before committing; never commit as `fixture` or
+  with an example/test email address.
+- Never set fixture identities in this repository's shared Git configuration.
+  Python tests that create repositories must import `tests/_git_test_env.py` before
+  invoking Git, and shell test runners must clear inherited `GIT_*` variables.
+  `git -C` alone does not isolate repository/configuration environment overrides.
+
 Rules that hold for any agent using this repository against a target:
 
 - Every deploy goes through `scripts/deploy.sh <ref>`, every benchmark
