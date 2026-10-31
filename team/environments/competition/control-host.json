@@ -1,10 +1,10 @@
 {
-  "account_id": "521390384516",
+  "account_id": "YOUR_AWS_ACCOUNT_ID",
   "region": "ap-northeast-1",
-  "instance_id": "i-006f0637c33d1d766",
+  "instance_id": "YOUR_CONTROL_INSTANCE_ID",
   "instance_type": "t3.small",
-  "vpc_id": "vpc-0599aa584eabb7604",
-  "subnet_id": "subnet-031099c9c2353a28c",
+  "vpc_id": "YOUR_VPC_ID",
+  "subnet_id": "YOUR_SUBNET_ID",
   "role_name": "isucon-competition-control-ssm",
   "project": "isucon-competition",
   "repository": "shm11C3/isucon-competition",
@@ -15,13 +15,13 @@
   "state_db": "/srv/isucon/state/team.sqlite3",
   "target_config": "/srv/isucon/state/target.json",
   "discord": {
-    "guild_id": "1560981538785599529",
+    "guild_id": "YOUR_DISCORD_GUILD_ID",
     "channels": {
-      "ops": "1565027592774484118",
-      "discoveries": "1565027594942947338",
-      "tasks": "1565027597195157685",
-      "benchmarks": "1565027599170797588",
-      "decisions": "1565027600353595514"
+      "ops": "YOUR_OPS_CHANNEL_ID",
+      "discoveries": "YOUR_DISCOVERIES_CHANNEL_ID",
+      "tasks": "YOUR_TASKS_CHANNEL_ID",
+      "benchmarks": "YOUR_BENCHMARKS_CHANNEL_ID",
+      "decisions": "YOUR_DECISIONS_CHANNEL_ID"
     },
     "post_prefix": "[SESSION_ID]"
   }

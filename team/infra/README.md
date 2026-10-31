@@ -16,6 +16,16 @@
 
 ## 構築・再実行
 
+同梱の `team/environments/competition/infra.json` と `control-host.json` は雛形です。`YOUR_...` は自分の環境の値へ置き換えます。実設定はGit管理外へコピーして使ってください。例えば `.local/my-team/infra.json` を用意し、次のように指定します。作成結果の `control-host.json` も同じディレクトリへ出力されます。
+
+```bash
+python3 "$K/team/infra/provision.py" --config "$K/.local/my-team/infra.json"
+python3 "$K/team/infra/provision.py" --config "$K/.local/my-team/infra.json" --create
+python3 "$K/team/infra/initialize-host.py" --host-config "$K/.local/my-team/control-host.json" --plugin-ref main
+```
+
+以下のデフォルトパスを使う場合も、先に雛形を設定する必要があります。
+
 ```bash
 python3 "$K/team/infra/provision.py"          # accountと構成を確認。作成しない
 python3 "$K/team/infra/provision.py" --create # このprojectの共通ホストだけ作成
@@ -76,7 +86,7 @@ aws ec2 start-instances --region ap-northeast-1 --instance-ids CONTROL_INSTANCE_
 
 2026-10-17にAWS Price List APIで確認した東京リージョンのLinux t3.small On-Demandは **0.0272 USD/時間**。EC2本体だけなら24時間で0.6528 USD、730時間で19.856 USD。EBS、public IPv4、転送、snapshot等は別。予算アラートの金額・通知先はチームで決めて設定する。
 
-構築時点でこのアカウントにCloudTrail trailは確認できなかった。SSM Command履歴とCloudTrail Event historyによるAPI確認は使えるが、長期trailやSession Managerのセッション内容ログは未設定。機密情報をコマンド本文・出力へ含めない。
+CloudTrail trailの有無・保存期間は利用するAWSアカウントで確認する。SSM Command履歴とCloudTrail Event historyに加え、長期保管やSession Managerのセッション内容ログが必要なら別途設定する。機密情報をコマンド本文・出力へ含めない。
 
 ## 参照
 
