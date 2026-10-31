@@ -4,7 +4,7 @@
 kaizenを入れるだけではDiscord MCPは登録されない。この手順はBot・各PCのMCP・実接続を別々に準備する。
 運用と排他の正本は[DISCORD](DISCORD.md)を参照する。
 
-## 1. チームで一度行うこと
+## 1. Botを準備する（メンバー各自）
 
 ### Botの作成と招待
 
@@ -24,15 +24,18 @@ kaizenを入れるだけではDiscord MCPは登録されない。この手順は
 
    Administratorは不要。非公開カテゴリ・チャンネル側でも、このBotのroleに上記を許可する。
    招待には対象サーバーでアプリを追加できる権限が必要。
+   自分で招待できない場合は、生成した招待URLをサーバー管理者へ渡す。tokenを渡す必要はない。
 5. `Bot`画面のToken欄から取得する。必要なら`Reset Token`して表示する。
    **Application ID / Public Key / OAuth2 Client Secretとは別の値**で、`Bot `という接頭辞は付けず保存する。
 
-メンバー全員がBotを新規作成する必要はない。今回の運用は **1つのBotを共有し、各PCで同じBot tokenを使う**。
-tokenの受渡しが必要なら、チームが認めたパスワード管理などの秘密共有手段を使う。
+標準運用は **各メンバーが自分のBotを作成し、そのtokenを自分のPCへ保存する**。
+他メンバーや管理者へbot-tokenの提供を依頼しない。全員のBotを対象サーバーへ招待し、
+同じ対象チャンネルへ必要な権限を与える。同じ人のClaudeとCodexは同じBotを使ってよいが、
+セッションIDとreaderIdは別にする。
 チャット、Discord投稿、Git、MCP設定ファイルへtokenを貼らない。
-各人のBotを使う構成も可能だが、全Botを対象サーバーへ招待し、同じチャンネル権限を与える。
+R3の検証では共有Botを使ったが、メンバー向けの標準導入手順にはしない。
 
-### チャンネルとIDの共有
+### サーバー管理者: チャンネルとIDの共有（一度だけ）
 
 非公開の`ops` / `discoveries` / `tasks` / `benchmarks` / `decisions`を用意する。
 Discordのユーザー設定 → 詳細設定 → 開発者モードを有効にし、サーバーと各チャンネルの
@@ -123,7 +126,7 @@ MCPがconnectedでも、Discord認証・権限確認が終わったとは扱わ�
 AIへ渡す初回指示例（IDだけを実値へ置換）:
 
 ```text
-共有Botで参加。セッションID/readerIdは mylogin-codex-20261031-01。
+自分で作成・招待したBotで参加。セッションID/readerIdは mylogin-codex-20261031-01。
 guild_idと5チャンネルIDは共有host-configのdiscordブロックを使う。
 全5チャンネルと関連threadを読み、activeとarchivedも確認する。
 discord_read_unreadはページ全文を読んでからreceiptをACKし、completeのページもACKする。
@@ -148,7 +151,7 @@ snapshot途中の上限や未ACKの位置は確定cursorとして扱わない。
 - 削除済み本文、参加していないprivate thread、古いIDの後日編集は復元・追跡できない。
 - 各PCのstate DBとBot tokenは私有のまま保持する。Discordの投稿はタスク取得や排他lockの代用にしない。
 - 起動中のAIか巡回subagentが約1分ごとに確認する構成で、Discord受信だけでAIが自動起動する仕組みではない。
-  共有BotではAPI制限も共有するため、未読差分を読み、変化のない定型投稿を避ける。
+  同じBotを複数クライアントで使う場合はAPI制限も共有する。未読差分を読み、変化のない定型投稿を避ける。
 
 ## 5. 困ったとき
 
@@ -163,7 +166,7 @@ snapshot途中の上限や未ACKの位置は確定cursorとして扱わない。
 | 新着が来ない/同じページが続く | readerId重複、空ページの未ACK、pending receiptを確認。切れたページはACKしない |
 | 429 | Discordのretry_afterに従う。readerを無闇に作り直したり同じ投稿を連打しない |
 
-tokenを再発行したら共有する全PCで更新する。既存Bot/token/MCP設定をAIが勝手に再発行・上書きしない。
+tokenを再発行したら、そのBotを使う自分の全PC・クライアントで更新する。既存Bot/token/MCP設定をAIが勝手に再発行・上書きしない。
 この手順を読んだだけで実接続や別PCの完了とは扱わない。
 
 ## 実装と根拠
